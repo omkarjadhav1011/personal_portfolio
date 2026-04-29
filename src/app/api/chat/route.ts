@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getPortfolioContext } from "@/lib/chatbot/context";
 import { buildSystemPrompt } from "@/lib/chatbot/prompt";
 import { checkRateLimit, clientIpFrom } from "@/lib/chatbot/rate-limit";
@@ -17,7 +17,7 @@ const requestSchema = z.object({
   messages: z.array(messageSchema).min(1).max(10),
 });
 
-const MODEL = "claude-haiku-4-5";
+const MODEL = "gemini-2.0-flash";
 const MAX_TOKENS = 1024;
 
 const SSE_HEADERS = {
@@ -68,9 +68,9 @@ export async function POST(request: NextRequest) {
   }
 
   // ── API key check ──────────────────────────────────────────────────────
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    console.error("[chat] ANTHROPIC_API_KEY is not set");
+    console.error("[chat] GEMINI_API_KEY is not set");
     return NextResponse.json(
       { error: "Chat is temporarily unavailable." },
       { status: 503 }
@@ -91,41 +91,42 @@ export async function POST(request: NextRequest) {
   }
 
   // ── Stream response ────────────────────────────────────────────────────
-  const client = new Anthropic({ apiKey });
-  const abortController = new AbortController();
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({
+    model: MODEL,
+    systemInstruction: systemPrompt,
+    generationConfig: { maxOutputTokens: MAX_TOKENS },
+  });
 
-  // If the client disconnects, abort the upstream stream so we stop billing
-  // tokens for nobody.
+  // Gemini expects role "user" | "model" with parts: [{ text }].
+  // The schema guarantees the final message is from the user; everything
+  // before it is conversation history.
+  const history = messages.slice(0, -1).map((m) => ({
+    role: m.role === "assistant" ? "model" : "user",
+    parts: [{ text: m.content }],
+  }));
+  const lastUserMessage = messages[messages.length - 1].content;
+
+  const abortController = new AbortController();
   request.signal.addEventListener("abort", () => abortController.abort());
 
   const readable = new ReadableStream<Uint8Array>({
     async start(controller) {
       try {
-        const stream = client.messages.stream(
-          {
-            model: MODEL,
-            max_tokens: MAX_TOKENS,
-            system: systemPrompt,
-            messages,
-          },
-          { signal: abortController.signal }
-        );
+        const chat = model.startChat({ history });
+        const result = await chat.sendMessageStream(lastUserMessage);
 
-        for await (const event of stream) {
-          if (
-            event.type === "content_block_delta" &&
-            event.delta.type === "text_delta"
-          ) {
-            controller.enqueue(
-              encodeEvent({ type: "delta", text: event.delta.text })
-            );
+        for await (const chunk of result.stream) {
+          if (abortController.signal.aborted) break;
+          const text = chunk.text();
+          if (text) {
+            controller.enqueue(encodeEvent({ type: "delta", text }));
           }
         }
 
         controller.enqueue(encodeEvent({ type: "done" }));
         controller.close();
       } catch (err: unknown) {
-        // Aborted by client → silent close.
         if (
           (err instanceof Error && err.name === "AbortError") ||
           abortController.signal.aborted

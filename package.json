@@ -16,10 +16,10 @@
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\",\"moduleResolution\":\"node\"} prisma/seed.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.91.1",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@google/generative-ai": "^0.24.1",
     "@libsql/client": "^0.8.0",
     "@prisma/adapter-libsql": "^5.22.0",
     "@prisma/client": "^5.22.0",
