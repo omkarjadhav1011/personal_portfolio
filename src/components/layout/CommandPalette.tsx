@@ -1,13 +1,22 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Terminal, Sparkles, Send, RotateCcw } from "lucide-react";
+import {
+  Terminal,
+  Sparkles,
+  Send,
+  RotateCcw,
+  FileSearch,
+  ChevronRight,
+} from "lucide-react";
 import { useTerminal } from "@/hooks/useTerminal";
 import { useAI, type AIMessage } from "@/hooks/useAI";
 import { useCommandPaletteStore } from "@/store/commandPalette";
 import { cn } from "@/lib/utils";
+import { InlineMarkdown } from "@/components/ui/InlineMarkdown";
 
 // ─── Suggested content ────────────────────────────────────────────────────────
 
@@ -28,49 +37,6 @@ const COMMAND_CHIPS = [
   { label: "git branch", cmd: "git branch" },
   { label: "git stash pop", cmd: "git stash pop" },
 ];
-
-// ─── Markdown renderer ────────────────────────────────────────────────────────
-
-function renderInline(text: string) {
-  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`|\*[^*]+\*)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith("**") && part.endsWith("**")) {
-      return (
-        <strong key={i} className="text-git-green font-semibold">
-          {part.slice(2, -2)}
-        </strong>
-      );
-    }
-    if (part.startsWith("`") && part.endsWith("`")) {
-      return (
-        <code
-          key={i}
-          className="px-1 rounded text-2xs bg-terminal-bg text-git-blue font-mono border border-terminal-border leading-none"
-        >
-          {part.slice(1, -1)}
-        </code>
-      );
-    }
-    if (part.startsWith("*") && part.endsWith("*")) {
-      return (
-        <em key={i} className="text-text-secondary italic">
-          {part.slice(1, -1)}
-        </em>
-      );
-    }
-    return part;
-  });
-}
-
-function renderMarkdown(content: string) {
-  const lines = content.split("\n");
-  return lines.map((line, i) => (
-    <span key={i}>
-      {renderInline(line)}
-      {i < lines.length - 1 && <br />}
-    </span>
-  ));
-}
 
 // ─── AI chat bubble ───────────────────────────────────────────────────────────
 
@@ -97,7 +63,7 @@ function AIBubble({ message }: { message: AIMessage }) {
       className="flex justify-start"
     >
       <div className="max-w-[92%] px-3 py-2.5 rounded-xl rounded-bl-sm bg-terminal-surface border border-terminal-border text-xs text-text-secondary leading-relaxed">
-        {renderMarkdown(message.content)}
+        <InlineMarkdown content={message.content} />
       </div>
     </motion.div>
   );
@@ -377,10 +343,32 @@ export function CommandPalette() {
                         {messages.length === 0 && !isTyping ? (
                           /* Empty state: suggested prompts */
                           <div className="space-y-3">
-                            <div className="flex items-center gap-2">
+                            <Link
+                              href="/recruiter"
+                              onClick={() => setOpen(false)}
+                              className="group flex items-center gap-3 px-3 py-2.5 rounded-lg bg-git-green/5 border border-git-green/30 hover:bg-git-green/10 transition-colors cursor-pointer"
+                            >
+                              <FileSearch size={14} className="text-git-green shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5 text-xs font-semibold text-git-green">
+                                  Recruiter mode
+                                  <span className="text-[9px] px-1 py-px rounded bg-git-green/20 border border-git-green/30 uppercase tracking-wider">
+                                    new
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-text-muted leading-snug truncate">
+                                  Paste a JD → get matched projects + a tailored pitch
+                                </p>
+                              </div>
+                              <ChevronRight
+                                size={14}
+                                className="text-git-green/60 group-hover:text-git-green group-hover:translate-x-0.5 transition-all shrink-0"
+                              />
+                            </Link>
+                            <div className="flex items-center gap-2 pt-1">
                               <Sparkles size={12} className="text-git-green/60" />
                               <p className="text-xs text-text-faint">
-                                Ask me anything about this developer:
+                                …or ask me anything about this developer:
                               </p>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

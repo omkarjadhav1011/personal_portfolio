@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import { FileSearch, Sparkles } from "lucide-react";
 import { useScrollProgress } from "@/hooks/useScrollProgress";
 import { useCommandPaletteStore } from "@/store/commandPalette";
 import { profile } from "@/data/profile";
@@ -69,6 +70,16 @@ export function Navbar() {
                 {s.label}
               </button>
             ))}
+            <Link
+              href="/recruiter"
+              className="ml-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-200 text-text-muted hover:text-git-green border border-transparent hover:border-git-green/30 hover:bg-git-green/5"
+            >
+              <FileSearch size={12} className="text-git-green/70" />
+              recruiter
+              <span className="text-[9px] px-1 py-px rounded bg-git-green/15 border border-git-green/30 text-git-green uppercase tracking-wider">
+                new
+              </span>
+            </Link>
           </div>
 
           {/* AI trigger + theme + mobile toggle */}
@@ -135,6 +146,18 @@ export function Navbar() {
               <Sparkles size={14} className="text-git-green/70" />
               <span>Ask AI about this developer</span>
             </button>
+
+            <Link
+              href="/recruiter"
+              onClick={() => setMobileOpen(false)}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-text-muted hover:text-git-green hover:bg-terminal-surface border border-terminal-border"
+            >
+              <FileSearch size={14} className="text-git-green/70" />
+              <span>Recruiter mode</span>
+              <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-git-green/15 border border-git-green/30 text-git-green uppercase tracking-wider">
+                new
+              </span>
+            </Link>
 
             <div className="border-t border-terminal-border my-1" />
 
