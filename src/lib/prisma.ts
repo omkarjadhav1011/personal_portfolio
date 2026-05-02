@@ -2,8 +2,14 @@ import { PrismaClient } from "@prisma/client";
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
+function shouldUseTurso() {
+  if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) return false;
+  if (process.env.USE_TURSO === "true") return true;
+  return process.env.NODE_ENV === "production";
+}
+
 function createPrismaClient(): PrismaClient {
-  if (process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN) {
+  if (shouldUseTurso()) {
     // eslint-disable-next-line
     const { createClient } = require("@libsql/client");
     // eslint-disable-next-line

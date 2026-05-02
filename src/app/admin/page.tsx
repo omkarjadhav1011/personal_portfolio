@@ -2,16 +2,36 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
 async function getStats() {
-  const [projects, experience, branches, diffs, profileExists] = await Promise.all([
-    prisma.project.count(),
-    prisma.commitEntry.count(),
-    prisma.skillBranch.findMany({ include: { _count: { select: { skills: true } } } }),
-    prisma.skillDiff.count(),
-    prisma.profile.findUnique({ where: { id: "main" }, select: { id: true } }),
-  ]);
+  try {
+    const [projects, experience, branches, diffs, profileExists] = await Promise.all([
+      prisma.project.count(),
+      prisma.commitEntry.count(),
+      prisma.skillBranch.findMany({ include: { _count: { select: { skills: true } } } }),
+      prisma.skillDiff.count(),
+      prisma.profile.findUnique({ where: { id: "main" }, select: { id: true } }),
+    ]);
 
-  const totalSkills = branches.reduce((acc, b) => acc + b._count.skills, 0);
-  return { projects, experience, skills: totalSkills, branches: branches.length, diffs, profileExists: !!profileExists };
+    const totalSkills = branches.reduce((acc, b) => acc + b._count.skills, 0);
+    return {
+      projects,
+      experience,
+      skills: totalSkills,
+      branches: branches.length,
+      diffs,
+      profileExists: !!profileExists,
+      dbAvailable: true,
+    };
+  } catch {
+    return {
+      projects: 0,
+      experience: 0,
+      skills: 0,
+      branches: 0,
+      diffs: 0,
+      profileExists: false,
+      dbAvailable: false,
+    };
+  }
 }
 
 export default async function AdminDashboard() {
@@ -81,7 +101,11 @@ export default async function AdminDashboard() {
         <div className="flex items-center gap-2">
           <span className={`w-2 h-2 rounded-full ${stats.profileExists ? "bg-git-green" : "bg-git-orange"} animate-pulse`} />
           <span className="text-text-secondary text-xs">
-            {stats.profileExists ? "Profile data loaded from database" : "Profile not seeded — run prisma db seed"}
+            {stats.dbAvailable
+              ? stats.profileExists
+                ? "Profile data loaded from database"
+                : "Profile not seeded — run prisma db seed"
+              : "Database unavailable — using safe empty admin state"}
           </span>
         </div>
         <div className="mt-2 flex items-center gap-2">
