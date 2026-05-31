@@ -1,0 +1,17 @@
+package com.portfolio.skill;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+
+import java.util.List;
+import java.util.UUID;
+
+public interface SkillDiffRepository extends JpaRepository<SkillDiff, UUID> {
+
+    /** Public ordering: by sort_order ascending. */
+    List<SkillDiff> findAllByOrderBySortOrderAsc();
+
+    /** Highest sort_order, or -1 when empty so the first diff gets order 0 (matches Next.js). */
+    @Query("select coalesce(max(d.sortOrder), -1) from SkillDiff d")
+    int findMaxSortOrder();
+}
