@@ -1,14 +1,15 @@
 spring:
   application:
     name: portfolio-backend
-  # PHASE 0.1 (skeleton only): there is no database yet, so JPA/DataSource
-  # auto-configuration is excluded to let the app boot for verification.
-  # This block is removed in step 0.2 when the Project entity + Postgres
-  # datasource (DATABASE_URL) are wired in.
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+  datasource:
+    # JDBC URL; defaults to the local docker-compose Postgres on host port 5433.
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5433/portfolio}
+    username: ${DATABASE_USERNAME:portfolio}
+    password: ${DATABASE_PASSWORD:portfolio}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
 
 server:
   port: 8081
