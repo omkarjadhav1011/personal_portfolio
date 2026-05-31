@@ -1,5 +1,8 @@
 package com.portfolio.experience;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+@Tag(name = "Experience", description = "Work experience / timeline entries")
 @RestController
 @RequestMapping("/api/experience")
 public class ExperienceController {
@@ -27,6 +31,8 @@ public class ExperienceController {
         this.repository = repository;
     }
 
+    @Operation(summary = "List experience entries", description = "Returns all experience entries ordered by sort order")
+    @ApiResponse(responseCode = "200", description = "Experience list returned")
     @GetMapping
     public List<ExperienceDto> list() {
         return repository.findAllByOrderBySortOrderAsc()
@@ -35,6 +41,8 @@ public class ExperienceController {
                 .toList();
     }
 
+    @Operation(summary = "Create experience entry", description = "Creates a new experience / timeline entry")
+    @ApiResponse(responseCode = "201", description = "Entry created")
     @PostMapping
     public ResponseEntity<ExperienceDto> create(@Valid @RequestBody ExperienceRequest req) {
         CommitEntry entry = new CommitEntry();
@@ -44,6 +52,9 @@ public class ExperienceController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ExperienceDto.from(saved));
     }
 
+    @Operation(summary = "Update experience entry", description = "Updates an existing experience entry by ID")
+    @ApiResponse(responseCode = "200", description = "Entry updated")
+    @ApiResponse(responseCode = "404", description = "Entry not found")
     @PatchMapping("/{id}")
     public ExperienceDto update(@PathVariable UUID id, @Valid @RequestBody ExperienceRequest req) {
         CommitEntry entry = repository.findById(id)
@@ -52,6 +63,9 @@ public class ExperienceController {
         return ExperienceDto.from(repository.save(entry));
     }
 
+    @Operation(summary = "Delete experience entry", description = "Deletes an experience entry by ID")
+    @ApiResponse(responseCode = "200", description = "Entry deleted")
+    @ApiResponse(responseCode = "404", description = "Entry not found")
     @DeleteMapping("/{id}")
     public Map<String, Boolean> delete(@PathVariable UUID id) {
         if (!repository.existsById(id)) {

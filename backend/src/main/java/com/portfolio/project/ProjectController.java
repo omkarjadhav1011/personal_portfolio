@@ -1,5 +1,8 @@
 package com.portfolio.project;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@Tag(name = "Projects", description = "Portfolio project entries")
 @RestController
 @RequestMapping("/api/projects")
 public class ProjectController {
@@ -21,6 +25,8 @@ public class ProjectController {
         this.repository = repository;
     }
 
+    @Operation(summary = "List projects", description = "Returns all projects ordered by sort order, pinned first")
+    @ApiResponse(responseCode = "200", description = "Project list returned")
     @GetMapping
     public List<ProjectDto> list() {
         return repository.findAllByOrderBySortOrderAscPinnedDesc()
@@ -29,6 +35,8 @@ public class ProjectController {
                 .toList();
     }
 
+    @Operation(summary = "Create project", description = "Creates a new project entry appended to the sort order")
+    @ApiResponse(responseCode = "201", description = "Project created")
     @PostMapping
     public ResponseEntity<ProjectDto> create(@Valid @RequestBody ProjectCreateRequest req) {
         Project p = new Project();
