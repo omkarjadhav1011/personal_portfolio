@@ -1,5 +1,6 @@
 package com.portfolio.project;
 
+import com.portfolio.common.Sortable;
 import com.portfolio.persistence.StringListJsonConverter;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -23,7 +24,7 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "project")
-public class Project {
+public class Project implements Sortable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

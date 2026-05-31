@@ -1,5 +1,6 @@
 package com.portfolio.skill;
 
+import com.portfolio.common.Sortable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -18,7 +19,7 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "skill_diff")
-public class SkillDiff {
+public class SkillDiff implements Sortable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

@@ -11,6 +11,9 @@ public interface SkillDiffRepository extends JpaRepository<SkillDiff, UUID> {
     /** Public ordering: by sort_order ascending. */
     List<SkillDiff> findAllByOrderBySortOrderAsc();
 
+    /** Reorder ordering: by sort_order, then createdAt (stable for normalization). */
+    List<SkillDiff> findAllByOrderBySortOrderAscCreatedAtAsc();
+
     /** Highest sort_order, or -1 when empty so the first diff gets order 0 (matches Next.js). */
     @Query("select coalesce(max(d.sortOrder), -1) from SkillDiff d")
     int findMaxSortOrder();
