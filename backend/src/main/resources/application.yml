@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: portfolio-backend
+  # PHASE 0.1 (skeleton only): there is no database yet, so JPA/DataSource
+  # auto-configuration is excluded to let the app boot for verification.
+  # This block is removed in step 0.2 when the Project entity + Postgres
+  # datasource (DATABASE_URL) are wired in.
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+
+server:
+  port: 8080
