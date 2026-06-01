@@ -415,7 +415,7 @@ export function CommandPalette() {
                           : "Ask me anything about Omkar..."
                       }
                       disabled={mode === "ai" && isTyping}
-                      className="flex-1 bg-transparent text-sm text-text-primary placeholder-text-faint outline-none font-mono disabled:opacity-50"
+                      className="flex-1 bg-transparent text-sm text-text-primary placeholder-text-faint outline-none focus-visible:ring-1 focus-visible:ring-git-green/40 rounded font-mono disabled:opacity-50"
                       autoComplete="off"
                       spellCheck={false}
                     />

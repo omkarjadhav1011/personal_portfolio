@@ -266,7 +266,6 @@ export function AboutSection({ profile, topSkills }: AboutSectionProps) {
                     }}
                   >
                     {role.logoUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={role.logoUrl}
                         alt={role.company}
