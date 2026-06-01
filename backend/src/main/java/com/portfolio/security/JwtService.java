@@ -36,6 +36,11 @@ public class JwtService {
                 .compact();
     }
 
+    /** Token lifetime in seconds (for the login response's {@code expiresIn}). */
+    public long getExpirySeconds() {
+        return EXPIRY.toSeconds();
+    }
+
     /**
      * Verifies the signature and expiry, returning the subject (username).
      * Throws {@link io.jsonwebtoken.JwtException} if the token is invalid, tampered, or expired.
