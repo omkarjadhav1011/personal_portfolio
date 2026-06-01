@@ -1,10 +1,14 @@
 
 import { useState, useCallback } from "react";
 import type { CommandResult } from "@/types";
-import { profile } from "@/data/profile";
-import { projects } from "@/data/projects";
-import { skillBranches } from "@/data/skills";
-import { timeline } from "@/data/experience";
+import { profile as staticProfile } from "@/data/profile";
+import { projects as staticProjects } from "@/data/projects";
+import { skillBranches as staticBranches } from "@/data/skills";
+import { timeline as staticTimeline } from "@/data/experience";
+import { useProfile } from "@/api/profile";
+import { useDomainProjects } from "@/api/projects";
+import { useSkillBranches } from "@/api/skills";
+import { useExperience } from "@/api/experience";
 import { fuzzyFilter } from "@/lib/fuzzy";
 
 const KNOWN_COMMANDS = [
@@ -41,6 +45,12 @@ function parseCommand(raw: string): ParsedCommand {
 export function useTerminal() {
   const [history, setHistory] = useState<Array<{ command: string; result: CommandResult }>>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+
+  // Live data from the API, falling back to static seed data until it loads.
+  const profile = useProfile().data ?? staticProfile;
+  const projects = useDomainProjects().data ?? staticProjects;
+  const skillBranches = useSkillBranches().data ?? staticBranches;
+  const timeline = useExperience().data ?? staticTimeline;
 
   const executeCommand = useCallback((raw: string): CommandResult => {
     if (!raw.trim()) return { output: [], type: "success" };
@@ -306,7 +316,7 @@ export function useTerminal() {
       ],
       type: "error",
     };
-  }, []);
+  }, [profile, projects, skillBranches, timeline]);
 
   const submit = useCallback(
     (command: string) => {
