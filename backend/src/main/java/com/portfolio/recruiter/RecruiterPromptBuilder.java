@@ -80,6 +80,37 @@ public class RecruiterPromptBuilder {
 
             Output JSON now.""";
 
+    private static final String LETTER_TEMPLATE = """
+            You are %1$s, writing a short, sincere note to a recruiter or hiring manager about a specific role. Write in first person.
+
+            <my_profile>
+            Name: %1$s
+            Headline: %2$s
+            Bio: %3$s
+            Location: %4$s
+            Available for work: %5$s
+            </my_profile>
+
+            <job_description>
+            %6$s
+            </job_description>
+
+            <match_analysis>
+            %7$s
+            </match_analysis>
+
+            # Rules
+
+            - 120–180 words. Plain prose, 2–3 short paragraphs. NO bullets, NO headers.
+            - Cite 1–2 specific projects from match_analysis.matchedProjects by name (use the slug-derived name or repoName if the reader would recognize it). Connect each to a concrete JD requirement.
+            - Acknowledge a real gap from match_analysis.gapSkills if any are must-have, briefly and confidently — frame it as something I'd ramp up on, not as a deal-breaker.
+            - Tone: warm, direct, technically grounded. NO buzzwords ("synergy", "passionate", "rockstar", "ninja", "leverage", "unlock"). NO clichés ("I'm excited to apply...", "I believe I would be a great fit...").
+            - End with a soft, specific call-to-action — e.g., "Happy to walk through any of this — drop a line at [email]" — using my email from <my_profile>.
+            - Output ONLY the letter text. No greeting like "Dear hiring manager" — start directly. No signature block.
+            - Use plain markdown only: **bold** sparingly for emphasis. No code blocks, no headers, no lists.
+
+            Write the note now.""";
+
     private final ObjectMapper objectMapper;
 
     public RecruiterPromptBuilder(ObjectMapper objectMapper) {
@@ -94,5 +125,18 @@ public class RecruiterPromptBuilder {
             throw new IllegalStateException("Failed to serialize portfolio context", e);
         }
         return MATCH_TEMPLATE.formatted(ctx.profile().name(), portfolioJson, jobDescription);
+    }
+
+    public String buildLetterPrompt(PortfolioContext ctx, String jobDescription, MatchResult match) {
+        String matchSummary;
+        try {
+            matchSummary = objectMapper.writeValueAsString(match);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Failed to serialize match result", e);
+        }
+        PortfolioContext.ProfileSummary p = ctx.profile();
+        return LETTER_TEMPLATE.formatted(
+                p.name(), p.headline(), p.bio(), p.location(),
+                p.availableForWork(), jobDescription, matchSummary);
     }
 }

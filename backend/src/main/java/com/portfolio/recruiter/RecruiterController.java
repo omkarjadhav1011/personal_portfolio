@@ -10,11 +10,16 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import reactor.core.publisher.Flux;
+
+import java.util.Map;
 
 /**
  * Recruiter mode. Ports {@code api/recruiter/match}: scores a job description against the
@@ -31,6 +36,10 @@ public class RecruiterController {
     private static final int MAX_OUTPUT_TOKENS = 2048;
     private static final double TEMPERATURE = 0.4;
     private static final String RATE_LIMIT_PREFIX = "recruiter-match";
+
+    private static final int LETTER_MAX_TOKENS = 512;
+    private static final double LETTER_TEMPERATURE = 0.7;
+    private static final String LETTER_RATE_LIMIT_PREFIX = "recruiter-letter";
 
     private final RateLimiter rateLimiter;
     private final PortfolioContextService contextService;
@@ -51,6 +60,9 @@ public class RecruiterController {
     }
 
     public record MatchRequest(String jobDescription) {
+    }
+
+    public record LetterRequest(String jobDescription, MatchResult matchResult) {
     }
 
     @Operation(summary = "Score a job description against the profile")
@@ -95,5 +107,44 @@ public class RecruiterController {
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "The model returned an unexpected response.");
         }
+    }
+
+    @Operation(summary = "Stream a cover letter for a job description")
+    @PostMapping(value = "/letter", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ServerSentEvent<Map<String, Object>>> letter(@RequestBody(required = false) LetterRequest req,
+                                                             HttpServletRequest request,
+                                                             HttpServletResponse response) {
+        RateLimiter.Result limit = rateLimiter.check(LETTER_RATE_LIMIT_PREFIX + ":" + RateLimiter.clientIp(request));
+        if (!limit.ok()) {
+            response.setHeader("Retry-After", String.valueOf(limit.retryAfterSeconds()));
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many submissions. Try again in a minute.");
+        }
+
+        String jd = req == null ? null : req.jobDescription();
+        if (jd == null || jd.length() < JD_MIN || jd.length() > JD_MAX || req.matchResult() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid request payload");
+        }
+
+        if (!geminiClient.isConfigured()) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Recruiter mode is temporarily unavailable.");
+        }
+
+        String prompt;
+        try {
+            PortfolioContext ctx = contextService.getContext();
+            prompt = promptBuilder.buildLetterPrompt(ctx, jd, req.matchResult());
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Recruiter mode is temporarily unavailable.");
+        }
+
+        return geminiClient.streamPrompt(prompt, LETTER_MAX_TOKENS, LETTER_TEMPERATURE)
+                .map(text -> event(Map.of("type", "delta", "text", text)))
+                .concatWithValues(event(Map.of("type", "done")))
+                .onErrorResume(e -> Flux.just(
+                        event(Map.of("type", "error", "message", "The cover letter ran into a problem."))));
+    }
+
+    private static ServerSentEvent<Map<String, Object>> event(Map<String, Object> data) {
+        return ServerSentEvent.<Map<String, Object>>builder().data(data).build();
     }
 }

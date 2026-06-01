@@ -95,6 +95,25 @@ public class GeminiClient {
                 .filter(text -> !text.isEmpty());
     }
 
+    /** Streaming generation from a single prompt with explicit limits (used by the cover letter). */
+    public Flux<String> streamPrompt(String prompt, int maxOutputTokens, double temperature) {
+        requireKey();
+        Map<String, Object> body = Map.of(
+                "contents", List.of(Map.of("role", "user", "parts", List.of(Map.of("text", prompt)))),
+                "generationConfig", Map.of("maxOutputTokens", maxOutputTokens, "temperature", temperature));
+        return webClient.post()
+                .uri(baseUrl + "/models/" + MODEL + ":streamGenerateContent?alt=sse")
+                .header("x-goog-api-key", apiKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(body)
+                .retrieve()
+                .bodyToFlux(new ParameterizedTypeReference<ServerSentEvent<String>>() {})
+                .map(ServerSentEvent::data)
+                .filter(Objects::nonNull)
+                .map(this::extractText)
+                .filter(text -> !text.isEmpty());
+    }
+
     private Map<String, Object> buildRequestBody(String systemInstruction, List<ChatMessage> messages) {
         List<Map<String, Object>> contents = messages.stream()
                 .map(m -> Map.<String, Object>of(
