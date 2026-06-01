@@ -2,12 +2,15 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Folder, GitBranch, ExternalLink, LogOut } from "lucide-react";
 import { useToast } from "./ToastProvider";
+import { useAuthStore } from "@/store/auth";
 
 export function AdminTopBar({ profileName }: { profileName: string }) {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const clear = useAuthStore((s) => s.clear);
 
   async function handleLogout() {
+    clear();
     await fetch("/api/auth/logout", { method: "POST" });
     toast("Logged out", "success");
     navigate("/admin/login");

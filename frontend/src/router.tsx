@@ -7,7 +7,10 @@ import { NotFound } from "@/routes/NotFound";
 import Home from "@/pages/Home";
 import ProjectDetail from "@/pages/ProjectDetail";
 import Login from "@/pages/admin/Login";
-import AdminHome from "@/pages/admin/AdminHome";
+import { AdminLayout } from "@/routes/AdminLayout";
+import Dashboard from "@/pages/admin/Dashboard";
+import ProjectsAdmin from "@/pages/admin/ProjectsAdmin";
+import ComingSoon from "@/pages/admin/ComingSoon";
 import ScratchProjects from "@/pages/ScratchProjects";
 
 export const router = createBrowserRouter([
@@ -31,7 +34,18 @@ export const router = createBrowserRouter([
       {
         path: "admin",
         element: <RequireAuth />,
-        children: [{ index: true, element: <AdminHome /> }],
+        children: [
+          {
+            element: <AdminLayout />,
+            children: [
+              { index: true, element: <Dashboard /> },
+              { path: "projects", element: <ProjectsAdmin /> },
+              { path: "experience", element: <ComingSoon /> },
+              { path: "skills", element: <ComingSoon /> },
+              { path: "profile", element: <ComingSoon /> },
+            ],
+          },
+        ],
       },
       { path: "scratch", element: <ScratchProjects /> },
       { path: "*", element: <NotFound /> },

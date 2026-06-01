@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuthStore } from "@/store/auth";
 import {
   Menu,
   X,
@@ -42,10 +43,12 @@ export function AdminSidebar() {
   const pathname = useLocation().pathname;
   const navigate = useNavigate();
   const { toast } = useToast();
+  const clear = useAuthStore((s) => s.clear);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [folderOpen, setFolderOpen] = useState(true);
 
   async function handleLogout() {
+    clear();
     await fetch("/api/auth/logout", { method: "POST" });
     toast("Logged out", "success");
     navigate("/admin/login");
