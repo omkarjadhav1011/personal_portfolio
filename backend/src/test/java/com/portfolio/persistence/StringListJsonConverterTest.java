@@ -32,9 +32,13 @@ class StringListJsonConverterTest {
     }
 
     @Test
-    void nullAndBlankMapToNull() {
+    void nullAttributeMapsToNullColumn() {
         assertNull(converter.convertToDatabaseColumn(null));
-        assertNull(converter.convertToEntityAttribute(null));
-        assertNull(converter.convertToEntityAttribute("   "));
+    }
+
+    @Test
+    void nullAndBlankDbDataMapToEmptyList() {
+        assertEquals(List.of(), converter.convertToEntityAttribute(null));
+        assertEquals(List.of(), converter.convertToEntityAttribute("   "));
     }
 }

@@ -8,7 +8,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.HtmlUtils;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -68,7 +70,7 @@ public class EmailService {
                             "html", buildHtml(name, email, message)))
                     .retrieve()
                     .toBodilessEntity()
-                    .block();
+                    .block(Duration.ofSeconds(15));
             return true;
         } catch (Exception e) {
             log.error("[contact] Email send failed: {}", e.getMessage());
@@ -84,6 +86,9 @@ public class EmailService {
     }
 
     private static String buildHtml(String name, String email, String message) {
+        String safeName = HtmlUtils.htmlEscape(name);
+        String safeEmail = HtmlUtils.htmlEscape(email);
+        String safeMessage = HtmlUtils.htmlEscape(message);
         return """
                 <div style="font-family: 'JetBrains Mono', monospace; background: #0d1117; color: #e6edf3; padding: 24px; border-radius: 8px; border: 1px solid #30363d;">
                   <h2 style="color: #00ff88; margin: 0 0 16px;">$ git send-email --incoming</h2>
@@ -96,6 +101,6 @@ public class EmailService {
                   <hr style="border: none; border-top: 1px solid #30363d; margin: 16px 0;" />
                   <p style="color: #484f58; font-size: 12px;">Reply directly to this email to respond to %s</p>
                 </div>
-                """.formatted(name, email, Instant.now().toString(), message, name);
+                """.formatted(safeName, safeEmail, Instant.now().toString(), safeMessage, safeName);
     }
 }

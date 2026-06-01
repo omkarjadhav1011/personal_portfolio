@@ -13,9 +13,14 @@ public class RateLimiter {
 
     private static final int CAPACITY = 10;
     private static final double REFILL_PER_MS = 10.0 / 60_000.0;
+    /** Buckets not accessed for this duration are evicted to prevent unbounded memory growth. */
+    private static final long BUCKET_TTL_MS = 5 * 60_000L;
+    /** Evict stale buckets every N check() calls to amortise the cost. */
+    private static final int EVICTION_INTERVAL = 500;
 
     private final LongSupplier clock;
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
+    private int checkCount = 0;
 
     public record Result(boolean ok, long retryAfterSeconds) {
     }
@@ -36,6 +41,12 @@ public class RateLimiter {
     /** Consumes a token for {@code key}; returns ok=false with a retry hint when empty. */
     public synchronized Result check(String key) {
         long now = clock.getAsLong();
+
+        if (++checkCount >= EVICTION_INTERVAL) {
+            checkCount = 0;
+            buckets.entrySet().removeIf(e -> now - e.getValue().updatedAt > BUCKET_TTL_MS);
+        }
+
         Bucket existing = buckets.get(key);
         Bucket bucket = new Bucket();
         if (existing != null) {

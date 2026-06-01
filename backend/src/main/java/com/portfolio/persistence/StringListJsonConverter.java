@@ -40,7 +40,7 @@ public class StringListJsonConverter implements AttributeConverter<List<String>,
     @Override
     public List<String> convertToEntityAttribute(String dbData) {
         if (dbData == null || dbData.isBlank()) {
-            return null;
+            return List.of();
         }
         try {
             return MAPPER.readValue(dbData, LIST_TYPE);
