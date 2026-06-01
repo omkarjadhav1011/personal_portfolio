@@ -8,8 +8,11 @@ spring:
     password: ${DATABASE_PASSWORD:portfolio}
   jpa:
     hibernate:
-      ddl-auto: update
+      # Schema is owned by Flyway (db/migration). Hibernate only validates entities against it.
+      ddl-auto: validate
     open-in-view: false
+  flyway:
+    enabled: true
 
 server:
   port: 8080

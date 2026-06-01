@@ -43,7 +43,7 @@ public class Profile {
     @Column(nullable = false)
     private String headline;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "text")
     private String bio;
 
     @Column(nullable = false)

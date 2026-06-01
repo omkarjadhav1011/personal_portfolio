@@ -23,4 +23,6 @@ public interface SkillDiffRepository extends JpaRepository<SkillDiff, UUID> {
 
     /** Nearest diff below (for a "down" swap): lowest sort_order strictly above the given one. */
     SkillDiff findFirstBySortOrderGreaterThanOrderBySortOrderAsc(int sortOrder);
+
+    boolean existsByName(String name);
 }
