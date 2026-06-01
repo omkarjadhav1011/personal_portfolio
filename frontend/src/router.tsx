@@ -10,7 +10,9 @@ import Login from "@/pages/admin/Login";
 import { AdminLayout } from "@/routes/AdminLayout";
 import Dashboard from "@/pages/admin/Dashboard";
 import ProjectsAdmin from "@/pages/admin/ProjectsAdmin";
-import ComingSoon from "@/pages/admin/ComingSoon";
+import ExperienceAdmin from "@/pages/admin/ExperienceAdmin";
+import SkillsAdmin from "@/pages/admin/SkillsAdmin";
+import ProfileAdmin from "@/pages/admin/ProfileAdmin";
 import ScratchProjects from "@/pages/ScratchProjects";
 
 export const router = createBrowserRouter([
@@ -40,9 +42,9 @@ export const router = createBrowserRouter([
             children: [
               { index: true, element: <Dashboard /> },
               { path: "projects", element: <ProjectsAdmin /> },
-              { path: "experience", element: <ComingSoon /> },
-              { path: "skills", element: <ComingSoon /> },
-              { path: "profile", element: <ComingSoon /> },
+              { path: "experience", element: <ExperienceAdmin /> },
+              { path: "skills", element: <SkillsAdmin /> },
+              { path: "profile", element: <ProfileAdmin /> },
             ],
           },
         ],

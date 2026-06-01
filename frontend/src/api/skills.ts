@@ -79,3 +79,18 @@ export function useSkillDiff() {
     select: (data) => data.map(toDomainDiff),
   });
 }
+
+/** Raw DTO lists (with id/order) for the admin editor. Share the cache keys. */
+export function useSkillBranchesList() {
+  return useQuery({
+    queryKey: skillKeys.branches,
+    queryFn: () => apiFetch<SkillBranchDto[]>("/api/skills/branches"),
+  });
+}
+
+export function useSkillDiffList() {
+  return useQuery({
+    queryKey: skillKeys.diff,
+    queryFn: () => apiFetch<SkillDiffDto[]>("/api/skills/diff"),
+  });
+}
