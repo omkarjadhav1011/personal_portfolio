@@ -1,8 +1,20 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useSensors, useSensor, PointerSensor, type DragEndEvent } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
+import { useQueryClient } from "@tanstack/react-query";
+import { authFetch } from "@/lib/api";
+import { projectKeys } from "@/api/projects";
+import { experienceKeys } from "@/api/experience";
+import { skillKeys } from "@/api/skills";
 
 export type ReorderType = "stack" | "projects" | "experience";
+
+/** Which cached query to refetch after a reorder of each sortable resource. */
+const QUERY_KEY_BY_TYPE = {
+  projects: projectKeys.all,
+  experience: experienceKeys.all,
+  stack: skillKeys.diff,
+} as const;
 
 interface WithOrder {
   id: string;
@@ -21,6 +33,7 @@ export function useReorder<T extends WithOrder>(
   const [items, setItems] = useState<T[]>(initial);
   const [reorderingId, setReorderingId] = useState<string | null>(null);
   const reorderingRef = useRef(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!reorderingRef.current) {
@@ -49,7 +62,7 @@ export function useReorder<T extends WithOrder>(
       reorderingRef.current = true;
 
       try {
-        const res = await fetch("/api/admin/reorder", {
+        const res = await authFetch("/api/admin/reorder", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -60,6 +73,8 @@ export function useReorder<T extends WithOrder>(
         if (!res.ok) {
           setItems(sorted);
           toast("Failed to reorder", "error");
+        } else {
+          await queryClient.invalidateQueries({ queryKey: QUERY_KEY_BY_TYPE[type] });
         }
       } catch {
         setItems(sorted);
@@ -89,7 +104,7 @@ export function useReorder<T extends WithOrder>(
       reorderingRef.current = true;
 
       try {
-        const res = await fetch("/api/admin/reorder", {
+        const res = await authFetch("/api/admin/reorder", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ type, id, direction }),
@@ -97,6 +112,8 @@ export function useReorder<T extends WithOrder>(
         if (!res.ok) {
           setItems(sorted);
           toast("Failed to reorder", "error");
+        } else {
+          await queryClient.invalidateQueries({ queryKey: QUERY_KEY_BY_TYPE[type] });
         }
       } catch {
         setItems(sorted);

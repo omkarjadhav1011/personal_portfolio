@@ -51,6 +51,19 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
 }
 
 /**
+ * Raw fetch with the Bearer token + base URL attached, returning the Response
+ * unparsed (caller branches on res.ok / res.json()). Used by ported admin code.
+ */
+export function authFetch(path: string, options: RequestInit = {}): Promise<Response> {
+  const headers = new Headers(options.headers);
+  const token = getAuthToken();
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  return fetch(`${BASE_URL}${path}`, { ...options, headers });
+}
+
+/**
  * Pulls a human message from an error body. Handles both a top-level
  * `{ message }` and the backend's standardized `{ error: { code, message } }`.
  */

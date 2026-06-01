@@ -47,3 +47,11 @@ export function useExperience() {
     select: (data) => data.map(toDomainEntry),
   });
 }
+
+/** Raw DTO list (with id/order) for the admin editor. Shares the cache key. */
+export function useExperienceList() {
+  return useQuery({
+    queryKey: experienceKeys.all,
+    queryFn: () => apiFetch<ExperienceDto[]>("/api/experience"),
+  });
+}
