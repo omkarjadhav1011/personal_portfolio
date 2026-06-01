@@ -54,6 +54,31 @@ public class GeminiClient {
         return extractText(response);
     }
 
+    /**
+     * Structured generation: forces JSON output matching {@code responseSchema} and returns
+     * the raw JSON text (the model's part text). Used by recruiter mode.
+     */
+    public String generateStructured(String prompt, Map<String, Object> responseSchema,
+                                     int maxOutputTokens, double temperature) {
+        requireKey();
+        Map<String, Object> body = Map.of(
+                "contents", List.of(Map.of("role", "user", "parts", List.of(Map.of("text", prompt)))),
+                "generationConfig", Map.of(
+                        "responseMimeType", "application/json",
+                        "responseSchema", responseSchema,
+                        "maxOutputTokens", maxOutputTokens,
+                        "temperature", temperature));
+        String response = webClient.post()
+                .uri(baseUrl + "/models/" + MODEL + ":generateContent")
+                .header("x-goog-api-key", apiKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(body)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+        return extractText(response);
+    }
+
     /** Streaming generation: emits incremental text deltas as they arrive. */
     public Flux<String> streamGenerateContent(String systemInstruction, List<ChatMessage> messages) {
         requireKey();
