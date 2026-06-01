@@ -1,3 +1,4 @@
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { HeroSection } from "@/components/sections/HeroSection";
 import { AboutSection } from "@/components/sections/AboutSection";
 import { SkillsSection } from "@/components/sections/SkillsSection";
@@ -24,6 +25,7 @@ import { useExperience } from "@/api/experience";
  * backend via useQuery, mapped to the domain types, and passed to the sections.
  */
 export default function Home() {
+  useDocumentTitle();
   const profileQ = useProfile();
   const projectsQ = useDomainProjects();
   const branchesQ = useSkillBranches();

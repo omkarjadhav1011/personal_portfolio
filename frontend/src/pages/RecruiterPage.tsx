@@ -1,3 +1,4 @@
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useDomainProjects } from "@/api/projects";
 import { useProfile } from "@/api/profile";
 import { profile as staticProfile } from "@/data/profile";
@@ -13,6 +14,7 @@ function deriveHandle(socials: SocialLink[], fallback: string): string {
 
 /** Recruiter Mode page (replaces (main)/recruiter/page.tsx). */
 export default function RecruiterPage() {
+  useDocumentTitle("Recruiter Mode");
   const projects = useDomainProjects().data ?? [];
   const profile = useProfile().data ?? staticProfile;
   const handle = deriveHandle(profile.socials, profile.handle);

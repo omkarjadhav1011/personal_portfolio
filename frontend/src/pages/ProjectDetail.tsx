@@ -1,3 +1,4 @@
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useParams, Link } from "react-router-dom";
 import { ExternalLink, GitFork, Star, GitCommitHorizontal } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
@@ -14,6 +15,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function ProjectDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: project, isPending, isError } = useProject(slug);
+  useDocumentTitle(project?.repoName);
 
   if (isPending) {
     return (

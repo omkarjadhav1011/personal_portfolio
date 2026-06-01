@@ -1,3 +1,4 @@
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -16,6 +17,7 @@ interface LoginResponse {
  * router.refresh).
  */
 export default function Login() {
+  useDocumentTitle("Admin Login");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const setToken = useAuthStore((s) => s.setToken);
