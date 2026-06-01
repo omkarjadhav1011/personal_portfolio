@@ -1,4 +1,4 @@
-import { getAuthToken } from "@/store/auth";
+import { getAuthToken, clearAuthToken } from "@/store/auth";
 
 /** Backend base URL. Empty in dev — relative paths hit the Vite proxy. */
 const BASE_URL = import.meta.env.VITE_API_URL ?? "";
@@ -35,6 +35,10 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
 
   if (!res.ok) {
+    // Token expired/invalid → drop it so RequireAuth bounces to login.
+    if (res.status === 401) {
+      clearAuthToken();
+    }
     let body: unknown;
     try {
       body = await res.json();
@@ -54,13 +58,18 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
  * Raw fetch with the Bearer token + base URL attached, returning the Response
  * unparsed (caller branches on res.ok / res.json()). Used by ported admin code.
  */
-export function authFetch(path: string, options: RequestInit = {}): Promise<Response> {
+export async function authFetch(path: string, options: RequestInit = {}): Promise<Response> {
   const headers = new Headers(options.headers);
   const token = getAuthToken();
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
   }
-  return fetch(`${BASE_URL}${path}`, { ...options, headers });
+  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+  // Token expired/invalid → drop it so RequireAuth bounces to login.
+  if (res.status === 401) {
+    clearAuthToken();
+  }
+  return res;
 }
 
 /**
