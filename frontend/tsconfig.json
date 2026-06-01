@@ -16,8 +16,10 @@
 
     /* Linting */
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    /* noUnusedLocals/Parameters are off to match the source project's tsconfig,
+       so faithfully-copied components don't need rewrites to satisfy linting. */
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
 
     /* Path alias — mirrors the original Next.js "@/..." imports */
