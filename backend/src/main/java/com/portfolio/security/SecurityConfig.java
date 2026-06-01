@@ -1,31 +1,39 @@
 package com.portfolio.security;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
- * PHASE 3.1 — Security baseline.
- *
- * <p>Stateless REST API: CSRF is disabled (no cookies; a Bearer JWT filter is added in a
- * later step). For now GETs are explicitly public and every other request is permitted too,
- * so existing behavior is unchanged. Admin mutations get gated once the JWT filter lands.
+ * <p>Stateless REST API (CSRF off, no sessions). Public: all GETs and {@code /api/auth/**}
+ * (login/logout). Every other request (POST/PATCH/DELETE on {@code /api/**}, incl.
+ * {@code /api/admin/**}) requires the ADMIN role, established by {@link JwtAuthFilter} from a
+ * {@code Bearer} token. Missing/invalid token on a protected route → 401.
  */
 @Configuration
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain filterChain(HttpSecurity http, JwtService jwtService) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/**").permitAll()
-                        .anyRequest().permitAll());
+                        .anyRequest().hasRole("ADMIN"))
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(
+                        (request, response, authEx) ->
+                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")))
+                .addFilterBefore(new JwtAuthFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
