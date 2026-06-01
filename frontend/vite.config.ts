@@ -11,4 +11,15 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
+  server: {
+    // Dev: proxy API calls to the Spring Boot backend so the browser stays
+    // same-origin (no CORS). Production sets VITE_API_URL to the backend URL
+    // and the client calls it directly (CORS handled server-side).
+    proxy: {
+      "/api": {
+        target: "http://localhost:8081",
+        changeOrigin: true,
+      },
+    },
+  },
 });
