@@ -1,4 +1,4 @@
-import { getAuthToken } from "@/stores/auth";
+import { getAuthToken } from "@/store/auth";
 
 /** Backend base URL. Empty in dev — relative paths hit the Vite proxy. */
 const BASE_URL = import.meta.env.VITE_API_URL ?? "";
