@@ -9,7 +9,9 @@ import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -21,6 +23,7 @@ public class GeminiClient {
 
     private static final String MODEL = "gemini-2.0-flash";
     private static final int MAX_OUTPUT_TOKENS = 1024;
+    private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(30);
 
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
@@ -50,6 +53,7 @@ public class GeminiClient {
                 .bodyValue(buildRequestBody(systemInstruction, messages))
                 .retrieve()
                 .bodyToMono(String.class)
+                .timeout(REQUEST_TIMEOUT)
                 .block();
         return extractText(response);
     }
@@ -75,6 +79,7 @@ public class GeminiClient {
                 .bodyValue(body)
                 .retrieve()
                 .bodyToMono(String.class)
+                .timeout(REQUEST_TIMEOUT)
                 .block();
         return extractText(response);
     }
@@ -92,7 +97,8 @@ public class GeminiClient {
                 .map(ServerSentEvent::data)
                 .filter(Objects::nonNull)
                 .map(this::extractText)
-                .filter(text -> !text.isEmpty());
+                .filter(text -> !text.isEmpty())
+                .timeout(REQUEST_TIMEOUT);
     }
 
     /** Streaming generation from a single prompt with explicit limits (used by the cover letter). */
@@ -111,7 +117,8 @@ public class GeminiClient {
                 .map(ServerSentEvent::data)
                 .filter(Objects::nonNull)
                 .map(this::extractText)
-                .filter(text -> !text.isEmpty());
+                .filter(text -> !text.isEmpty())
+                .timeout(REQUEST_TIMEOUT);
     }
 
     private Map<String, Object> buildRequestBody(String systemInstruction, List<ChatMessage> messages) {

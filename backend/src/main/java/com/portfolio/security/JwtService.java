@@ -20,8 +20,16 @@ public class JwtService {
 
     private final SecretKey key;
 
-    public JwtService(
-            @Value("${JWT_SECRET:dev-only-secret-change-me-must-be-at-least-32-bytes-long}") String secret) {
+    public JwtService(@Value("${JWT_SECRET:}") String secret) {
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException(
+                    "JWT_SECRET environment variable is required. " +
+                    "Generate one with: openssl rand -base64 48");
+        }
+        if (secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalStateException(
+                    "JWT_SECRET is too short — minimum 32 bytes (256 bits) required for HMAC-SHA256.");
+        }
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
