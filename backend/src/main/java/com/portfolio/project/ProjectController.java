@@ -31,11 +31,11 @@ public class ProjectController {
         this.repository = repository;
     }
 
-    @Operation(summary = "List projects", description = "Returns all projects ordered by sort order, pinned first")
+    @Operation(summary = "List projects", description = "Returns all projects pinned first, then by sort order")
     @ApiResponse(responseCode = "200", description = "Project list returned")
     @GetMapping
     public List<ProjectDto> list() {
-        return repository.findAllByOrderBySortOrderAscPinnedDesc()
+        return repository.findAllByOrderByPinnedDescSortOrderAsc()
                 .stream()
                 .map(ProjectDto::from)
                 .toList();
