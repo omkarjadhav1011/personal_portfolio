@@ -4,8 +4,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -27,23 +25,30 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/contact")
 public class ContactController {
 
-    private static final Logger log = LoggerFactory.getLogger(ContactController.class);
     private static final String SUCCESS_MESSAGE = "Message delivered to origin/inbox";
+    private static final String FAILURE_MESSAGE = "fatal: failed to connect to remote — try again later";
 
-    @Operation(summary = "Send a contact message", description = "Public; validates, drops bots, logs (no send yet)")
-    @ApiResponse(responseCode = "200", description = "Accepted (or validation/bot result in the body)")
+    private final EmailService emailService;
+
+    public ContactController(EmailService emailService) {
+        this.emailService = emailService;
+    }
+
+    @Operation(summary = "Send a contact message", description = "Public; validates, drops bots, sends via Resend")
+    @ApiResponse(responseCode = "200", description = "Accepted (or validation/bot/failure result in the body)")
     @PostMapping
     public ContactResult send(@Valid @RequestBody ContactRequest req) {
-        // Honeypot: bots fill this; humans don't. Silently succeed — no log, no send.
+        // Honeypot: bots fill this; humans don't. Silently succeed — no send.
         if (req.honeypot() != null && !req.honeypot().isBlank()) {
             return new ContactResult(true, SUCCESS_MESSAGE);
         }
 
-        // PHASE 4.1: log instead of sending.
-        log.info("[contact] message from {} <{}>: {}",
+        boolean sent = emailService.send(
                 req.name().trim(), req.email().trim().toLowerCase(), req.message().trim());
 
-        return new ContactResult(true, SUCCESS_MESSAGE);
+        return sent
+                ? new ContactResult(true, SUCCESS_MESSAGE)
+                : new ContactResult(false, FAILURE_MESSAGE);
     }
 
     /** Mirror the server action: validation failures return 200 with {success:false, firstError}. */
