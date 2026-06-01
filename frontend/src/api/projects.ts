@@ -51,3 +51,17 @@ export function useDomainProjects() {
     select: (data) => data.map(toDomainProject),
   });
 }
+
+/**
+ * Single project by slug. Reuses the cached projects list and selects the match
+ * (instant when arriving from the home page; fetches the list on a deep link).
+ * Resolves to `undefined` when no project has that slug.
+ */
+export function useProject(slug: string | undefined) {
+  return useQuery({
+    queryKey: projectKeys.all,
+    queryFn: fetchProjects,
+    enabled: !!slug,
+    select: (data) => data.map(toDomainProject).find((p) => p.slug === slug),
+  });
+}
