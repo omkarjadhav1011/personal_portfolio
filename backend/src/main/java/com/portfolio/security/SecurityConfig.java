@@ -27,8 +27,11 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/error").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/chat").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/recruiter/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/**").permitAll()
                         .anyRequest().hasRole("ADMIN"))
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(
