@@ -1,7 +1,6 @@
 
 import { useState } from "react";
-import { Link } from "@/lib/next-shims";
-import { usePathname, useRouter } from "@/lib/next-shims";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Menu,
   X,
@@ -40,8 +39,8 @@ function isActive(pathname: string, path: string) {
 }
 
 export function AdminSidebar() {
-  const pathname = usePathname() ?? "/admin";
-  const router = useRouter();
+  const pathname = useLocation().pathname;
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [folderOpen, setFolderOpen] = useState(true);
@@ -49,7 +48,7 @@ export function AdminSidebar() {
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
     toast("Logged out", "success");
-    router.push("/admin/login");
+    navigate("/admin/login");
   }
 
   const navContent = (
@@ -86,7 +85,7 @@ export function AdminSidebar() {
             return (
               <Link
                 key={f.id}
-                href={f.path}
+                to={f.path}
                 onClick={() => setMobileOpen(false)}
                 className="w-full flex items-center gap-2 pl-5 pr-3 py-1.5 font-mono text-[12px] transition-all"
                 style={{
@@ -113,7 +112,7 @@ export function AdminSidebar() {
           Quick actions
         </div>
         <Link
-          href="/"
+          to="/"
           target="_blank"
           rel="noopener noreferrer"
           className="w-full flex items-center gap-2 px-2 py-1.5 rounded font-mono text-[11px] text-text-muted hover:text-text-primary hover:brightness-125 transition-all"

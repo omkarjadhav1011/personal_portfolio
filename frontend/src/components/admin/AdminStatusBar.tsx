@@ -1,5 +1,5 @@
 
-import { usePathname } from "@/lib/next-shims";
+import { useLocation } from "react-router-dom";
 import { GitBranch } from "lucide-react";
 
 const FILE_TYPE_BY_PATH: { match: (p: string) => boolean; type: string }[] = [
@@ -14,7 +14,7 @@ function fileTypeFor(pathname: string) {
 }
 
 export function AdminStatusBar() {
-  const pathname = usePathname() ?? "/admin";
+  const pathname = useLocation().pathname;
   const type = fileTypeFor(pathname);
 
   return (

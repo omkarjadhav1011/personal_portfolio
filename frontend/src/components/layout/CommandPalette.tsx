@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Link } from "@/lib/next-shims";
+import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
@@ -343,7 +343,7 @@ export function CommandPalette() {
                           /* Empty state: suggested prompts */
                           <div className="space-y-3">
                             <Link
-                              href="/recruiter"
+                              to="/recruiter"
                               onClick={() => setOpen(false)}
                               className="group flex items-center gap-3 px-3 py-2.5 rounded-lg bg-git-green/5 border border-git-green/30 hover:bg-git-green/10 transition-colors cursor-pointer"
                             >

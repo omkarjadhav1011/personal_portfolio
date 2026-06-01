@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link } from "@/lib/next-shims";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FileSearch, Sparkles } from "lucide-react";
 import { useScrollProgress } from "@/hooks/useScrollProgress";
@@ -70,7 +70,7 @@ export function Navbar() {
               </button>
             ))}
             <Link
-              href="/recruiter"
+              to="/recruiter"
               className="ml-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-200 text-text-muted hover:text-git-green border border-transparent hover:border-git-green/30 hover:bg-git-green/5"
             >
               <FileSearch size={12} className="text-git-green/70" />
@@ -147,7 +147,7 @@ export function Navbar() {
             </button>
 
             <Link
-              href="/recruiter"
+              to="/recruiter"
               onClick={() => setMobileOpen(false)}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-text-muted hover:text-git-green hover:bg-terminal-surface border border-terminal-border"
             >
