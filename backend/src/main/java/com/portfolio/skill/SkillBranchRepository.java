@@ -16,4 +16,6 @@ public interface SkillBranchRepository extends JpaRepository<SkillBranch, UUID> 
     /** A single branch with its skills eagerly fetched. */
     @Query("select b from SkillBranch b left join fetch b.skills where b.id = :id")
     Optional<SkillBranch> findByIdWithSkills(UUID id);
+
+    Optional<SkillBranch> findByBranchName(String branchName);
 }
