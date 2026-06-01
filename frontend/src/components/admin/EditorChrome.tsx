@@ -1,5 +1,5 @@
 
-import { usePathname } from "@/lib/next-shims";
+import { useLocation } from "react-router-dom";
 import {
   User,
   Code2,
@@ -51,7 +51,7 @@ const FILES: FileMeta[] = [
 ];
 
 export function EditorChrome({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname() ?? "/admin";
+  const pathname = useLocation().pathname;
   const file = FILES.find((f) => f.match(pathname)) ?? FILES[0];
   const Icon = file.icon;
 

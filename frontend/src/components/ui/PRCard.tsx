@@ -8,6 +8,7 @@ import {
   Sparkles,
   Star,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import type { Project } from "@/types";
 
@@ -191,12 +192,18 @@ export function PRCard({
           )}
 
           {/* Actions */}
-          <div className="pt-3 border-t border-terminal-border">
+          <div className="pt-3 border-t border-terminal-border flex gap-2">
+            <Link
+              to={`/projects/${project.slug}`}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg font-mono text-xs font-semibold transition-colors bg-git-green/10 border border-git-green/40 text-git-green hover:bg-git-green/20"
+            >
+              <ChevronRight size={11} /> Details
+            </Link>
             <a
               href={project.repoUrl || `https://github.com/${handle}/${project.slug}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg font-mono text-xs font-semibold transition-colors bg-terminal-bg/70 border border-terminal-border text-text-primary hover:border-git-blue/50"
+              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg font-mono text-xs font-semibold transition-colors bg-terminal-bg/70 border border-terminal-border text-text-primary hover:border-git-blue/50"
             >
               <ExternalLink size={11} /> View Source
             </a>

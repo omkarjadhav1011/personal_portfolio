@@ -1,17 +1,16 @@
 
-import { Link } from "@/lib/next-shims";
-import { useRouter } from "@/lib/next-shims";
+import { Link, useNavigate } from "react-router-dom";
 import { Folder, GitBranch, ExternalLink, LogOut } from "lucide-react";
 import { useToast } from "./ToastProvider";
 
 export function AdminTopBar({ profileName }: { profileName: string }) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
     toast("Logged out", "success");
-    router.push("/admin/login");
+    navigate("/admin/login");
   }
 
   return (
@@ -36,7 +35,7 @@ export function AdminTopBar({ profileName }: { profileName: string }) {
           main
         </div>
         <Link
-          href="/"
+          to="/"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs font-medium text-text-primary bg-terminal-bg border border-terminal-border hover:brightness-125 transition-all"

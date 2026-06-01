@@ -1,6 +1,9 @@
-import { profile } from "@/data/profile";
+import { profile as staticProfile } from "@/data/profile";
+import { useProfile } from "@/api/profile";
 
 export function Footer() {
+  const { data: profileData } = useProfile();
+  const profile = profileData ?? staticProfile;
   const year = new Date().getFullYear();
 
   return (
