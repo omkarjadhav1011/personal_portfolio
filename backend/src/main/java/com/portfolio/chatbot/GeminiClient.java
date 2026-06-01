@@ -3,14 +3,19 @@ package com.portfolio.chatbot;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
-/* Client for the Gemini REST API. */
+
+/* Client for the Gemini REST API (model {@code gemini-2.0-flash}, {@code maxOutputTokens=1024}). */
 @Service
 public class GeminiClient {
 
@@ -31,37 +36,61 @@ public class GeminiClient {
         this.webClient = WebClient.builder().build();
     }
 
+    public boolean isConfigured() {
+        return apiKey != null && !apiKey.isBlank();
+    }
+
     /** Non-streaming generation: returns the assembled reply text. */
     public String generateContent(String systemInstruction, List<ChatMessage> messages) {
-        if (apiKey == null || apiKey.isBlank()) {
-            throw new IllegalStateException("GEMINI_API_KEY is not set");
-        }
+        requireKey();
+        String response = webClient.post()
+                .uri(baseUrl + "/models/" + MODEL + ":generateContent")
+                .header("x-goog-api-key", apiKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(buildRequestBody(systemInstruction, messages))
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+        return extractText(response);
+    }
+
+    /** Streaming generation: emits incremental text deltas as they arrive. */
+    public Flux<String> streamGenerateContent(String systemInstruction, List<ChatMessage> messages) {
+        requireKey();
+        return webClient.post()
+                .uri(baseUrl + "/models/" + MODEL + ":streamGenerateContent?alt=sse")
+                .header("x-goog-api-key", apiKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(buildRequestBody(systemInstruction, messages))
+                .retrieve()
+                .bodyToFlux(new ParameterizedTypeReference<ServerSentEvent<String>>() {})
+                .map(ServerSentEvent::data)
+                .filter(Objects::nonNull)
+                .map(this::extractText)
+                .filter(text -> !text.isEmpty());
+    }
+
+    private Map<String, Object> buildRequestBody(String systemInstruction, List<ChatMessage> messages) {
         List<Map<String, Object>> contents = messages.stream()
                 .map(m -> Map.<String, Object>of(
                         "role", "assistant".equals(m.role()) ? "model" : "user",
                         "parts", List.of(Map.of("text", m.content()))))
                 .toList();
-
-        Map<String, Object> body = Map.of(
+        return Map.of(
                 "systemInstruction", Map.of("parts", List.of(Map.of("text", systemInstruction))),
                 "contents", contents,
                 "generationConfig", Map.of("maxOutputTokens", MAX_OUTPUT_TOKENS));
-
-        String response = webClient.post()
-                .uri(baseUrl + "/models/" + MODEL + ":generateContent")
-                .header("x-goog-api-key", apiKey)
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(body)
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
-
-        return extractText(response);
     }
 
-    private String extractText(String response) {
+    private void requireKey() {
+        if (!isConfigured()) {
+            throw new IllegalStateException("GEMINI_API_KEY is not set");
+        }
+    }
+
+    private String extractText(String chunk) {
         try {
-            JsonNode parts = objectMapper.readTree(response)
+            JsonNode parts = objectMapper.readTree(chunk)
                     .path("candidates").path(0).path("content").path("parts");
             StringBuilder sb = new StringBuilder();
             for (JsonNode part : parts) {
