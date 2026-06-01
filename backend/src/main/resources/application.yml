@@ -4,8 +4,8 @@ spring:
   datasource:
     # JDBC URL; defaults to the local docker-compose Postgres on host port 5433.
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5433/portfolio}
-    username: ${DATABASE_USERNAME:portfolio}
-    password: ${DATABASE_PASSWORD:portfolio}
+    username: portfolio
+    password: portfolio
   jpa:
     hibernate:
       # Schema is owned by Flyway (db/migration). Hibernate only validates entities against it.
@@ -15,4 +15,4 @@ spring:
     enabled: true
 
 server:
-  port: 8080
+  port: 8081
