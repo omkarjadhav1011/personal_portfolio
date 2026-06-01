@@ -14,6 +14,9 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     /** Reorder ordering: by sort_order, then createdAt (stable for normalization). */
     List<Project> findAllByOrderBySortOrderAscCreatedAtAsc();
 
+    /** Chatbot context ordering: pinned first, then sort_order ascending. */
+    List<Project> findAllByOrderByPinnedDescSortOrderAsc();
+
     /** Highest assigned sort_order, or 0 when the table is empty. Used to append new projects. */
     @Query("select coalesce(max(p.sortOrder), 0) from Project p")
     int findMaxSortOrder();
