@@ -1,8 +1,10 @@
+import { Suspense } from "react";
 import { Outlet } from "react-router-dom";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminTopBar } from "@/components/admin/AdminTopBar";
 import { AdminStatusBar } from "@/components/admin/AdminStatusBar";
 import { EditorChrome } from "@/components/admin/EditorChrome";
+import { RouteFallback } from "./RouteFallback";
 import { useProfile } from "@/api/profile";
 
 /** Admin chrome — replaces admin/layout.tsx. profileName comes from live data. */
@@ -17,7 +19,9 @@ export function AdminLayout() {
         <AdminSidebar />
         <EditorChrome>
           <main className="p-4 pt-16 md:p-6">
-            <Outlet />
+            <Suspense fallback={<RouteFallback />}>
+              <Outlet />
+            </Suspense>
           </main>
         </EditorChrome>
       </div>

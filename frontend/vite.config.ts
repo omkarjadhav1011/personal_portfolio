@@ -23,6 +23,12 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    // Don't ship source maps publicly; raise the warning limit (vendor chunks
+    // like framer-motion + radix are legitimately large for a portfolio).
+    sourcemap: false,
+    chunkSizeWarningLimit: 700,
+  },
   test: {
     environment: "jsdom",
     globals: true,

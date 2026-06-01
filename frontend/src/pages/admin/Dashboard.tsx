@@ -1,3 +1,4 @@
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { Link } from "react-router-dom";
 import { useProfile } from "@/api/profile";
 import { useDomainProjects } from "@/api/projects";
@@ -6,6 +7,7 @@ import { useSkillBranches, useSkillDiff } from "@/api/skills";
 
 /** Admin dashboard (replaces admin/page.tsx). Stats come from the live queries. */
 export default function Dashboard() {
+  useDocumentTitle("Admin");
   const projects = useDomainProjects().data ?? [];
   const experience = useExperience().data ?? [];
   const branches = useSkillBranches().data ?? [];

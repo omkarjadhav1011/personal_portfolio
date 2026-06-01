@@ -55,7 +55,7 @@ export function JobInputForm({
           disabled={loading}
           rows={12}
           maxLength={JD_MAX + 200}
-          className="w-full resize-y bg-transparent p-4 text-sm font-mono text-text-primary placeholder-text-faint outline-none disabled:opacity-60 leading-relaxed min-h-[220px]"
+          className="w-full resize-y bg-transparent p-4 text-sm font-mono text-text-primary placeholder-text-faint outline-none focus-visible:ring-1 focus-visible:ring-git-green/40 disabled:opacity-60 leading-relaxed min-h-[220px]"
           spellCheck={false}
         />
       </div>

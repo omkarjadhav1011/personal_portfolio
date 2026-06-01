@@ -1,7 +1,9 @@
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { Link } from "react-router-dom";
 
 /** Catch-all 404 — ported from Next's not-found.tsx (now using react-router Link). */
 export function NotFound() {
+  useDocumentTitle("Not Found");
   const branches = [
     { to: "/", label: "git checkout main", desc: "→ home" },
     { to: "/#projects", label: "git checkout projects", desc: "→ my work" },
