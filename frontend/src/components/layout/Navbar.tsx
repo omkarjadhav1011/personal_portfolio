@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FileSearch, Sparkles } from "lucide-react";
 import { useScrollProgress } from "@/hooks/useScrollProgress";
 import { useCommandPaletteStore } from "@/store/commandPalette";
-import { profile } from "@/data/profile";
+import { profile as staticProfile } from "@/data/profile";
+import { useProfile } from "@/api/profile";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
@@ -22,6 +23,8 @@ function scrollTo(id: string) {
 }
 
 export function Navbar() {
+  const { data: profileData } = useProfile();
+  const profile = profileData ?? staticProfile;
   const { progress, activeSection } = useScrollProgress();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { openInMode } = useCommandPaletteStore();

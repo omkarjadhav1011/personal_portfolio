@@ -1,9 +1,12 @@
 
 import { useEffect, useState } from "react";
 import { useScrollProgress } from "@/hooks/useScrollProgress";
-import { profile } from "@/data/profile";
+import { profile as staticProfile } from "@/data/profile";
+import { useProfile } from "@/api/profile";
 
 export function StatusBar() {
+  const { data: profileData } = useProfile();
+  const profile = profileData ?? staticProfile;
   const { progress, activeSection } = useScrollProgress();
   const [time, setTime] = useState("");
 
