@@ -3,21 +3,44 @@ import { useProjects } from "@/api/projects";
 import { cn } from "@/lib/utils";
 import { formatRelativeTime } from "@/lib/date";
 import { useThemeStore, initTheme } from "@/store/theme";
+import { useTableSort } from "@/hooks/useTableSort";
+import type { Project } from "@/types/project";
 
 /**
- * Phase 7.2/7.3 scratch page — proves the API client + TanStack Query path by
- * rendering live data from GET /api/projects, and exercises copied store/util
- * code (theme store, cn(), formatRelativeTime). Replaced by real pages later.
+ * Scratch page (Phases 7.2–7.4) — proves the API client + TanStack Query path
+ * (GET /api/projects) and exercises copied code: theme store, cn(),
+ * formatRelativeTime, and the useTableSort hook. Replaced by real pages later.
  */
 export default function ScratchProjects() {
   const { data: projects, isPending, isError, error } = useProjects();
   const resolved = useThemeStore((s) => s.resolved);
   const setTheme = useThemeStore((s) => s.setTheme);
 
+  // Exercises the copied useTableSort hook (src/hooks/useTableSort.ts).
+  const { sorted, sortKey, sortDir, toggleSort } = useTableSort<Project>(
+    projects ?? [],
+    "stars",
+    "desc",
+  );
+
   // Sync the theme store with localStorage / system preference on mount.
   useEffect(() => {
     initTheme();
   }, []);
+
+  const sortButton = (key: keyof Project, label: string) => (
+    <button
+      type="button"
+      onClick={() => toggleSort(key)}
+      className={cn(
+        "rounded px-2 py-0.5 font-mono text-2xs transition-colors",
+        sortKey === key ? "text-git-green" : "text-text-muted hover:text-text-secondary",
+      )}
+    >
+      {label}
+      {sortKey === key ? (sortDir === "asc" ? " ▲" : " ▼") : ""}
+    </button>
+  );
 
   return (
     <main className="min-h-screen bg-terminal-bg bg-grid-pattern bg-grid font-sans text-text-primary p-6">
@@ -29,7 +52,6 @@ export default function ScratchProjects() {
           <span className="ml-3 font-mono text-2xs uppercase tracking-widest text-text-muted">
             GET /api/projects
           </span>
-          {/* Exercises the copied theme store (src/store/theme.ts) + cn() */}
           <button
             type="button"
             onClick={() => setTheme(resolved === "dark" ? "light" : "dark")}
@@ -52,11 +74,17 @@ export default function ScratchProjects() {
 
           {projects && (
             <>
-              <p className="mb-4 text-git-green">
-                ✓ {projects.length} project{projects.length === 1 ? "" : "s"} loaded
-              </p>
+              <div className="mb-4 flex items-center gap-3">
+                <span className="text-git-green">
+                  ✓ {sorted.length} project{sorted.length === 1 ? "" : "s"} loaded
+                </span>
+                <span className="ml-auto flex items-center gap-1 text-2xs text-text-faint">
+                  sort: {sortButton("repoName", "name")} {sortButton("stars", "stars")}{" "}
+                  {sortButton("commits", "commits")}
+                </span>
+              </div>
               <ul className="space-y-3">
-                {projects.map((p) => (
+                {sorted.map((p) => (
                   <li
                     key={p.id}
                     className="rounded-lg border border-terminal-border bg-terminal-surface p-4"
@@ -81,7 +109,6 @@ export default function ScratchProjects() {
                       <span>★ {p.stars}</span>
                       <span>⑂ {p.forks}</span>
                       <span>{p.commits} commits</span>
-                      {/* Exercises the copied date util (src/lib/date.ts) */}
                       <span className="text-text-faint">
                         updated {formatRelativeTime(p.updatedAt)}
                       </span>
