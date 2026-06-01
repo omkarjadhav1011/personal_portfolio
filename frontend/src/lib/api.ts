@@ -41,15 +41,27 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     } catch {
       // Non-JSON error body — ignore and fall back to status text.
     }
-    const message =
-      body && typeof body === "object" && "message" in body
-        ? String((body as { message: unknown }).message)
-        : `Request failed: ${res.status} ${res.statusText}`;
-    throw new ApiError(res.status, message, body);
+    throw new ApiError(res.status, extractMessage(body, res), body);
   }
 
   if (res.status === 204) {
     return undefined as T;
   }
   return (await res.json()) as T;
+}
+
+/**
+ * Pulls a human message from an error body. Handles both a top-level
+ * `{ message }` and the backend's standardized `{ error: { code, message } }`.
+ */
+function extractMessage(body: unknown, res: Response): string {
+  if (body && typeof body === "object") {
+    const b = body as Record<string, unknown>;
+    if (typeof b.message === "string") return b.message;
+    const err = b.error;
+    if (err && typeof err === "object" && typeof (err as Record<string, unknown>).message === "string") {
+      return (err as Record<string, unknown>).message as string;
+    }
+  }
+  return `Request failed: ${res.status} ${res.statusText}`;
 }
