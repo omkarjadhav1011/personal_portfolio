@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import { RootLayout } from "@/routes/RootLayout";
 import { MainLayout } from "@/routes/MainLayout";
+import { RequireAuth, RedirectIfAuthed } from "@/routes/RequireAuth";
 import { RouteError } from "@/routes/RouteError";
 import { NotFound } from "@/routes/NotFound";
 import Home from "@/pages/Home";
@@ -22,8 +23,16 @@ export const router = createBrowserRouter([
           { path: "projects/:slug", element: <ProjectDetail /> },
         ],
       },
-      { path: "admin/login", element: <Login /> },
-      { path: "admin", element: <AdminHome /> },
+      {
+        path: "admin/login",
+        element: <RedirectIfAuthed />,
+        children: [{ index: true, element: <Login /> }],
+      },
+      {
+        path: "admin",
+        element: <RequireAuth />,
+        children: [{ index: true, element: <AdminHome /> }],
+      },
       { path: "scratch", element: <ScratchProjects /> },
       { path: "*", element: <NotFound /> },
     ],

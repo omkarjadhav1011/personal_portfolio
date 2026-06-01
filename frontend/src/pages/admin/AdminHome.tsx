@@ -1,26 +1,10 @@
 import { Link } from "react-router-dom";
-import { useAuthStore } from "@/store/auth";
 
 /**
- * Placeholder admin landing — the login redirect target. The full admin
- * dashboard (sidebar, editors, reorder) is ported in a later phase.
+ * Placeholder admin landing — rendered only when authenticated (RequireAuth
+ * guards the route). The full admin dashboard is ported in a later phase.
  */
 export default function AdminHome() {
-  const token = useAuthStore((s) => s.token);
-
-  if (!token) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-terminal-bg px-4 font-mono text-sm">
-        <div className="space-y-3 text-center">
-          <p className="text-git-red">[✗] not authenticated</p>
-          <Link to="/admin/login" className="text-git-green hover:underline">
-            $ sudo admin login →
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-terminal-bg px-4 font-mono text-sm">
       <div className="space-y-2 text-center">
