@@ -25,3 +25,6 @@ export const useAuthStore = create<AuthState>()(
 
 /** Non-React accessor so the API client can read the token outside components. */
 export const getAuthToken = (): string | null => useAuthStore.getState().token;
+
+/** Clears the token (e.g. on a 401) so RequireAuth bounces to the login page. */
+export const clearAuthToken = (): void => useAuthStore.getState().clear();

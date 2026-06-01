@@ -6,6 +6,7 @@ import { RouteError } from "@/routes/RouteError";
 import { NotFound } from "@/routes/NotFound";
 import Home from "@/pages/Home";
 import ProjectDetail from "@/pages/ProjectDetail";
+import RecruiterPage from "@/pages/RecruiterPage";
 import Login from "@/pages/admin/Login";
 import { AdminLayout } from "@/routes/AdminLayout";
 import Dashboard from "@/pages/admin/Dashboard";
@@ -26,6 +27,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <Home /> },
           { path: "projects/:slug", element: <ProjectDetail /> },
+          { path: "recruiter", element: <RecruiterPage /> },
         ],
       },
       {
