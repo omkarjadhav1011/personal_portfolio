@@ -3,6 +3,7 @@ package com.portfolio.admin;
 import com.portfolio.common.Sortable;
 import com.portfolio.experience.ExperienceRepository;
 import com.portfolio.project.ProjectRepository;
+import com.portfolio.skill.SkillDiff;
 import com.portfolio.skill.SkillDiffRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -30,7 +31,7 @@ import java.util.UUID;
  */
 @Tag(name = "Reorder", description = "Bulk/relative reordering of sortable resources")
 @RestController
-@RequestMapping("/api/admin/reorder")
+@RequestMapping("/api/admin")
 public class ReorderController {
 
     private static final Set<String> VALID_TYPES = Set.of("stack", "projects", "experience");
@@ -52,7 +53,7 @@ public class ReorderController {
     @ApiResponse(responseCode = "200", description = "Reordered")
     @ApiResponse(responseCode = "400", description = "Invalid type/payload or cannot move further")
     // Mapped to PATCH (the Next.js method) and POST (per the migration step heading).
-    @RequestMapping(method = {RequestMethod.PATCH, RequestMethod.POST})
+    @RequestMapping(value = "/reorder", method = {RequestMethod.PATCH, RequestMethod.POST})
     @Transactional
     public Map<String, Boolean> reorder(@RequestBody ReorderRequest body) {
         if (body.type() == null || !VALID_TYPES.contains(body.type())) {
@@ -67,6 +68,36 @@ public class ReorderController {
                     skillDiffRepository.findAllByOrderBySortOrderAscCreatedAtAsc(), body);
             default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid type");
         };
+    }
+
+    @Operation(summary = "Reorder skill diffs",
+            description = "SkillDiff-specific reorder: bulk set positions, or swap with the neighbor by order")
+    @ApiResponse(responseCode = "200", description = "Reordered")
+    @ApiResponse(responseCode = "400", description = "Invalid payload or cannot move further")
+    @ApiResponse(responseCode = "404", description = "Diff not found")
+    @RequestMapping(value = "/stack/reorder", method = {RequestMethod.PATCH, RequestMethod.POST})
+    @Transactional
+    public Map<String, Boolean> reorderDiffs(@RequestBody ReorderRequest body) {
+        if (body.items() != null) {
+            bulkReorder(skillDiffRepository, body.items());
+            return Map.of("success", true);
+        }
+        if (body.id() == null || !("up".equals(body.direction()) || "down".equals(body.direction()))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid request");
+        }
+        SkillDiff current = skillDiffRepository.findById(UUID.fromString(body.id()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found"));
+        SkillDiff neighbor = "up".equals(body.direction())
+                ? skillDiffRepository.findFirstBySortOrderLessThanOrderBySortOrderDesc(current.getSortOrder())
+                : skillDiffRepository.findFirstBySortOrderGreaterThanOrderBySortOrderAsc(current.getSortOrder());
+        if (neighbor == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot move further");
+        }
+        int currentOrder = current.getSortOrder();
+        current.setSortOrder(neighbor.getSortOrder());
+        neighbor.setSortOrder(currentOrder);
+        skillDiffRepository.saveAll(List.of(current, neighbor));
+        return Map.of("success", true);
     }
 
     private <T extends Sortable> Map<String, Boolean> handle(JpaRepository<T, UUID> repo,
