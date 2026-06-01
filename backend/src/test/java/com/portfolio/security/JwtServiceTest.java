@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class JwtServiceTest {
 
     private final JwtService jwt =
-            new JwtService("unit-test-secret-key-that-is-at-least-32-bytes-long");
+            new JwtService("unit-test-secret-key-that-is-at-least-32-bytes-long", 8L);
 
     @Test
     void generatesAndValidatesToken() {
@@ -20,16 +20,21 @@ class JwtServiceTest {
     @Test
     void rejectsTamperedToken() {
         String token = jwt.generate("omkar");
-        // Flip the last character of the signature segment.
-        char last = token.charAt(token.length() - 1);
-        String tampered = token.substring(0, token.length() - 1) + (last == 'A' ? 'B' : 'A');
+        // Flip the FIRST character of the signature segment. The last char's low bits are
+        // padding for a 32-byte HMAC signature and can decode unchanged, so tampering there
+        // may be a no-op.
+        int sigStart = token.lastIndexOf('.') + 1;
+        char first = token.charAt(sigStart);
+        String tampered = token.substring(0, sigStart)
+                + (first == 'A' ? 'B' : 'A')
+                + token.substring(sigStart + 1);
         assertThrows(JwtException.class, () -> jwt.validate(tampered));
     }
 
     @Test
     void rejectsTokenSignedWithDifferentSecret() {
         JwtService other =
-                new JwtService("a-totally-different-secret-key-also-32-bytes-plus");
+                new JwtService("a-totally-different-secret-key-also-32-bytes-plus", 8L);
         String foreign = other.generate("omkar");
         assertThrows(JwtException.class, () -> jwt.validate(foreign));
     }
