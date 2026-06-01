@@ -13,9 +13,21 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
 
 server:
   port: 8081
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
 
 springdoc:
   swagger-ui:
