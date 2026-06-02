@@ -34,3 +34,8 @@ springdoc:
     path: /swagger-ui.html
   api-docs:
     path: /v3/api-docs
+
+# JWT — override JWT_SECRET with a real secret in production via env var.
+# This dev default is intentionally public; never use it in a deployed environment.
+JWT_SECRET: ${JWT_SECRET:dev-only-local-secret-key-not-for-production-use-min32b}
+JWT_EXPIRY_HOURS: ${JWT_EXPIRY_HOURS:8}
