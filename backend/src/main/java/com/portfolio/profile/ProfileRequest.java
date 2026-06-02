@@ -8,8 +8,8 @@ import java.util.List;
 
 /**
  * Update payload for the profile. Mirrors {@code profileSchema} (Zod). Full-object
- * upsert (matching the Next.js PUT). {@code availableForWork} defaults to true when
- * omitted; {@code stash}/{@code currentRole} are optional.
+ * upsert; {@code availableForWork} defaults to true when omitted;
+ * {@code stash}, {@code currentRole}, and {@code techPicks} are optional.
  */
 public record ProfileRequest(
         @NotBlank String name,
@@ -24,6 +24,7 @@ public record ProfileRequest(
         @NotNull List<SocialLink> socials,
         @NotNull List<String> funFacts,
         List<String> stash,
-        CurrentRole currentRole
+        CurrentRole currentRole,
+        List<TechPick> techPicks
 ) {
 }

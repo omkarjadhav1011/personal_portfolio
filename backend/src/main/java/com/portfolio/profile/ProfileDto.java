@@ -23,6 +23,7 @@ public record ProfileDto(
         List<String> stash,
         CurrentRole currentRole,
         String avatarUrl,
+        List<TechPick> techPicks,
         Instant updatedAt
 ) {
     public static ProfileDto from(Profile p) {
@@ -44,6 +45,8 @@ public record ProfileDto(
                 p.getFunFacts(),
                 p.getStash() == null ? List.of() : p.getStash(),
                 p.getCurrentRole(),
+                avatarUrl,
+                p.getTechPicks() == null ? List.of() : p.getTechPicks(),
                 p.getUpdatedAt()
         );
     }

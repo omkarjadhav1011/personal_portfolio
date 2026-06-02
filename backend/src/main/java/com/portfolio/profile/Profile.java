@@ -3,6 +3,7 @@ package com.portfolio.profile;
 import com.portfolio.persistence.CurrentRoleJsonConverter;
 import com.portfolio.persistence.SocialLinkListJsonConverter;
 import com.portfolio.persistence.StringListJsonConverter;
+import com.portfolio.persistence.TechPickListJsonConverter;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -16,16 +17,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Maps the Prisma {@code Profile} model — a single-row table. The old {@code id = "main"}
- * sentinel is dropped in favor of a generated UUID (locked decision: UUID PKs everywhere,
- * fresh seed); the singleton is enforced by seeding exactly one row.
- *
- * <p>JSON columns: {@code socials} ({@code SocialLink[]}), {@code currentRole}
- * ({@code CurrentRole}) via object converters; {@code funFacts}/{@code stash}
- * ({@code string[]}) via {@link StringListJsonConverter}. Schema has only
- * {@code updatedAt} (no {@code createdAt}).
- */
 @Entity
 @Table(name = "profile")
 public class Profile {
@@ -83,139 +74,64 @@ public class Profile {
     @Column(name = "avatar_content_type", length = 50)
     private String avatarContentType;
 
+    @Convert(converter = TechPickListJsonConverter.class)
+    @Column(name = "tech_picks", columnDefinition = "text")
+    private List<TechPick> techPicks;
+
     @UpdateTimestamp
     @Column(nullable = false)
     private Instant updatedAt;
 
-    public UUID getId() {
-        return id;
-    }
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
 
-    public void setId(UUID id) {
-        this.id = id;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public String getName() {
-        return name;
-    }
+    public String getHandle() { return handle; }
+    public void setHandle(String handle) { this.handle = handle; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public String getHeadline() { return headline; }
+    public void setHeadline(String headline) { this.headline = headline; }
 
-    public String getHandle() {
-        return handle;
-    }
+    public String getBio() { return bio; }
+    public void setBio(String bio) { this.bio = bio; }
 
-    public void setHandle(String handle) {
-        this.handle = handle;
-    }
+    public String getCurrentBranch() { return currentBranch; }
+    public void setCurrentBranch(String currentBranch) { this.currentBranch = currentBranch; }
 
-    public String getHeadline() {
-        return headline;
-    }
+    public String getCurrentStatus() { return currentStatus; }
+    public void setCurrentStatus(String currentStatus) { this.currentStatus = currentStatus; }
 
-    public void setHeadline(String headline) {
-        this.headline = headline;
-    }
+    public boolean isAvailableForWork() { return availableForWork; }
+    public void setAvailableForWork(boolean availableForWork) { this.availableForWork = availableForWork; }
 
-    public String getBio() {
-        return bio;
-    }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 
-    public void setBio(String bio) {
-        this.bio = bio;
-    }
+    public String getLocation() { return location; }
+    public void setLocation(String location) { this.location = location; }
 
-    public String getCurrentBranch() {
-        return currentBranch;
-    }
+    public List<SocialLink> getSocials() { return socials; }
+    public void setSocials(List<SocialLink> socials) { this.socials = socials; }
 
-    public void setCurrentBranch(String currentBranch) {
-        this.currentBranch = currentBranch;
-    }
+    public List<String> getFunFacts() { return funFacts; }
+    public void setFunFacts(List<String> funFacts) { this.funFacts = funFacts; }
 
-    public String getCurrentStatus() {
-        return currentStatus;
-    }
+    public List<String> getStash() { return stash; }
+    public void setStash(List<String> stash) { this.stash = stash; }
 
-    public void setCurrentStatus(String currentStatus) {
-        this.currentStatus = currentStatus;
-    }
+    public CurrentRole getCurrentRole() { return currentRole; }
+    public void setCurrentRole(CurrentRole currentRole) { this.currentRole = currentRole; }
 
-    public boolean isAvailableForWork() {
-        return availableForWork;
-    }
+    public byte[] getAvatarData() { return avatarData; }
+    public void setAvatarData(byte[] avatarData) { this.avatarData = avatarData; }
 
-    public void setAvailableForWork(boolean availableForWork) {
-        this.availableForWork = availableForWork;
-    }
+    public String getAvatarContentType() { return avatarContentType; }
+    public void setAvatarContentType(String avatarContentType) { this.avatarContentType = avatarContentType; }
 
-    public String getEmail() {
-        return email;
-    }
+    public List<TechPick> getTechPicks() { return techPicks; }
+    public void setTechPicks(List<TechPick> techPicks) { this.techPicks = techPicks; }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getLocation() {
-        return location;
-    }
-
-    public void setLocation(String location) {
-        this.location = location;
-    }
-
-    public List<SocialLink> getSocials() {
-        return socials;
-    }
-
-    public void setSocials(List<SocialLink> socials) {
-        this.socials = socials;
-    }
-
-    public List<String> getFunFacts() {
-        return funFacts;
-    }
-
-    public void setFunFacts(List<String> funFacts) {
-        this.funFacts = funFacts;
-    }
-
-    public List<String> getStash() {
-        return stash;
-    }
-
-    public void setStash(List<String> stash) {
-        this.stash = stash;
-    }
-
-    public CurrentRole getCurrentRole() {
-        return currentRole;
-    }
-
-    public void setCurrentRole(CurrentRole currentRole) {
-        this.currentRole = currentRole;
-    }
-
-
-    public byte[] getAvatarData() {
-        return avatarData;
-    }
-
-    public void setAvatarData(byte[] avatarData) {
-        this.avatarData = avatarData;
-    }
-
-    public String getAvatarContentType() {
-        return avatarContentType;
-    }
-
-    public void setAvatarContentType(String avatarContentType) {
-        this.avatarContentType = avatarContentType;
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
+    public Instant getUpdatedAt() { return updatedAt; }
 }

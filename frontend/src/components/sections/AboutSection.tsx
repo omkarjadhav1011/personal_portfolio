@@ -79,10 +79,9 @@ function Avatar({ name, avatarUrl }: { name: string; avatarUrl?: string }) {
 }
 
 function TechChip({ t }: { t: TechPick }) {
-  // Treat any glyph whose first code point is outside the BMP, or a single
-  // non-ASCII char, as emoji-ish so we render it slightly larger.
+  const isUrl = t.glyph.startsWith("http") || t.glyph.startsWith("/");
   const cp = t.glyph.codePointAt(0) ?? 0;
-  const isEmoji = cp > 0x7f;
+  const isEmoji = !isUrl && cp > 0x7f;
   return (
     <div
       className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full font-mono text-xs transition-transform hover:-translate-y-0.5"
@@ -93,18 +92,22 @@ function TechChip({ t }: { t: TechPick }) {
       }}
     >
       <span
-        className="flex items-center justify-center rounded-full font-bold"
+        className="flex items-center justify-center rounded-full font-bold overflow-hidden"
         style={{
           width: 18,
           height: 18,
           background: `${t.tint}22`,
           border: `1px solid ${t.tint}55`,
           color: t.tint,
-          fontSize: isEmoji ? 11 : 10,
+          fontSize: isUrl ? undefined : (isEmoji ? 11 : 10),
           lineHeight: 1,
         }}
       >
-        {t.glyph}
+        {isUrl ? (
+          <img src={t.glyph} alt={t.name} className="w-full h-full object-contain p-0.5" />
+        ) : (
+          t.glyph
+        )}
       </span>
       <span>{t.name}</span>
     </div>
@@ -179,15 +182,13 @@ interface AboutSectionProps {
 }
 
 export function AboutSection({ profile, topSkills }: AboutSectionProps) {
-  // Prefer DB-provided top skills; fall back to a curated default if none have icons
-  const techPicks: TechPick[] = topSkills.length
+  // Priority: admin-managed techPicks > DB-derived topSkills > hardcoded fallback
+  const techPicks: TechPick[] = (profile.techPicks && profile.techPicks.length > 0)
+    ? profile.techPicks
+    : topSkills.length
     ? topSkills.slice(0, 8).map((s, i) => {
         const fallback = TECH_PICKS_FALLBACK[i] ?? TECH_PICKS_FALLBACK[0];
-        return {
-          name: s.name,
-          glyph: s.icon || fallback.glyph,
-          tint: fallback.tint,
-        };
+        return { name: s.name, glyph: s.icon || fallback.glyph, tint: fallback.tint };
       })
     : TECH_PICKS_FALLBACK;
 

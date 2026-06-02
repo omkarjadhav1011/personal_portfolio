@@ -4,6 +4,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -11,6 +15,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
 
 @Tag(name = "Profile", description = "Singleton developer profile")
 @RestController
@@ -19,16 +29,15 @@ public class ProfileController {
 
     private static final Set<String> ALLOWED_IMAGE_TYPES =
             Set.of("image/jpeg", "image/png", "image/gif", "image/webp");
+    private static final long MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 5 MB
 
     private final ProfileRepository repository;
-    private final AvatarStorageService avatarStorage;
 
-    public ProfileController(ProfileRepository repository, AvatarStorageService avatarStorage) {
+    public ProfileController(ProfileRepository repository) {
         this.repository = repository;
-        this.avatarStorage = avatarStorage;
     }
 
-    @Operation(summary = "Get profile", description = "Returns the singleton developer profile, or null if not yet created")
+    @Operation(summary = "Get profile")
     @ApiResponse(responseCode = "200", description = "Profile returned (may be null)")
     @GetMapping
     public ProfileDto get() {
@@ -38,7 +47,7 @@ public class ProfileController {
                 .orElse(null);
     }
 
-    @Operation(summary = "Upsert profile", description = "Updates the existing profile row, or creates the first one")
+    @Operation(summary = "Upsert profile")
     @ApiResponse(responseCode = "200", description = "Profile saved and returned")
     @PatchMapping
     public ProfileDto update(@Valid @RequestBody ProfileRequest req) {
@@ -56,6 +65,41 @@ public class ProfileController {
         profile.setFunFacts(req.funFacts());
         profile.setStash(req.stash());
         profile.setCurrentRole(req.currentRole());
+        profile.setTechPicks(req.techPicks());
         return ProfileDto.from(repository.save(profile));
+    }
+
+    @Operation(summary = "Upload avatar — stores image bytes in the database")
+    @PostMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Map<String, String> uploadAvatar(@RequestParam("file") MultipartFile file) throws IOException {
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Only JPEG, PNG, GIF or WebP images are allowed");
+        }
+        if (file.getSize() > MAX_AVATAR_BYTES) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File must be ≤ 5 MB");
+        }
+        Profile profile = repository.findAll().stream().findFirst().orElseGet(Profile::new);
+        profile.setAvatarData(file.getBytes());
+        profile.setAvatarContentType(contentType);
+        repository.save(profile);
+        return Map.of("avatarUrl", "/api/profile/avatar");
+    }
+
+    @Operation(summary = "Retrieve avatar image from the database")
+    @GetMapping("/avatar")
+    public ResponseEntity<byte[]> getAvatar() {
+        return repository.findAll().stream()
+                .findFirst()
+                .filter(p -> p.getAvatarData() != null && p.getAvatarData().length > 0)
+                .map(p -> {
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setContentType(MediaType.parseMediaType(
+                            p.getAvatarContentType() != null ? p.getAvatarContentType() : "image/jpeg"));
+                    headers.setCacheControl("no-cache, no-store, must-revalidate");
+                    return new ResponseEntity<>(p.getAvatarData(), headers, HttpStatus.OK);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 }

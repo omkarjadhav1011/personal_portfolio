@@ -55,6 +55,14 @@ export interface CommitEntry {
   url?: string;
 }
 
+// ─── Tech Picks ──────────────────────────────────────────────────────────────
+
+export interface TechPick {
+  name: string;
+  glyph: string; // emoji, 1-3 char text, or a URL to an icon image
+  tint: string;  // hex color
+}
+
 // ─── Profile ─────────────────────────────────────────────────────────────────
 
 export interface SocialLink {
@@ -91,6 +99,7 @@ export interface Profile {
   stash?: string[];
   currentRole?: CurrentRole;
   avatarUrl?: string;
+  techPicks?: TechPick[];
 }
 
 // ─── Skills Diff ─────────────────────────────────────────────────────────────

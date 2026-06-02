@@ -84,4 +84,9 @@ export const profileSchema = z.object({
   funFacts: z.array(z.string()),
   stash: z.array(z.string()).optional(),
   currentRole: currentRoleSchema.optional(),
+  techPicks: z.array(z.object({
+    name: z.string().min(1),
+    glyph: z.string().min(1),
+    tint: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Must be a hex color"),
+  })).optional(),
 });

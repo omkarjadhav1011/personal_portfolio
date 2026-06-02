@@ -2,12 +2,13 @@
 import { useRef, useState } from "react";
 import { FormInput, FormTextarea, FormCheckbox } from "@/components/admin/FormField";
 import { TagInput } from "@/components/admin/TagInput";
+import { TechPicksEditor } from "@/components/admin/TechPicksEditor";
 import { LoadingButton } from "@/components/ui/LoadingButton";
 import { useToast } from "@/components/admin/ToastProvider";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { profileSchema } from "@/lib/admin-validations";
 import { DEFAULT_ROLE, DEFAULT_ACCENT } from "@/lib/defaults";
-import type { CurrentRole, SocialLink } from "@/types";
+import type { CurrentRole, SocialLink, TechPick } from "@/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { authFetch } from "@/lib/api";
 import { profileKeys } from "@/api/profile";
@@ -28,6 +29,7 @@ interface Profile {
   stash?: string[];
   currentRole?: CurrentRole;
   avatarUrl?: string;
+  techPicks?: TechPick[];
 }
 
 export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
@@ -339,6 +341,15 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Tech I Reach For */}
+        <div className="rounded-xl border border-terminal-border bg-terminal-surface p-5 space-y-4">
+          <div className="text-text-faint text-xs border-b border-terminal-border pb-2">## Tech I Reach For</div>
+          <TechPicksEditor
+            values={form.techPicks ?? []}
+            onChange={(v) => field("techPicks", v)}
+          />
         </div>
 
         {/* Fun facts & stash */}

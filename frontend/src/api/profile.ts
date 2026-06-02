@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
-import type { Profile, SocialLink, CurrentRole } from "@/types";
+import type { Profile, SocialLink, CurrentRole, TechPick } from "@/types";
 
 interface CurrentRoleDto {
   enabled: boolean;
@@ -31,6 +31,7 @@ interface ProfileDto {
   stash: string[];
   currentRole: CurrentRoleDto | null;
   avatarUrl: string | null;
+  techPicks: TechPick[] | null;
   updatedAt: string;
 }
 
@@ -69,6 +70,7 @@ function toDomainProfile(p: ProfileDto): Profile {
     stash: p.stash,
     currentRole,
     avatarUrl: p.avatarUrl ?? undefined,
+    techPicks: p.techPicks ?? undefined,
   };
 }
 
