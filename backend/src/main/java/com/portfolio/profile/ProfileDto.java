@@ -44,7 +44,6 @@ public record ProfileDto(
                 p.getFunFacts(),
                 p.getStash() == null ? List.of() : p.getStash(),
                 p.getCurrentRole(),
-                avatarUrl,
                 p.getUpdatedAt()
         );
     }

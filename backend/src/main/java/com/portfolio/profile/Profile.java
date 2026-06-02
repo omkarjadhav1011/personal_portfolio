@@ -199,6 +199,7 @@ public class Profile {
         this.currentRole = currentRole;
     }
 
+
     public byte[] getAvatarData() {
         return avatarData;
     }
@@ -213,7 +214,6 @@ public class Profile {
 
     public void setAvatarContentType(String avatarContentType) {
         this.avatarContentType = avatarContentType;
-    }
 
     public Instant getUpdatedAt() {
         return updatedAt;
