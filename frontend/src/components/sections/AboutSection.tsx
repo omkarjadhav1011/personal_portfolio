@@ -28,7 +28,7 @@ const SOCIAL_ICON: Record<string, { Icon: React.ElementType; tint: string }> = {
   twitter: { Icon: Twitter, tint: "var(--color-git-purple, 210 168 255)" },
 };
 
-function Avatar({ name }: { name: string }) {
+function Avatar({ name, avatarUrl }: { name: string; avatarUrl?: string }) {
   const initials = name
     .split(" ")
     .map((s) => s[0])
@@ -40,14 +40,24 @@ function Avatar({ name }: { name: string }) {
       <div
         className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center font-mono font-bold text-2xl sm:text-3xl overflow-hidden"
         style={{
-          background:
-            "linear-gradient(135deg, rgb(var(--color-git-green) / 0.2), rgb(var(--color-git-blue) / 0.2))",
+          background: avatarUrl
+            ? undefined
+            : "linear-gradient(135deg, rgb(var(--color-git-green) / 0.2), rgb(var(--color-git-blue) / 0.2))",
           border: "1.5px solid rgb(var(--color-git-green) / 0.5)",
           color: "rgb(var(--color-git-green))",
           boxShadow: "0 0 30px rgb(var(--color-git-green) / 0.15)",
         }}
       >
-        {initials}
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt={name}
+            className="w-full h-full object-cover"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+          />
+        ) : (
+          initials
+        )}
       </div>
       <div
         className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center"
@@ -211,7 +221,7 @@ export function AboutSection({ profile, topSkills }: AboutSectionProps) {
             <div className="p-6 sm:p-8">
               {/* Profile header */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-5 mb-5">
-                <Avatar name={profile.name} />
+                <Avatar name={profile.name} avatarUrl={profile.avatarUrl} />
                 <div className="min-w-0 flex-1">
                   <h1 className="font-mono font-bold text-2xl sm:text-3xl tracking-tight leading-tight text-text-primary">
                     {profile.name}

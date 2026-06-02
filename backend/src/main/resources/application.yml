@@ -13,6 +13,10 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
   lifecycle:
     timeout-per-shutdown-phase: 30s
 
@@ -39,3 +43,14 @@ springdoc:
 # Env vars take precedence over this file; this literal is a local-dev fallback only.
 JWT_SECRET: dev-only-local-secret-key-not-for-production-use-min32b
 JWT_EXPIRY_HOURS: 8
+
+# CORS — Vite dev server runs on 5173; override in production with the real frontend URL.
+CORS_ALLOWED_ORIGIN: http://localhost:5173
+
+# File uploads — override in production with an absolute path outside the working directory.
+UPLOAD_DIR: uploads
+
+# Admin credentials — override in production via env vars.
+# ADMIN_PASSWORD_HASH is BCrypt of "admin123"; never use this in a deployed environment.
+ADMIN_USERNAME: admin
+ADMIN_PASSWORD_HASH: "$2a$10$gs3uL7UBNJnZV1MFuAyHE.0z78h6msl3zr6vPbIhAHpWlw595i7Xm"
