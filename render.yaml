@@ -1,0 +1,61 @@
+# Render Blueprint — provisions the Spring Boot backend + a managed Postgres.
+# Deploy: push this file, then in the Render dashboard "New +" → "Blueprint" and
+# point it at this repo. Render reads backend/Dockerfile and creates both resources.
+# Docs: https://render.com/docs/blueprint-spec
+
+databases:
+  - name: portfolio-db
+    databaseName: portfolio
+    user: portfolio
+    plan: free
+
+services:
+  - type: web
+    name: portfolio-backend
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    # Actuator health endpoint — Render gates traffic on this returning 200.
+    healthCheckPath: /actuator/health
+    envVars:
+      # ── Database (auto-wired from the managed Postgres above) ──────────────
+      - key: DB_HOST
+        fromDatabase: { name: portfolio-db, property: host }
+      - key: DB_PORT
+        fromDatabase: { name: portfolio-db, property: port }
+      - key: DB_NAME
+        fromDatabase: { name: portfolio-db, property: database }
+      - key: DB_USERNAME
+        fromDatabase: { name: portfolio-db, property: user }
+      - key: DB_PASSWORD
+        fromDatabase: { name: portfolio-db, property: password }
+
+      # ── Auth ───────────────────────────────────────────────────────────────
+      # JWT signing key — Render generates a strong random value on first deploy.
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRY_HOURS
+        value: "8"
+      # Admin login. Set these in the dashboard (sync:false = not stored in git).
+      # ADMIN_PASSWORD_HASH is a BCrypt hash, NOT the plaintext password.
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD_HASH
+        sync: false
+
+      # ── CORS ─────────────────────────────────────────────────────────────
+      # The Vercel frontend's public origin, e.g. https://your-portfolio.vercel.app
+      # (no trailing slash). Set after the frontend URL is known.
+      - key: CORS_ALLOWED_ORIGIN
+        sync: false
+
+      # ── Optional features (app boots fine if these are blank) ──────────────
+      # Chatbot + recruiter-match (Google Gemini). Leave unset to disable.
+      - key: GEMINI_API_KEY
+        sync: false
+      # Contact-form email delivery (Resend). Leave unset to disable.
+      - key: RESEND_API_KEY
+        sync: false
+      - key: CONTACT_TO_EMAIL
+        sync: false

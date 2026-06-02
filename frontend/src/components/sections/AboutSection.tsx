@@ -1,6 +1,7 @@
 
 import { BookText, ExternalLink, Github, Linkedin, Mail, Twitter } from "lucide-react";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
+import { assetUrl } from "@/lib/api";
 import type { Profile, Skill } from "@/types";
 
 interface TechPick {
@@ -50,7 +51,7 @@ function Avatar({ name, avatarUrl }: { name: string; avatarUrl?: string }) {
       >
         {avatarUrl ? (
           <img
-            src={avatarUrl}
+            src={assetUrl(avatarUrl)}
             alt={name}
             className="w-full h-full object-cover"
             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}

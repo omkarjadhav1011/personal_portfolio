@@ -1,6 +1,7 @@
 package com.portfolio.security;
 
-import jakarta.servlet.http.HttpServletResponse;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,7 +17,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.List;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * <p>Stateless REST API (CSRF off, no sessions). Public: all GETs and {@code /api/auth/**}
@@ -29,7 +30,7 @@ public class SecurityConfig {
 
     @Bean
     CorsConfigurationSource corsConfigurationSource(
-            @Value("${CORS_ALLOWED_ORIGIN:http://localhost:3000}") String allowedOrigin) {
+            @Value("${CORS_ALLOWED_ORIGIN:http://localhost:5173}") String allowedOrigin) {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(allowedOrigin));
         config.setAllowedMethods(List.of("GET", "POST", "PATCH", "DELETE", "OPTIONS"));

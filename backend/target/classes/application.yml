@@ -2,10 +2,12 @@ spring:
   application:
     name: portfolio-backend
   datasource:
-    # JDBC URL; defaults to the local docker-compose Postgres on host port 5433.
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5433/portfolio}
-    username: portfolio
-    password: portfolio
+    # Prod (Render): the managed Postgres injects DB_HOST/DB_PORT/DB_NAME/DB_USERNAME/
+    # DB_PASSWORD, which compose the JDBC URL below. Docker-compose sets DATABASE_URL
+    # directly (takes precedence); local dev falls back to the host:5433 Postgres.
+    url: ${DATABASE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:portfolio}}
+    username: ${DB_USERNAME:portfolio}
+    password: ${DB_PASSWORD:portfolio}
   jpa:
     hibernate:
       # Schema is owned by Flyway (db/migration). Hibernate only validates entities against it.
@@ -21,7 +23,8 @@ spring:
     timeout-per-shutdown-phase: 30s
 
 server:
-  port: 8081
+  # Render injects PORT at runtime; locally and in docker-compose this falls back to 8081.
+  port: ${PORT:8081}
   shutdown: graceful
 
 management:
@@ -43,3 +46,10 @@ springdoc:
 # Env vars take precedence over this file; this literal is a local-dev fallback only.
 JWT_SECRET: dev-only-local-secret-key-not-for-production-use-min32b
 JWT_EXPIRY_HOURS: 8
+
+# CORS — Vite dev server runs on 5173. Override with CORS_ALLOWED_ORIGIN env var in production.
+CORS_ALLOWED_ORIGIN: http://localhost:5173
+
+# Admin credentials — local dev fallback only. Override both env vars in production.
+ADMIN_USERNAME: admin
+ADMIN_PASSWORD_HASH: "$2b$10$.HpAVUX/TqltNusc6NXXyObUOj3BxxcpgCf.oI7uxeM7jsp4AKsLS"

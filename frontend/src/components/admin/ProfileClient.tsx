@@ -10,7 +10,7 @@ import { profileSchema } from "@/lib/admin-validations";
 import { DEFAULT_ROLE, DEFAULT_ACCENT } from "@/lib/defaults";
 import type { CurrentRole, SocialLink, TechPick } from "@/types";
 import { useQueryClient } from "@tanstack/react-query";
-import { authFetch } from "@/lib/api";
+import { authFetch, assetUrl } from "@/lib/api";
 import { profileKeys } from "@/api/profile";
 import { motion } from "framer-motion";
 
@@ -152,7 +152,7 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
                 }}
               >
                 {avatarPreview ? (
-                  <img src={avatarPreview} alt="avatar" className="w-full h-full object-cover" />
+                  <img src={assetUrl(avatarPreview)} alt="avatar" className="w-full h-full object-cover" />
                 ) : (
                   form.name.split(" ").map((s) => s[0]).join("").slice(0, 2).toUpperCase() || "?"
                 )}

@@ -3,6 +3,19 @@ import { getAuthToken, clearAuthToken } from "@/store/auth";
 /** Backend base URL. Empty in dev — relative paths hit the Vite proxy. */
 const BASE_URL = import.meta.env.VITE_API_URL ?? "";
 
+/**
+ * Resolves a backend asset path (e.g. "/api/profile/avatar") to an absolute URL.
+ * Needed for `<img src>` and other browser-issued requests that bypass {@link apiFetch}:
+ * in production the frontend (Vercel) and backend (Render) are different origins, so a
+ * bare relative path would resolve against the frontend. Pass-through for blob:/data:/
+ * absolute URLs and falsy values.
+ */
+export function assetUrl(path?: string | null): string | undefined {
+  if (!path) return undefined;
+  if (/^(https?:|blob:|data:)/.test(path)) return path;
+  return `${BASE_URL}${path}`;
+}
+
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
