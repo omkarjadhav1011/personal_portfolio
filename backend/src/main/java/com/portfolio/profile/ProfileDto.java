@@ -4,9 +4,8 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * Response shape for the profile. Mirrors the Next.js {@code /api/profile} JSON:
- * {@code id} as a string, {@code socials}/{@code funFacts} as arrays, {@code stash}
- * defaulting to {@code []} when null, and {@code currentRole} {@code null} when absent.
+ * Response shape for the profile. {@code avatarUrl} is {@code "/api/profile/avatar"} when the
+ * profile has image data stored in the database, or {@code null} when no avatar has been uploaded.
  */
 public record ProfileDto(
         String id,
@@ -23,9 +22,13 @@ public record ProfileDto(
         List<String> funFacts,
         List<String> stash,
         CurrentRole currentRole,
+        String avatarUrl,
         Instant updatedAt
 ) {
     public static ProfileDto from(Profile p) {
+        String avatarUrl = (p.getAvatarData() != null && p.getAvatarData().length > 0)
+                ? "/api/profile/avatar"
+                : null;
         return new ProfileDto(
                 p.getId().toString(),
                 p.getName(),
@@ -41,6 +44,7 @@ public record ProfileDto(
                 p.getFunFacts(),
                 p.getStash() == null ? List.of() : p.getStash(),
                 p.getCurrentRole(),
+                avatarUrl,
                 p.getUpdatedAt()
         );
     }

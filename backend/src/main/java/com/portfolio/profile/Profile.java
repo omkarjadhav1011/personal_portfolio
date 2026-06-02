@@ -77,6 +77,12 @@ public class Profile {
     @Column(name = "current_role_json", columnDefinition = "text")
     private CurrentRole currentRole;
 
+    @Column(name = "avatar_data", columnDefinition = "bytea")
+    private byte[] avatarData;
+
+    @Column(name = "avatar_content_type", length = 50)
+    private String avatarContentType;
+
     @UpdateTimestamp
     @Column(nullable = false)
     private Instant updatedAt;
@@ -191,6 +197,22 @@ public class Profile {
 
     public void setCurrentRole(CurrentRole currentRole) {
         this.currentRole = currentRole;
+    }
+
+    public byte[] getAvatarData() {
+        return avatarData;
+    }
+
+    public void setAvatarData(byte[] avatarData) {
+        this.avatarData = avatarData;
+    }
+
+    public String getAvatarContentType() {
+        return avatarContentType;
+    }
+
+    public void setAvatarContentType(String avatarContentType) {
+        this.avatarContentType = avatarContentType;
     }
 
     public Instant getUpdatedAt() {
