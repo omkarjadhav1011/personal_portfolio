@@ -39,3 +39,6 @@ springdoc:
 # Env vars take precedence over this file; this literal is a local-dev fallback only.
 JWT_SECRET: dev-only-local-secret-key-not-for-production-use-min32b
 JWT_EXPIRY_HOURS: 8
+
+# CORS — Vite dev server runs on 5173; override in production with the real frontend URL.
+CORS_ALLOWED_ORIGIN: http://localhost:5173
