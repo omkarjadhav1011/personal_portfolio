@@ -19,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -38,7 +39,6 @@ public class ProfileController {
     }
 
     @Operation(summary = "Get profile")
-    @ApiResponse(responseCode = "200", description = "Profile returned (may be null)")
     @GetMapping
     public ProfileDto get() {
         return repository.findAll().stream()
@@ -48,7 +48,6 @@ public class ProfileController {
     }
 
     @Operation(summary = "Upsert profile")
-    @ApiResponse(responseCode = "200", description = "Profile saved and returned")
     @PatchMapping
     public ProfileDto update(@Valid @RequestBody ProfileRequest req) {
         Profile profile = repository.findAll().stream().findFirst().orElseGet(Profile::new);
@@ -90,16 +89,18 @@ public class ProfileController {
     @Operation(summary = "Retrieve avatar image from the database")
     @GetMapping("/avatar")
     public ResponseEntity<byte[]> getAvatar() {
-        return repository.findAll().stream()
-                .findFirst()
-                .filter(p -> p.getAvatarData() != null && p.getAvatarData().length > 0)
-                .map(p -> {
-                    HttpHeaders headers = new HttpHeaders();
-                    headers.setContentType(MediaType.parseMediaType(
-                            p.getAvatarContentType() != null ? p.getAvatarContentType() : "image/jpeg"));
-                    headers.setCacheControl("no-cache, no-store, must-revalidate");
-                    return new ResponseEntity<>(p.getAvatarData(), headers, HttpStatus.OK);
-                })
-                .orElse(ResponseEntity.notFound().build());
+        List<Profile> all = repository.findAll();
+        if (all.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        Profile p = all.get(0);
+        if (p.getAvatarData() == null || p.getAvatarData().length == 0) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        HttpHeaders headers = new HttpHeaders();
+        String ct = p.getAvatarContentType() != null ? p.getAvatarContentType() : "image/jpeg";
+        headers.setContentType(MediaType.parseMediaType(ct));
+        headers.setCacheControl("no-cache, no-store, must-revalidate");
+        return new ResponseEntity<>(p.getAvatarData(), headers, HttpStatus.OK);
     }
 }

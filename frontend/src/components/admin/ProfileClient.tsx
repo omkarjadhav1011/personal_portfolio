@@ -105,8 +105,11 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
         body: JSON.stringify(form),
       });
       if (res.ok) {
+        const saved = await res.json();
+        // Push the server response directly into the query cache so the public
+        // page picks up the new techPicks immediately without a separate refetch.
+        queryClient.setQueryData(profileKeys.detail, saved);
         toast("Profile updated", "success");
-        await queryClient.invalidateQueries({ queryKey: profileKeys.detail });
       } else {
         const err = await res.json();
         toast(err.error?.message ?? "Failed to update", "error");
