@@ -86,7 +86,7 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
   }
 
   const inputClass =
-    "w-full bg-terminal-bg border border-terminal-border rounded-lg px-3 py-2 font-mono text-xs text-text-primary placeholder-text-faint focus:outline-none focus:border-git-blue/50 focus:ring-1 focus:ring-git-blue/20 transition-colors";
+    "w-full bg-terminal-bg border border-terminal-border rounded-lg px-3 py-2 font-mono text-xs text-text-primary placeholder-text-faint outline-none focus:border-git-blue/50 focus-visible:ring-1 focus-visible:ring-git-blue/20 transition-colors";
 
   const role = form.currentRole ?? DEFAULT_ROLE;
 

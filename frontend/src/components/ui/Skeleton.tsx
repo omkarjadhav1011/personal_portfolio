@@ -177,9 +177,9 @@ export function HeroSkeleton() {
         {/* Terminal window skeleton */}
         <div className="rounded-xl border border-terminal-border bg-terminal-surface overflow-hidden">
           <div className="flex items-center gap-1.5 px-4 py-3 bg-terminal-bg border-b border-terminal-border">
-            <span className="w-3 h-3 rounded-full bg-[#ff5f57]/40 animate-pulse" />
-            <span className="w-3 h-3 rounded-full bg-[#febc2e]/40 animate-pulse" />
-            <span className="w-3 h-3 rounded-full bg-[#28c840]/40 animate-pulse" />
+            <span className="w-3 h-3 rounded-full bg-dot-red/40 animate-pulse" />
+            <span className="w-3 h-3 rounded-full bg-dot-yellow/40 animate-pulse" />
+            <span className="w-3 h-3 rounded-full bg-dot-green/40 animate-pulse" />
           </div>
           <div className="p-6 space-y-3">
             <Skeleton className="h-4 w-3/4" />

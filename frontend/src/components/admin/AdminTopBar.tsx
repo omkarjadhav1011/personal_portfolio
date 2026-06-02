@@ -20,9 +20,9 @@ export function AdminTopBar({ profileName }: { profileName: string }) {
     <div className="hidden md:flex items-center justify-between h-11 shrink-0 px-4 border-b border-terminal-border bg-terminal-surface">
       <div className="flex items-center gap-3 min-w-0">
         <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-full" style={{ background: "#ff5f57" }} />
-          <span className="w-3 h-3 rounded-full" style={{ background: "#febc2e" }} />
-          <span className="w-3 h-3 rounded-full" style={{ background: "#28c840" }} />
+          <span className="w-3 h-3 rounded-full bg-dot-red" />
+          <span className="w-3 h-3 rounded-full bg-dot-yellow" />
+          <span className="w-3 h-3 rounded-full bg-dot-green" />
         </div>
         <div className="font-mono text-xs flex items-center gap-2 text-text-muted min-w-0">
           <Folder size={12} className="text-git-blue shrink-0" />

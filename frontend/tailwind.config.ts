@@ -33,6 +33,12 @@ const config: Config = {
           muted: "rgb(var(--color-text-muted) / <alpha-value>)",
           faint: "rgb(var(--color-text-faint) / <alpha-value>)",
         },
+        // macOS window chrome dots — fixed semantic colors, not themeable
+        dot: {
+          red:    "rgb(var(--color-dot-red) / <alpha-value>)",
+          yellow: "rgb(var(--color-dot-yellow) / <alpha-value>)",
+          green:  "rgb(var(--color-dot-green) / <alpha-value>)",
+        },
       },
       fontFamily: {
         mono: ["var(--font-mono)", "JetBrains Mono", "Fira Code", "monospace"],

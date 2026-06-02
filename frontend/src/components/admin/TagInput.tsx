@@ -58,7 +58,7 @@ export function TagInput({ label, values, onChange, placeholder = "Add tag…" }
           onKeyDown={handleKey}
           onBlur={() => input && addTag(input)}
           placeholder={values.length === 0 ? placeholder : ""}
-          className="flex-1 min-w-[80px] bg-transparent font-mono text-xs text-text-primary placeholder-text-faint focus:outline-none"
+          className="flex-1 min-w-[80px] bg-transparent font-mono text-xs text-text-primary placeholder-text-faint outline-none"
         />
       </div>
       <p className="font-mono text-[10px] text-text-faint">Press Enter or comma to add</p>

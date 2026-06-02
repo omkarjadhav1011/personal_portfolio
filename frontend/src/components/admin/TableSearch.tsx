@@ -18,7 +18,7 @@ export function TableSearch({ value, onChange, placeholder = "Search...", classN
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-terminal-border bg-terminal-bg py-2 pl-9 pr-3 font-mono text-xs text-text-primary placeholder:text-text-faint focus:border-git-blue/50 focus:outline-none focus:ring-1 focus:ring-git-blue/30 transition-colors"
+        className="w-full rounded-lg border border-terminal-border bg-terminal-bg py-2 pl-9 pr-3 font-mono text-xs text-text-primary placeholder:text-text-faint focus:border-git-blue/50 outline-none focus-visible:ring-1 focus-visible:ring-git-blue/30 transition-colors"
       />
     </div>
   );

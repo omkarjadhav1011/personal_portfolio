@@ -2,9 +2,9 @@
 import { InputHTMLAttributes, TextareaHTMLAttributes, SelectHTMLAttributes, ReactNode } from "react";
 
 const inputBase =
-  "w-full bg-terminal-bg border rounded-lg px-3 py-2 font-mono text-xs text-text-primary placeholder-text-faint focus:outline-none transition-colors";
-const inputNormal = "border-terminal-border focus:border-git-blue/50 focus:ring-1 focus:ring-git-blue/20";
-const inputError = "border-git-red/50 focus:border-git-red/70 focus:ring-1 focus:ring-git-red/30";
+  "w-full bg-terminal-bg border rounded-lg px-3 py-2 font-mono text-xs text-text-primary placeholder-text-faint outline-none transition-colors";
+const inputNormal = "border-terminal-border focus:border-git-blue/50 focus-visible:ring-1 focus-visible:ring-git-blue/20";
+const inputError = "border-git-red/50 focus:border-git-red/70 focus-visible:ring-1 focus-visible:ring-git-red/30";
 
 function inputClass(error?: string) {
   return `${inputBase} ${error ? inputError : inputNormal}`;

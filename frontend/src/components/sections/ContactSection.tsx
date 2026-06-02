@@ -99,7 +99,7 @@ export function ContactSection() {
                   rows={4}
                   placeholder="What's on your mind..."
                   disabled={state.status === "loading" || state.status === "success"}
-                  className="w-full bg-terminal-bg border border-terminal-border rounded-lg px-4 py-3 font-mono text-sm text-text-primary placeholder-text-faint focus:outline-none focus:border-git-green/60 focus:ring-1 focus:ring-git-green/30 transition-colors resize-none disabled:opacity-50"
+                  className="w-full bg-terminal-bg border border-terminal-border rounded-lg px-4 py-3 font-mono text-sm text-text-primary placeholder-text-faint outline-none focus:border-git-green/60 focus-visible:ring-1 focus-visible:ring-git-green/30 transition-colors resize-none disabled:opacity-50"
                 />
               </div>
 
@@ -219,7 +219,7 @@ function TerminalField({
         required={required}
         disabled={disabled}
         placeholder={placeholder}
-        className="w-full bg-terminal-bg border border-terminal-border rounded-lg px-4 py-2.5 font-mono text-sm text-text-primary placeholder-text-faint focus:outline-none focus:border-git-green/60 focus:ring-1 focus:ring-git-green/30 transition-colors disabled:opacity-50"
+        className="w-full bg-terminal-bg border border-terminal-border rounded-lg px-4 py-2.5 font-mono text-sm text-text-primary placeholder-text-faint outline-none focus:border-git-green/60 focus-visible:ring-1 focus-visible:ring-git-green/30 transition-colors disabled:opacity-50"
       />
     </div>
   );

@@ -1,5 +1,5 @@
 
-import { motion, useInView } from "framer-motion";
+import { motion, useInView, useReducedMotion } from "framer-motion";
 import { useRef } from "react";
 import { cn } from "@/lib/utils";
 
@@ -19,13 +19,14 @@ export function ScrollReveal({
   once = true,
 }: ScrollRevealProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once, margin: "-80px" });
+  const isInView = useInView(ref, { once, margin: "-100px" });
+  const shouldReduce = useReducedMotion();
 
   const variants = {
     hidden: {
-      opacity: 0,
-      y: direction === "up" ? 24 : 0,
-      x: direction === "left" ? -24 : direction === "right" ? 24 : 0,
+      opacity: shouldReduce ? 1 : 0,
+      y: shouldReduce ? 0 : direction === "up" ? 24 : 0,
+      x: shouldReduce ? 0 : direction === "left" ? -24 : direction === "right" ? 24 : 0,
     },
     visible: {
       opacity: 1,
@@ -40,7 +41,7 @@ export function ScrollReveal({
       variants={variants}
       initial="hidden"
       animate={isInView ? "visible" : "hidden"}
-      transition={{ duration: 0.5, delay, ease: "easeOut" }}
+      transition={{ duration: shouldReduce ? 0 : 0.5, delay: shouldReduce ? 0 : delay, ease: "easeOut" }}
       className={cn(className)}
     >
       {children}

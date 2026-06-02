@@ -122,7 +122,7 @@ export function HeroSection({ profile }: HeroSectionProps) {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.3, duration: 0.5, ease: "easeOut" }}
               className="flex flex-col sm:flex-row flex-wrap justify-center md:justify-start gap-2 sm:gap-3 pt-2"
             >
               <a
@@ -131,7 +131,7 @@ export function HeroSection({ profile }: HeroSectionProps) {
                   e.preventDefault();
                   document.getElementById("projects")?.scrollIntoView({ behavior: "smooth" });
                 }}
-                className="group flex items-center justify-center sm:justify-start gap-2 w-full sm:w-auto px-3 sm:px-4 py-2 rounded-lg border border-git-blue/40 bg-git-blue/10 text-git-blue text-xs sm:text-sm font-mono hover:bg-git-blue/20 hover:border-git-blue/70 transition-all duration-200"
+                className="group flex items-center justify-center sm:justify-start gap-2 w-full sm:w-auto px-3 sm:px-4 py-2 rounded-lg border border-git-blue/40 bg-git-blue/10 text-git-blue text-xs sm:text-sm font-mono hover:bg-git-blue/20 hover:border-git-blue/70 transition-colors duration-150"
               >
                 <span className="text-text-muted">$</span>
                 git checkout projects
@@ -142,7 +142,7 @@ export function HeroSection({ profile }: HeroSectionProps) {
                   e.preventDefault();
                   document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
                 }}
-                className="flex items-center justify-center sm:justify-start gap-2 w-full sm:w-auto px-3 sm:px-4 py-2 rounded-lg border border-git-green/40 bg-git-green/10 text-git-green text-xs sm:text-sm font-mono hover:bg-git-green/20 hover:border-git-green/70 transition-all duration-200"
+                className="flex items-center justify-center sm:justify-start gap-2 w-full sm:w-auto px-3 sm:px-4 py-2 rounded-lg border border-git-green/40 bg-git-green/10 text-git-green text-xs sm:text-sm font-mono hover:bg-git-green/20 hover:border-git-green/70 transition-colors duration-150"
               >
                 <span className="text-text-muted">$</span>
                 git show --contact
@@ -152,7 +152,7 @@ export function HeroSection({ profile }: HeroSectionProps) {
                 download
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center sm:justify-start gap-2 w-full sm:w-auto px-3 sm:px-4 py-2 rounded-lg border border-git-purple/40 bg-git-purple/10 text-git-purple text-xs sm:text-sm font-mono hover:bg-git-purple/20 hover:border-git-purple/70 transition-all duration-200"
+                className="flex items-center justify-center sm:justify-start gap-2 w-full sm:w-auto px-3 sm:px-4 py-2 rounded-lg border border-git-purple/40 bg-git-purple/10 text-git-purple text-xs sm:text-sm font-mono hover:bg-git-purple/20 hover:border-git-purple/70 transition-colors duration-150"
               >
                 <span className="text-text-muted">$</span>
                 git export --resume
@@ -165,7 +165,7 @@ export function HeroSection({ profile }: HeroSectionProps) {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
+          transition={{ delay: 0.8, duration: 0.5, ease: "easeOut" }}
           className="flex justify-center mt-8 sm:mt-12"
         >
           <div className="flex flex-col items-center gap-1 text-text-faint text-xs font-mono animate-float">

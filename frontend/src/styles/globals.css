@@ -35,6 +35,11 @@
   --color-git-purple: 130 80 223;
   --color-git-yellow: 154 103 0;
 
+  /* macOS window chrome dots — semantic, not themeable */
+  --color-dot-red:    255 95 87;
+  --color-dot-yellow: 254 188 46;
+  --color-dot-green:  40 200 64;
+
   /* Misc */
   --color-selection-bg: 46 164 79 / 0.2;
   --color-selection-text: 31 35 40;
@@ -124,7 +129,7 @@
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-text-faint;
+    @apply bg-git-green;
   }
 
   /* Selection */

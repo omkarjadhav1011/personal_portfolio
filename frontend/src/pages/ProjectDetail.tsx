@@ -64,9 +64,9 @@ export default function ProjectDetail() {
         <div className="rounded-xl border border-terminal-border bg-terminal-surface overflow-hidden shadow-terminal">
           {/* Terminal title bar */}
           <div className="flex items-center gap-1.5 px-4 py-3 bg-terminal-bg border-b border-terminal-border">
-            <span className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-            <span className="w-3 h-3 rounded-full bg-[#febc2e]" />
-            <span className="w-3 h-3 rounded-full bg-[#28c840]" />
+            <span className="w-3 h-3 rounded-full bg-dot-red" />
+            <span className="w-3 h-3 rounded-full bg-dot-yellow" />
+            <span className="w-3 h-3 rounded-full bg-dot-green" />
             <span className="ml-2 text-xs text-text-muted font-mono">
               {project.repoName} — detail
             </span>

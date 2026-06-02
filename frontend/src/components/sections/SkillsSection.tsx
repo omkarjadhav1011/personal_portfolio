@@ -157,9 +157,9 @@ export function SkillsSection({ skillBranches }: SkillsSectionProps) {
           <div className="rounded-xl overflow-hidden bg-terminal-surface border border-terminal-border shadow-terminal">
             {/* Title bar */}
             <div className="flex items-center gap-2 px-4 py-2.5 border-b border-terminal-border bg-terminal-bg/60 font-mono text-xs">
-              <span className="w-3 h-3 rounded-full" style={{ background: "#ff5f57" }} />
-              <span className="w-3 h-3 rounded-full" style={{ background: "#febc2e" }} />
-              <span className="w-3 h-3 rounded-full" style={{ background: "#28c840" }} />
+              <span className="w-3 h-3 rounded-full bg-dot-red" />
+              <span className="w-3 h-3 rounded-full bg-dot-yellow" />
+              <span className="w-3 h-3 rounded-full bg-dot-green" />
               <span className="flex-1 text-center text-text-faint">
                 ~/skills · git branch -a
               </span>

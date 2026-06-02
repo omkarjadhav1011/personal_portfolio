@@ -210,11 +210,11 @@ export function CommandPalette() {
                     <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => setOpen(false)}
-                        className="w-3 h-3 rounded-full bg-[#ff5f57] hover:opacity-80 transition-opacity cursor-pointer"
+                        className="w-3 h-3 rounded-full bg-dot-red hover:opacity-80 transition-opacity cursor-pointer"
                         aria-label="Close"
                       />
-                      <span className="w-3 h-3 rounded-full bg-[#febc2e]" />
-                      <span className="w-3 h-3 rounded-full bg-[#28c840]" />
+                      <span className="w-3 h-3 rounded-full bg-dot-yellow" />
+                      <span className="w-3 h-3 rounded-full bg-dot-green" />
                     </div>
 
                     {/* Mode tabs */}

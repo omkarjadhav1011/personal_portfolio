@@ -20,7 +20,7 @@ export function Footer() {
           <span className="text-text-muted">Made with</span>{" "}
           <code className="text-git-green">git push</code>{" "}
           <span className="text-text-muted">·</span>{" "}
-          <span className="text-text-muted">Next.js + Tailwind</span>
+          <span className="text-text-muted">React + Tailwind</span>
         </p>
 
         <div className="flex items-center gap-3">

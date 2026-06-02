@@ -136,9 +136,9 @@ export function Navbar() {
         {mobileOpen && (
           <motion.div
             initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -16 }}
-            className="fixed top-14 left-0 right-0 z-40 bg-terminal-bg border-b border-terminal-border p-4 font-mono space-y-1 md:hidden"
+            animate={{ opacity: 1, y: 0, transition: { duration: 0.25, ease: "easeOut" } }}
+            exit={{ opacity: 0, y: -16, transition: { duration: 0.2, ease: "easeIn" } }}
+            className="fixed top-14 left-0 right-0 z-40 bg-terminal-bg/95 backdrop-blur-md border-b border-terminal-border p-4 font-mono space-y-1 md:hidden"
           >
             {/* AI trigger */}
             <button
