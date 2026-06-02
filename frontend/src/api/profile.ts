@@ -30,6 +30,7 @@ interface ProfileDto {
   funFacts: string[];
   stash: string[];
   currentRole: CurrentRoleDto | null;
+  avatarUrl: string | null;
   updatedAt: string;
 }
 
@@ -67,6 +68,7 @@ function toDomainProfile(p: ProfileDto): Profile {
     funFacts: p.funFacts,
     stash: p.stash,
     currentRole,
+    avatarUrl: p.avatarUrl ?? undefined,
   };
 }
 

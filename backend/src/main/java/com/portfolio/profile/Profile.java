@@ -77,6 +77,9 @@ public class Profile {
     @Column(name = "current_role_json", columnDefinition = "text")
     private CurrentRole currentRole;
 
+    @Column(name = "avatar_url", length = 1000)
+    private String avatarUrl;
+
     @UpdateTimestamp
     @Column(nullable = false)
     private Instant updatedAt;
@@ -191,6 +194,14 @@ public class Profile {
 
     public void setCurrentRole(CurrentRole currentRole) {
         this.currentRole = currentRole;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
     }
 
     public Instant getUpdatedAt() {

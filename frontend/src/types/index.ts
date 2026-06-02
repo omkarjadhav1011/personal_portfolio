@@ -90,6 +90,7 @@ export interface Profile {
   funFacts: string[];
   stash?: string[];
   currentRole?: CurrentRole;
+  avatarUrl?: string;
 }
 
 // ─── Skills Diff ─────────────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { FormInput, FormTextarea, FormCheckbox } from "@/components/admin/FormField";
 import { TagInput } from "@/components/admin/TagInput";
 import { LoadingButton } from "@/components/ui/LoadingButton";
@@ -27,6 +27,7 @@ interface Profile {
   funFacts: string[];
   stash?: string[];
   currentRole?: CurrentRole;
+  avatarUrl?: string;
 }
 
 export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
@@ -35,6 +36,9 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
     currentRole: initialProfile.currentRole ?? DEFAULT_ROLE,
   });
   const [loading, setLoading] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | undefined>(initialProfile.avatarUrl);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { errors, validate } = useFormValidation(profileSchema);
@@ -61,6 +65,32 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
 
   function removeSocial(index: number) {
     field("socials", form.socials.filter((_, i) => i !== index));
+  }
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const objectUrl = URL.createObjectURL(file);
+    setAvatarPreview(objectUrl);
+    setAvatarUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await authFetch("/api/profile/avatar", { method: "POST", body: formData });
+      if (res.ok) {
+        const data = await res.json() as { avatarUrl: string };
+        setAvatarPreview(data.avatarUrl);
+        toast("Avatar updated", "success");
+        await queryClient.invalidateQueries({ queryKey: profileKeys.detail });
+      } else {
+        const err = await res.json();
+        toast(err.error?.message ?? "Failed to upload avatar", "error");
+        setAvatarPreview(initialProfile.avatarUrl);
+      }
+    } finally {
+      setAvatarUploading(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -102,6 +132,61 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
+        {/* Avatar */}
+        <div className="rounded-xl border border-terminal-border bg-terminal-surface p-5 space-y-4">
+          <div className="text-text-faint text-xs border-b border-terminal-border pb-2">## Avatar</div>
+          <div className="flex items-center gap-5">
+            <div className="relative shrink-0">
+              <div
+                className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center font-mono font-bold text-2xl"
+                style={{
+                  background: avatarPreview
+                    ? undefined
+                    : "linear-gradient(135deg, rgb(var(--color-git-green) / 0.2), rgb(var(--color-git-blue) / 0.2))",
+                  border: "1.5px solid rgb(var(--color-git-green) / 0.5)",
+                  color: "rgb(var(--color-git-green))",
+                }}
+              >
+                {avatarPreview ? (
+                  <img src={avatarPreview} alt="avatar" className="w-full h-full object-cover" />
+                ) : (
+                  form.name
+                    .split(" ")
+                    .map((s) => s[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase() || "?"
+                )}
+              </div>
+              {avatarUploading && (
+                <div className="absolute inset-0 rounded-2xl bg-terminal-bg/70 flex items-center justify-center">
+                  <span className="text-[10px] text-git-green font-mono animate-pulse">...</span>
+                </div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
+              <button
+                type="button"
+                disabled={avatarUploading}
+                onClick={() => avatarInputRef.current?.click()}
+                className="px-3 py-1.5 rounded-lg border border-terminal-border text-xs font-mono text-text-muted hover:border-git-blue/50 hover:text-text-primary transition-colors disabled:opacity-50"
+              >
+                {avatarUploading ? "uploading..." : "$ git add avatar.jpg"}
+              </button>
+              <div className="text-[10px] text-text-faint font-mono">
+                JPEG · PNG · GIF · WebP — max 5 MB
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Basic info */}
         <div className="rounded-xl border border-terminal-border bg-terminal-surface p-5 space-y-4">
           <div className="text-text-faint text-xs border-b border-terminal-border pb-2">## Basic Info</div>
