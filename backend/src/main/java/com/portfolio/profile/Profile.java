@@ -74,6 +74,18 @@ public class Profile {
     @Column(name = "avatar_content_type", length = 50)
     private String avatarContentType;
 
+    // Resume document (phase 1: a single uploaded file). Mirrors the avatar's
+    // binary-in-DB storage so it survives ephemeral container filesystems. A
+    // future structured resume builder can sit alongside these fields.
+    @Column(name = "resume_data", columnDefinition = "bytea")
+    private byte[] resumeData;
+
+    @Column(name = "resume_content_type", length = 100)
+    private String resumeContentType;
+
+    @Column(name = "resume_filename", length = 255)
+    private String resumeFilename;
+
     @Convert(converter = TechPickListJsonConverter.class)
     @Column(name = "tech_picks", columnDefinition = "text")
     private List<TechPick> techPicks;
@@ -129,6 +141,15 @@ public class Profile {
 
     public String getAvatarContentType() { return avatarContentType; }
     public void setAvatarContentType(String avatarContentType) { this.avatarContentType = avatarContentType; }
+
+    public byte[] getResumeData() { return resumeData; }
+    public void setResumeData(byte[] resumeData) { this.resumeData = resumeData; }
+
+    public String getResumeContentType() { return resumeContentType; }
+    public void setResumeContentType(String resumeContentType) { this.resumeContentType = resumeContentType; }
+
+    public String getResumeFilename() { return resumeFilename; }
+    public void setResumeFilename(String resumeFilename) { this.resumeFilename = resumeFilename; }
 
     public List<TechPick> getTechPicks() { return techPicks; }
     public void setTechPicks(List<TechPick> techPicks) { this.techPicks = techPicks; }

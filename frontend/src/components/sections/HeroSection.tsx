@@ -2,6 +2,7 @@
 import { motion } from "framer-motion";
 import { TerminalWindow } from "@/components/ui/TerminalWindow";
 import { TypewriterText } from "@/components/ui/TypewriterText";
+import { assetUrl } from "@/lib/api";
 import type { Profile } from "@/types";
 
 function makeBootLines(handle: string, headline: string) {
@@ -147,16 +148,18 @@ export function HeroSection({ profile }: HeroSectionProps) {
                 <span className="text-text-muted">$</span>
                 git show --contact
               </a>
-              <a
-                href="/resume.pdf"
-                download
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center sm:justify-start gap-2 w-full sm:w-auto px-3 sm:px-4 py-2 rounded-lg border border-git-purple/40 bg-git-purple/10 text-git-purple text-xs sm:text-sm font-mono hover:bg-git-purple/20 hover:border-git-purple/70 transition-colors duration-150"
-              >
-                <span className="text-text-muted">$</span>
-                git export --resume
-              </a>
+              {profile.resumeUrl && (
+                <a
+                  href={assetUrl(profile.resumeUrl)}
+                  download={profile.resumeFilename ?? "resume.pdf"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center sm:justify-start gap-2 w-full sm:w-auto px-3 sm:px-4 py-2 rounded-lg border border-git-purple/40 bg-git-purple/10 text-git-purple text-xs sm:text-sm font-mono hover:bg-git-purple/20 hover:border-git-purple/70 transition-colors duration-150"
+                >
+                  <span className="text-text-muted">$</span>
+                  git export --resume
+                </a>
+              )}
             </motion.div>
           </motion.div>
         </div>

@@ -99,6 +99,8 @@ export interface Profile {
   stash?: string[];
   currentRole?: CurrentRole;
   avatarUrl?: string;
+  resumeUrl?: string;
+  resumeFilename?: string;
   techPicks?: TechPick[];
 }
 

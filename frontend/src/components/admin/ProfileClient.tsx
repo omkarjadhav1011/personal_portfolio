@@ -29,6 +29,8 @@ interface Profile {
   stash?: string[];
   currentRole?: CurrentRole;
   avatarUrl?: string;
+  resumeUrl?: string;
+  resumeFilename?: string;
   techPicks?: TechPick[];
 }
 
@@ -41,6 +43,11 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
   const [avatarPreview, setAvatarPreview] = useState<string | undefined>(initialProfile.avatarUrl);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [resumeName, setResumeName] = useState<string | undefined>(
+    initialProfile.resumeUrl ? initialProfile.resumeFilename ?? "resume.pdf" : undefined,
+  );
+  const [resumeUploading, setResumeUploading] = useState(false);
+  const resumeInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { errors, validate } = useFormValidation(profileSchema);
@@ -91,6 +98,29 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
     } finally {
       setAvatarUploading(false);
       if (avatarInputRef.current) avatarInputRef.current.value = "";
+    }
+  }
+
+  async function handleResumeChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setResumeUploading(true);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await authFetch("/api/profile/resume", { method: "POST", body });
+      if (res.ok) {
+        const data = await res.json();
+        setResumeName(data.resumeFilename ?? file.name);
+        toast("Resume updated", "success");
+        await queryClient.invalidateQueries({ queryKey: profileKeys.detail });
+      } else {
+        const err = await res.json();
+        toast(err.error?.message ?? "Failed to upload resume", "error");
+      }
+    } finally {
+      setResumeUploading(false);
+      if (resumeInputRef.current) resumeInputRef.current.value = "";
     }
   }
 
@@ -180,6 +210,69 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
                 {avatarUploading ? "uploading…" : "$ git add avatar.jpg"}
               </button>
               <div className="text-[10px] text-text-faint font-mono">JPEG · PNG · GIF · WebP — max 5 MB · stored in database</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Resume */}
+        <div className="rounded-xl border border-terminal-border bg-terminal-surface p-5 space-y-4">
+          <div className="text-text-faint text-xs border-b border-terminal-border pb-2">
+            ## Resume <span className="text-text-faint">— powers the &quot;git export --resume&quot; button on the home page</span>
+          </div>
+          <div className="flex items-center gap-5">
+            <div className="relative shrink-0">
+              <div
+                className="w-20 h-20 rounded-2xl flex items-center justify-center font-mono text-3xl"
+                style={{
+                  background: "linear-gradient(135deg, rgb(var(--color-git-purple) / 0.2), rgb(var(--color-git-blue) / 0.15))",
+                  border: "1.5px solid rgb(var(--color-git-purple) / 0.5)",
+                  color: "rgb(var(--color-git-purple))",
+                }}
+              >
+                {resumeName ? "📄" : "∅"}
+              </div>
+              {resumeUploading && (
+                <div className="absolute inset-0 rounded-2xl bg-terminal-bg/70 flex items-center justify-center">
+                  <span className="text-[10px] text-git-purple font-mono animate-pulse">saving…</span>
+                </div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <div className="text-xs font-mono text-text-muted">
+                {resumeName ? (
+                  <span className="text-text-primary">{resumeName}</span>
+                ) : (
+                  <span className="text-text-faint">no resume uploaded yet</span>
+                )}
+              </div>
+              <input
+                ref={resumeInputRef}
+                type="file"
+                accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.pdf,.doc,.docx"
+                className="hidden"
+                onChange={handleResumeChange}
+              />
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={resumeUploading}
+                  onClick={() => resumeInputRef.current?.click()}
+                  className="px-3 py-1.5 rounded-lg border border-terminal-border text-xs font-mono text-text-muted hover:border-git-purple/50 hover:text-text-primary transition-colors disabled:opacity-50"
+                >
+                  {resumeUploading ? "uploading…" : resumeName ? "$ git add resume --force" : "$ git add resume"}
+                </button>
+                {resumeName && (
+                  <a
+                    href={assetUrl(`/api/profile/resume?v=${Date.now()}`)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 rounded-lg border border-terminal-border text-xs font-mono text-text-muted hover:border-git-blue/50 hover:text-text-primary transition-colors"
+                  >
+                    preview
+                  </a>
+                )}
+              </div>
+              <div className="text-[10px] text-text-faint font-mono">PDF · DOC · DOCX — max 5 MB · stored in database</div>
             </div>
           </div>
         </div>

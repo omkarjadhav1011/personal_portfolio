@@ -31,6 +31,8 @@ interface ProfileDto {
   stash: string[];
   currentRole: CurrentRoleDto | null;
   avatarUrl: string | null;
+  resumeUrl: string | null;
+  resumeFilename: string | null;
   techPicks: TechPick[] | null;
   updatedAt: string;
 }
@@ -70,6 +72,8 @@ function toDomainProfile(p: ProfileDto): Profile {
     stash: p.stash,
     currentRole,
     avatarUrl: p.avatarUrl ?? undefined,
+    resumeUrl: p.resumeUrl ?? undefined,
+    resumeFilename: p.resumeFilename ?? undefined,
     techPicks: p.techPicks ?? undefined,
   };
 }
