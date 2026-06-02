@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: portfolio-backend
+  datasource:
+    # JDBC URL; defaults to the local docker-compose Postgres on host port 5433.
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5433/portfolio}
+    username: portfolio
+    password: portfolio
+  jpa:
+    hibernate:
+      # Schema is owned by Flyway (db/migration). Hibernate only validates entities against it.
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
+server:
+  port: 8081
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+# JWT — override in production by setting the JWT_SECRET environment variable.
+# Env vars take precedence over this file; this literal is a local-dev fallback only.
+JWT_SECRET: dev-only-local-secret-key-not-for-production-use-min32b
+JWT_EXPIRY_HOURS: 8
