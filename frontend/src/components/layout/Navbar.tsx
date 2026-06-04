@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FileSearch, Sparkles } from "lucide-react";
 import { useScrollProgress } from "@/hooks/useScrollProgress";
@@ -28,6 +28,19 @@ export function Navbar() {
   const { progress, activeSection } = useScrollProgress();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { openInMode } = useCommandPaletteStore();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Section anchors only exist on the home page. When we're on another route
+  // (e.g. a project detail page), route home first and let Home scroll to the
+  // section once it has rendered (see useScrollToSection in Home).
+  function goTo(id: string) {
+    if (location.pathname === "/") {
+      scrollTo(id);
+    } else {
+      navigate("/", { state: { scrollTo: id } });
+    }
+  }
 
   return (
     <>
@@ -44,7 +57,7 @@ export function Navbar() {
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           {/* Logo / branch indicator */}
           <button
-            onClick={() => scrollTo("hero")}
+            onClick={() => goTo("hero")}
             className="flex items-center gap-2 font-mono text-sm hover:opacity-80 transition-opacity cursor-pointer"
           >
             <span className="text-git-green font-bold">⑂</span>
@@ -58,7 +71,7 @@ export function Navbar() {
             {NAV_SECTIONS.map((s) => (
               <button
                 key={s.id}
-                onClick={() => scrollTo(s.id)}
+                onClick={() => goTo(s.id)}
                 className={cn(
                   "px-3 py-1.5 rounded-lg transition-all duration-200",
                   activeSection === s.id
@@ -166,7 +179,7 @@ export function Navbar() {
             {NAV_SECTIONS.map((s) => (
               <button
                 key={s.id}
-                onClick={() => { scrollTo(s.id); setMobileOpen(false); }}
+                onClick={() => { goTo(s.id); setMobileOpen(false); }}
                 className={cn(
                   "w-full text-left px-4 py-3 rounded-lg text-sm transition-colors",
                   activeSection === s.id
