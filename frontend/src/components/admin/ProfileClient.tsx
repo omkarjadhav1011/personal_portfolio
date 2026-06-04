@@ -1,5 +1,18 @@
 
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
+import {
+  Image as ImageIcon,
+  FileText,
+  User,
+  GitBranch,
+  Briefcase,
+  Link2,
+  Boxes,
+  Sparkles,
+  Plus,
+  Trash2,
+  type LucideIcon,
+} from "lucide-react";
 import { FormInput, FormTextarea, FormCheckbox } from "@/components/admin/FormField";
 import { TagInput } from "@/components/admin/TagInput";
 import { TechPicksEditor } from "@/components/admin/TechPicksEditor";
@@ -32,6 +45,55 @@ interface Profile {
   resumeUrl?: string;
   resumeFilename?: string;
   techPicks?: TechPick[];
+}
+
+/**
+ * Card with a clear, color-accented header. `accent` is a git color token name
+ * (e.g. "git-green") resolved against the CSS variables in globals.css.
+ */
+function Section({
+  icon: Icon,
+  title,
+  hint,
+  accent,
+  action,
+  children,
+}: {
+  icon: LucideIcon;
+  title: string;
+  hint?: ReactNode;
+  accent: string;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section className="overflow-hidden rounded-xl border border-terminal-border bg-terminal-surface">
+      <header className="flex items-center gap-3 border-b border-terminal-border bg-terminal-bg/40 px-5 py-3">
+        <div
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+          style={{
+            color: `rgb(var(--color-${accent}))`,
+            background: `rgb(var(--color-${accent}) / 0.12)`,
+            border: `1px solid rgb(var(--color-${accent}) / 0.3)`,
+          }}
+        >
+          <Icon size={16} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h2 className="font-sans text-sm font-semibold leading-tight text-text-primary">
+            {title}
+          </h2>
+          {hint && (
+            <p className="mt-0.5 truncate font-mono text-[11px] leading-tight text-text-muted">
+              {hint}
+            </p>
+          )}
+        </div>
+        {action}
+      </header>
+      <div className="space-y-4 p-5">{children}</div>
+    </section>
+  );
 }
 
 export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
@@ -155,131 +217,137 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
   const role = form.currentRole ?? DEFAULT_ROLE;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="space-y-6 font-mono"
-    >
-      <div>
-        <div className="text-text-faint text-xs mb-1">$ git config --global user.profile</div>
-        <h1 className="text-xl font-bold text-text-primary">Profile</h1>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-mono">
+      {/* Page header */}
+      <div className="mb-6">
+        <div className="mb-1 font-mono text-xs text-text-faint">
+          $ git config --global user.profile
+        </div>
+        <h1 className="font-sans text-2xl font-bold text-text-primary">Profile</h1>
+        <p className="mt-1 font-sans text-sm text-text-muted">
+          Edit how you appear across the public site. Changes go live on save.
+        </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
-        {/* Avatar */}
-        <div className="rounded-xl border border-terminal-border bg-terminal-surface p-5 space-y-4">
-          <div className="text-text-faint text-xs border-b border-terminal-border pb-2">## Avatar</div>
-          <div className="flex items-center gap-5">
-            <div className="relative shrink-0">
-              <div
-                className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center font-mono font-bold text-2xl"
-                style={{
-                  background: avatarPreview
-                    ? undefined
-                    : "linear-gradient(135deg, rgb(var(--color-git-green) / 0.2), rgb(var(--color-git-blue) / 0.2))",
-                  border: "1.5px solid rgb(var(--color-git-green) / 0.5)",
-                  color: "rgb(var(--color-git-green))",
-                }}
-              >
-                {avatarPreview ? (
-                  <img src={assetUrl(avatarPreview)} alt="avatar" className="w-full h-full object-cover" />
-                ) : (
-                  form.name.split(" ").map((s) => s[0]).join("").slice(0, 2).toUpperCase() || "?"
+      <form onSubmit={handleSubmit} className="mx-auto max-w-3xl space-y-5 pb-4">
+        {/* Media — avatar + resume side by side */}
+        <div className="grid gap-5 md:grid-cols-2">
+          <Section icon={ImageIcon} title="Avatar" accent="git-green">
+            <div className="flex items-center gap-5">
+              <div className="relative shrink-0">
+                <div
+                  className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl font-mono text-2xl font-bold"
+                  style={{
+                    background: avatarPreview
+                      ? undefined
+                      : "linear-gradient(135deg, rgb(var(--color-git-green) / 0.2), rgb(var(--color-git-blue) / 0.2))",
+                    border: "1.5px solid rgb(var(--color-git-green) / 0.5)",
+                    color: "rgb(var(--color-git-green))",
+                  }}
+                >
+                  {avatarPreview ? (
+                    <img src={assetUrl(avatarPreview)} alt="avatar" className="h-full w-full object-cover" />
+                  ) : (
+                    form.name.split(" ").map((s) => s[0]).join("").slice(0, 2).toUpperCase() || "?"
+                  )}
+                </div>
+                {avatarUploading && (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-terminal-bg/70">
+                    <span className="animate-pulse font-mono text-[10px] text-git-green">saving…</span>
+                  </div>
                 )}
               </div>
-              {avatarUploading && (
-                <div className="absolute inset-0 rounded-2xl bg-terminal-bg/70 flex items-center justify-center">
-                  <span className="text-[10px] text-git-green font-mono animate-pulse">saving…</span>
-                </div>
-              )}
-            </div>
-            <div className="space-y-2">
-              <input
-                ref={avatarInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/gif,image/webp"
-                className="hidden"
-                onChange={handleAvatarChange}
-              />
-              <button
-                type="button"
-                disabled={avatarUploading}
-                onClick={() => avatarInputRef.current?.click()}
-                className="px-3 py-1.5 rounded-lg border border-terminal-border text-xs font-mono text-text-muted hover:border-git-blue/50 hover:text-text-primary transition-colors disabled:opacity-50"
-              >
-                {avatarUploading ? "uploading…" : "$ git add avatar.jpg"}
-              </button>
-              <div className="text-[10px] text-text-faint font-mono">JPEG · PNG · GIF · WebP — max 5 MB · stored in database</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Resume */}
-        <div className="rounded-xl border border-terminal-border bg-terminal-surface p-5 space-y-4">
-          <div className="text-text-faint text-xs border-b border-terminal-border pb-2">
-            ## Resume <span className="text-text-faint">— powers the &quot;git export --resume&quot; button on the home page</span>
-          </div>
-          <div className="flex items-center gap-5">
-            <div className="relative shrink-0">
-              <div
-                className="w-20 h-20 rounded-2xl flex items-center justify-center font-mono text-3xl"
-                style={{
-                  background: "linear-gradient(135deg, rgb(var(--color-git-purple) / 0.2), rgb(var(--color-git-blue) / 0.15))",
-                  border: "1.5px solid rgb(var(--color-git-purple) / 0.5)",
-                  color: "rgb(var(--color-git-purple))",
-                }}
-              >
-                {resumeName ? "📄" : "∅"}
-              </div>
-              {resumeUploading && (
-                <div className="absolute inset-0 rounded-2xl bg-terminal-bg/70 flex items-center justify-center">
-                  <span className="text-[10px] text-git-purple font-mono animate-pulse">saving…</span>
-                </div>
-              )}
-            </div>
-            <div className="space-y-2">
-              <div className="text-xs font-mono text-text-muted">
-                {resumeName ? (
-                  <span className="text-text-primary">{resumeName}</span>
-                ) : (
-                  <span className="text-text-faint">no resume uploaded yet</span>
-                )}
-              </div>
-              <input
-                ref={resumeInputRef}
-                type="file"
-                accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.pdf,.doc,.docx"
-                className="hidden"
-                onChange={handleResumeChange}
-              />
-              <div className="flex items-center gap-2">
+              <div className="space-y-2">
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  className="hidden"
+                  onChange={handleAvatarChange}
+                />
                 <button
                   type="button"
-                  disabled={resumeUploading}
-                  onClick={() => resumeInputRef.current?.click()}
-                  className="px-3 py-1.5 rounded-lg border border-terminal-border text-xs font-mono text-text-muted hover:border-git-purple/50 hover:text-text-primary transition-colors disabled:opacity-50"
+                  disabled={avatarUploading}
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="rounded-lg border border-terminal-border px-3 py-1.5 font-mono text-xs text-text-muted transition-colors hover:border-git-blue/50 hover:text-text-primary disabled:opacity-50"
                 >
-                  {resumeUploading ? "uploading…" : resumeName ? "$ git add resume --force" : "$ git add resume"}
+                  {avatarUploading ? "uploading…" : "$ git add avatar.jpg"}
                 </button>
-                {resumeName && (
-                  <a
-                    href={assetUrl(`/api/profile/resume?v=${Date.now()}`)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 py-1.5 rounded-lg border border-terminal-border text-xs font-mono text-text-muted hover:border-git-blue/50 hover:text-text-primary transition-colors"
-                  >
-                    preview
-                  </a>
+                <div className="font-mono text-[10px] text-text-faint">
+                  JPEG · PNG · GIF · WebP — max 5 MB
+                </div>
+              </div>
+            </div>
+          </Section>
+
+          <Section
+            icon={FileText}
+            title="Resume"
+            accent="git-purple"
+            hint={'powers the "git export --resume" button'}
+          >
+            <div className="flex items-center gap-5">
+              <div className="relative shrink-0">
+                <div
+                  className="flex h-20 w-20 items-center justify-center rounded-2xl font-mono text-3xl"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, rgb(var(--color-git-purple) / 0.2), rgb(var(--color-git-blue) / 0.15))",
+                    border: "1.5px solid rgb(var(--color-git-purple) / 0.5)",
+                    color: "rgb(var(--color-git-purple))",
+                  }}
+                >
+                  {resumeName ? "📄" : "∅"}
+                </div>
+                {resumeUploading && (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-terminal-bg/70">
+                    <span className="animate-pulse font-mono text-[10px] text-git-purple">saving…</span>
+                  </div>
                 )}
               </div>
-              <div className="text-[10px] text-text-faint font-mono">PDF · DOC · DOCX — max 5 MB · stored in database</div>
+              <div className="space-y-2">
+                <div className="font-mono text-xs text-text-muted">
+                  {resumeName ? (
+                    <span className="text-text-primary">{resumeName}</span>
+                  ) : (
+                    <span className="text-text-faint">no resume uploaded yet</span>
+                  )}
+                </div>
+                <input
+                  ref={resumeInputRef}
+                  type="file"
+                  accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.pdf,.doc,.docx"
+                  className="hidden"
+                  onChange={handleResumeChange}
+                />
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={resumeUploading}
+                    onClick={() => resumeInputRef.current?.click()}
+                    className="rounded-lg border border-terminal-border px-3 py-1.5 font-mono text-xs text-text-muted transition-colors hover:border-git-purple/50 hover:text-text-primary disabled:opacity-50"
+                  >
+                    {resumeUploading ? "uploading…" : resumeName ? "$ git add resume --force" : "$ git add resume"}
+                  </button>
+                  {resumeName && (
+                    <a
+                      href={assetUrl(`/api/profile/resume?v=${Date.now()}`)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-lg border border-terminal-border px-3 py-1.5 font-mono text-xs text-text-muted transition-colors hover:border-git-blue/50 hover:text-text-primary"
+                    >
+                      preview
+                    </a>
+                  )}
+                </div>
+                <div className="font-mono text-[10px] text-text-faint">PDF · DOC · DOCX — max 5 MB</div>
+              </div>
             </div>
-          </div>
+          </Section>
         </div>
 
         {/* Basic info */}
-        <div className="rounded-xl border border-terminal-border bg-terminal-surface p-5 space-y-4">
-          <div className="text-text-faint text-xs border-b border-terminal-border pb-2">## Basic Info</div>
+        <Section icon={User} title="Basic Info" accent="git-blue">
           <div className="grid grid-cols-2 gap-3">
             <FormInput label="name" value={form.name} onChange={(e) => field("name", e.target.value)} error={errors.name} required />
             <FormInput label="handle" value={form.handle} onChange={(e) => field("handle", e.target.value)} error={errors.handle} required placeholder="omkarjadhav" />
@@ -290,23 +358,24 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
             <FormInput label="email" type="email" value={form.email} onChange={(e) => field("email", e.target.value)} error={errors.email} required />
             <FormInput label="location" value={form.location} onChange={(e) => field("location", e.target.value)} error={errors.location} required />
           </div>
-        </div>
+        </Section>
 
         {/* Git status */}
-        <div className="rounded-xl border border-terminal-border bg-terminal-surface p-5 space-y-4">
-          <div className="text-text-faint text-xs border-b border-terminal-border pb-2">## Git Status</div>
+        <Section icon={GitBranch} title="Git Status" accent="git-green">
           <div className="grid grid-cols-2 gap-3">
             <FormInput label="current branch" value={form.currentBranch} onChange={(e) => field("currentBranch", e.target.value)} error={errors.currentBranch} required placeholder="main" />
             <FormInput label="current status" value={form.currentStatus} onChange={(e) => field("currentStatus", e.target.value)} error={errors.currentStatus} required placeholder="Open to internships" />
           </div>
           <FormCheckbox label="available for work" checked={form.availableForWork} onChange={(v) => field("availableForWork", v)} />
-        </div>
+        </Section>
 
         {/* Currently working at */}
-        <div className="rounded-xl border border-terminal-border bg-terminal-surface p-5 space-y-4">
-          <div className="text-text-faint text-xs border-b border-terminal-border pb-2">
-            ## Currently Working At <span className="text-text-faint">— LinkedIn-style strip on About</span>
-          </div>
+        <Section
+          icon={Briefcase}
+          title="Currently Working At"
+          accent="git-orange"
+          hint="LinkedIn-style strip on About"
+        >
           <FormCheckbox
             label="show on profile"
             checked={role.enabled}
@@ -377,13 +446,13 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
               />
               {/* Live preview */}
               <div className="pt-2">
-                <div className="text-[10px] text-text-faint mb-2">preview:</div>
+                <div className="mb-2 font-mono text-[10px] text-text-faint">preview:</div>
                 <div
-                  className="flex items-center gap-3 p-3 rounded-lg bg-terminal-bg/60"
+                  className="flex items-center gap-3 rounded-lg bg-terminal-bg/60 p-3"
                   style={{ border: `1px solid ${role.accent || "rgb(var(--color-terminal-border))"}` }}
                 >
                   <div
-                    className="w-12 h-12 rounded-lg flex items-center justify-center font-mono font-bold text-lg overflow-hidden"
+                    className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg font-mono text-lg font-bold"
                     style={{
                       background: `linear-gradient(135deg, ${role.accent ?? DEFAULT_ACCENT}33, ${role.accent ?? DEFAULT_ACCENT}0d)`,
                       border: `1px solid ${role.accent ?? DEFAULT_ACCENT}66`,
@@ -391,14 +460,13 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
                     }}
                   >
                     {role.logoUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={role.logoUrl} alt={role.company} className="w-full h-full object-cover" />
+                      <img src={role.logoUrl} alt={role.company} className="h-full w-full object-cover" />
                     ) : (
                       role.monogram || role.company.charAt(0).toUpperCase() || "?"
                     )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs text-text-primary font-semibold truncate">{role.title || "(role)"}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-xs font-semibold text-text-primary">{role.title || "(role)"}</div>
                     <div className="text-[11px]" style={{ color: role.accent ?? DEFAULT_ACCENT }}>
                       {role.company || "(company)"}
                     </div>
@@ -410,59 +478,87 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
               </div>
             </>
           )}
-        </div>
+        </Section>
 
         {/* Socials */}
-        <div className="rounded-xl border border-terminal-border bg-terminal-surface p-5 space-y-4">
-          <div className="flex items-center justify-between border-b border-terminal-border pb-2">
-            <div className="text-text-faint text-xs">## Socials</div>
-            <button type="button" onClick={addSocial} className="text-xs text-git-green hover:underline">+ add</button>
-          </div>
+        <Section
+          icon={Link2}
+          title="Socials"
+          accent="git-blue"
+          action={
+            <button
+              type="button"
+              onClick={addSocial}
+              className="inline-flex shrink-0 items-center gap-1 font-mono text-xs text-git-green transition-colors hover:text-git-green/80"
+            >
+              <Plus size={12} /> add
+            </button>
+          }
+        >
+          {form.socials.length === 0 && (
+            <p className="font-mono text-xs text-text-faint">
+              no socials yet — click “add” to create one.
+            </p>
+          )}
           {form.socials.map((social, i) => (
-            <div key={i} className="grid grid-cols-3 gap-2 items-end">
+            <div key={i} className="grid grid-cols-3 items-end gap-2">
               <div>
-                <label className="block text-[10px] text-text-muted mb-1">label</label>
+                <label className="mb-1 block font-mono text-[10px] text-text-muted">label</label>
                 <input className={inputClass} value={social.label} onChange={(e) => updateSocial(i, "label", e.target.value)} placeholder="GitHub" />
               </div>
               <div>
-                <label className="block text-[10px] text-text-muted mb-1">url</label>
+                <label className="mb-1 block font-mono text-[10px] text-text-muted">url</label>
                 <input className={inputClass} value={social.url} onChange={(e) => updateSocial(i, "url", e.target.value)} placeholder="https://github.com/..." />
               </div>
-              <div className="flex gap-2 items-end">
+              <div className="flex items-end gap-2">
                 <div className="flex-1">
-                  <label className="block text-[10px] text-text-muted mb-1">icon key</label>
+                  <label className="mb-1 block font-mono text-[10px] text-text-muted">icon key</label>
                   <input className={inputClass} value={social.icon} onChange={(e) => updateSocial(i, "icon", e.target.value)} placeholder="github" />
                 </div>
-                <button type="button" onClick={() => removeSocial(i)} className="py-2 px-2 text-git-red text-xs hover:underline">×</button>
+                <button
+                  type="button"
+                  onClick={() => removeSocial(i)}
+                  aria-label="Remove social link"
+                  className="flex h-[34px] w-9 shrink-0 items-center justify-center rounded-lg border border-terminal-border text-text-muted transition-colors hover:border-git-red/50 hover:text-git-red"
+                >
+                  <Trash2 size={13} />
+                </button>
               </div>
             </div>
           ))}
-        </div>
+        </Section>
 
         {/* Tech I Reach For */}
-        <div className="rounded-xl border border-terminal-border bg-terminal-surface p-5 space-y-4">
-          <div className="text-text-faint text-xs border-b border-terminal-border pb-2">## Tech I Reach For</div>
+        <Section icon={Boxes} title="Tech I Reach For" accent="git-purple">
           <TechPicksEditor
             values={form.techPicks ?? []}
             onChange={(v) => field("techPicks", v)}
           />
-        </div>
+        </Section>
 
         {/* Fun facts & stash */}
-        <div className="rounded-xl border border-terminal-border bg-terminal-surface p-5 space-y-4">
-          <div className="text-text-faint text-xs border-b border-terminal-border pb-2">## Fun Facts & Stash</div>
+        <Section icon={Sparkles} title="Fun Facts & Stash" accent="git-yellow">
           <TagInput label="fun facts (one per tag)" values={form.funFacts} onChange={(v) => field("funFacts", v)} placeholder="I debug at 2am..." />
           <TagInput label="stash (hobbies/interests)" values={form.stash ?? []} onChange={(v) => field("stash", v)} placeholder="☕ Coffee-driven development" />
-        </div>
+        </Section>
 
-        <LoadingButton
-          type="submit"
-          loading={loading}
-          loadingText="Saving..."
-          className="w-full py-2.5"
-        >
-          $ git commit -m &apos;update: profile&apos;
-        </LoadingButton>
+        {/* Sticky save dock — Save is always reachable */}
+        <div className="sticky bottom-4 z-10 pt-1">
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-terminal-border bg-terminal-surface/95 px-4 py-3 shadow-terminal backdrop-blur">
+            <span className="hidden min-w-0 items-center gap-2 font-mono text-[11px] text-text-faint sm:flex">
+              <span className="text-git-green">$</span>
+              <span className="truncate">git commit -m &apos;update: profile&apos;</span>
+            </span>
+            <LoadingButton
+              type="submit"
+              loading={loading}
+              loadingText="Saving..."
+              className="shrink-0 px-6 py-2.5"
+            >
+              Save changes
+            </LoadingButton>
+          </div>
+        </div>
       </form>
     </motion.div>
   );
