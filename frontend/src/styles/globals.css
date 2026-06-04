@@ -10,7 +10,8 @@
   /* Font stacks — replace Next.js next/font CSS variables.
      Backing webfonts are loaded via <link> in index.html. */
   --font-mono: "JetBrains Mono", "Fira Code", monospace;
-  --font-sans: "Inter", system-ui, sans-serif;
+  /* GitHub's native UI font stack — matches github.com chrome/body text. */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
 
   /* Surfaces — Light theme (GitHub Light) */
   --color-terminal-bg: 255 255 255;

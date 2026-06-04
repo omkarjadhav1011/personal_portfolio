@@ -42,7 +42,16 @@ const config: Config = {
       },
       fontFamily: {
         mono: ["var(--font-mono)", "JetBrains Mono", "Fira Code", "monospace"],
-        sans: ["var(--font-sans)", "Inter", "system-ui", "sans-serif"],
+        sans: [
+          "var(--font-sans)",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Noto Sans",
+          "Helvetica",
+          "Arial",
+          "sans-serif",
+        ],
       },
       fontSize: {
         "2xs": ["0.625rem", { lineHeight: "1rem" }],
