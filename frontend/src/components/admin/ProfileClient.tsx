@@ -68,19 +68,19 @@ function Section({
 }) {
   return (
     <section className="overflow-hidden rounded-xl border border-terminal-border bg-terminal-surface">
-      <header className="flex items-center gap-3 border-b border-terminal-border bg-terminal-bg/40 px-5 py-3">
+      <header className="flex items-center gap-3 border-b border-terminal-border bg-terminal-bg/40 px-6 py-4">
         <div
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
           style={{
             color: `rgb(var(--color-${accent}))`,
             background: `rgb(var(--color-${accent}) / 0.12)`,
             border: `1px solid rgb(var(--color-${accent}) / 0.3)`,
           }}
         >
-          <Icon size={16} />
+          <Icon size={17} />
         </div>
         <div className="min-w-0 flex-1">
-          <h2 className="font-sans text-sm font-semibold leading-tight text-text-primary">
+          <h2 className="font-sans text-base font-semibold leading-tight text-text-primary">
             {title}
           </h2>
           {hint && (
@@ -91,7 +91,7 @@ function Section({
         </div>
         {action}
       </header>
-      <div className="space-y-4 p-5">{children}</div>
+      <div className="space-y-5 p-6">{children}</div>
     </section>
   );
 }
@@ -212,7 +212,7 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
   }
 
   const inputClass =
-    "w-full bg-terminal-bg border border-terminal-border rounded-lg px-3 py-2 font-mono text-xs text-text-primary placeholder-text-faint outline-none focus:border-git-blue/50 focus-visible:ring-1 focus-visible:ring-git-blue/20 transition-colors";
+    "w-full bg-terminal-bg border border-terminal-border rounded-lg px-3 py-2.5 font-mono text-[13px] text-text-primary placeholder-text-faint outline-none focus:border-git-blue/50 focus-visible:ring-1 focus-visible:ring-git-blue/20 transition-colors";
 
   const role = form.currentRole ?? DEFAULT_ROLE;
 
@@ -229,9 +229,9 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="mx-auto max-w-3xl space-y-5 pb-4">
+      <form onSubmit={handleSubmit} className="mx-auto max-w-3xl space-y-6 pb-4">
         {/* Media — avatar + resume side by side */}
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2">
           <Section icon={ImageIcon} title="Avatar" accent="git-green">
             <div className="flex items-center gap-5">
               <div className="relative shrink-0">
@@ -348,13 +348,13 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
 
         {/* Basic info */}
         <Section icon={User} title="Basic Info" accent="git-blue">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <FormInput label="name" value={form.name} onChange={(e) => field("name", e.target.value)} error={errors.name} required />
             <FormInput label="handle" value={form.handle} onChange={(e) => field("handle", e.target.value)} error={errors.handle} required placeholder="omkarjadhav" />
           </div>
           <FormInput label="headline" value={form.headline} onChange={(e) => field("headline", e.target.value)} error={errors.headline} required />
           <FormTextarea label="bio" value={form.bio} onChange={(e) => field("bio", e.target.value)} error={errors.bio} rows={5} required />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <FormInput label="email" type="email" value={form.email} onChange={(e) => field("email", e.target.value)} error={errors.email} required />
             <FormInput label="location" value={form.location} onChange={(e) => field("location", e.target.value)} error={errors.location} required />
           </div>
@@ -362,7 +362,7 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
 
         {/* Git status */}
         <Section icon={GitBranch} title="Git Status" accent="git-green">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <FormInput label="current branch" value={form.currentBranch} onChange={(e) => field("currentBranch", e.target.value)} error={errors.currentBranch} required placeholder="main" />
             <FormInput label="current status" value={form.currentStatus} onChange={(e) => field("currentStatus", e.target.value)} error={errors.currentStatus} required placeholder="Open to internships" />
           </div>
@@ -383,7 +383,7 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
           />
           {role.enabled && (
             <>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 <FormInput
                   label="role title"
                   value={role.title}
@@ -397,7 +397,7 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
                   placeholder="NonStop io Technologies"
                 />
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-4">
                 <FormInput
                   label="monogram (1-2 chars)"
                   value={role.monogram ?? ""}
@@ -418,7 +418,7 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
                   placeholder="https://nonstopio.com"
                 />
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-4">
                 <FormInput
                   label="started at"
                   value={role.startedAt}
@@ -519,7 +519,7 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
                   type="button"
                   onClick={() => removeSocial(i)}
                   aria-label="Remove social link"
-                  className="flex h-[34px] w-9 shrink-0 items-center justify-center rounded-lg border border-terminal-border text-text-muted transition-colors hover:border-git-red/50 hover:text-git-red"
+                  className="flex h-[38px] w-9 shrink-0 items-center justify-center rounded-lg border border-terminal-border text-text-muted transition-colors hover:border-git-red/50 hover:text-git-red"
                 >
                   <Trash2 size={13} />
                 </button>
