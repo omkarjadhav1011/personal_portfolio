@@ -1,0 +1,51 @@
+services:
+
+  # ── Database ─────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: portfolio-postgres
+    environment:
+      POSTGRES_USER: portfolio
+      POSTGRES_PASSWORD: portfolio
+      POSTGRES_DB: portfolio
+    ports:
+      # Expose on 5433 so local dev tools can still connect without conflict.
+      - "5433:5432"
+    volumes:
+      - portfolio_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U portfolio -d portfolio"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend ──────────────────────────────────────────────────────────────
+  backend:
+    build: ./backend
+    container_name: portfolio-backend
+    ports:
+      - "8081:8081"
+    environment:
+      # Override the localhost default so the backend reaches the postgres service.
+      DATABASE_URL: jdbc:postgresql://postgres:5432/portfolio
+      # Allow requests originating from the nginx frontend container.
+      CORS_ALLOWED_ORIGIN: http://localhost:3000
+    volumes:
+      # Persist uploaded files (avatars, etc.) across container restarts.
+      - uploads_data:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Frontend ─────────────────────────────────────────────────────────────
+  frontend:
+    build: ./frontend
+    container_name: portfolio-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  portfolio_pgdata:
+  uploads_data:

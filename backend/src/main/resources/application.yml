@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: portfolio-backend
+  datasource:
+    # Prod (Render): the managed Postgres injects DB_HOST/DB_PORT/DB_NAME/DB_USERNAME/
+    # DB_PASSWORD, which compose the JDBC URL below. Docker-compose sets DATABASE_URL
+    # directly (takes precedence); local dev falls back to the host:5433 Postgres.
+    url: ${DATABASE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:portfolio}}
+    username: ${DB_USERNAME:portfolio}
+    password: ${DB_PASSWORD:portfolio}
+  jpa:
+    hibernate:
+      # Schema is owned by Flyway (db/migration). Hibernate only validates entities against it.
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
+server:
+  # Render injects PORT at runtime; locally and in docker-compose this falls back to 8081.
+  port: ${PORT:8081}
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+# JWT — override in production by setting the JWT_SECRET environment variable.
+# Env vars take precedence over this file; this literal is a local-dev fallback only.
+JWT_SECRET: dev-only-local-secret-key-not-for-production-use-min32b
+JWT_EXPIRY_HOURS: 8
+
+# CORS — Vite dev server runs on 5173. Override with CORS_ALLOWED_ORIGIN env var in production.
+CORS_ALLOWED_ORIGIN: http://localhost:5173
+
+# Admin credentials — local dev fallback only. Override both env vars in production.
+ADMIN_USERNAME: admin
+ADMIN_PASSWORD_HASH: "$2b$10$.HpAVUX/TqltNusc6NXXyObUOj3BxxcpgCf.oI7uxeM7jsp4AKsLS"

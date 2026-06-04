@@ -1,26 +1,39 @@
+# dependencies
+node_modules/
+
+# build
 target/
+dist/
+build/
+out/
+coverage/
+.next/
+*.class
+*.lst
+
+# IDE / editor
 *.iml
 .idea/
 .vscode/
-CLAUDE.md
-MIGRATION_PLAN.md
-README.md
-LICENSE
-.gitignore
-*.log
-*.tmp
-*.bak
 *.swp
-.DS_Store
-node_modules/
-dist/
-build/
-coverage/
+
+# env files
 .env
 .env.local
 .env.*.local
 *.env
 *.env.*
+
+# secrets
 *.pem
 *.key
 *.crt
+
+# misc
+CLAUDE.md
+MIGRATION_PLAN.md
+*.log
+*.tmp
+*.bak
+.DS_Store
+Thumbs.db
