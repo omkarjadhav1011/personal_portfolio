@@ -1,8 +1,8 @@
 
-import { useEffect, useRef, useState } from "react";
-import { Clock } from "lucide-react";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import type { CommitEntry, EntryType } from "@/types";
+import { Clock, GitCommitHorizontal } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 const KIND_MAP: Record<EntryType, { label: string; glyph: string }> = {
   job: { label: "Work", glyph: "⌬" },
@@ -11,7 +11,7 @@ const KIND_MAP: Record<EntryType, { label: string; glyph: string }> = {
   project: { label: "Project", glyph: "✦" },
 };
 
-const ROW_MIN_HEIGHT = 240;
+const ROW_MIN_HEIGHT = 200;
 
 const MONTHS: Record<string, number> = {
   Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
@@ -137,20 +137,22 @@ export function ExperienceSection({ timeline }: ExperienceSectionProps) {
                     className="flex items-center"
                   >
                     <ScrollReveal className="w-full">
-                      <div
-                        className="rounded-xl p-5 transition-all duration-500 bg-terminal-surface"
+                      <article
+                        className="group relative overflow-hidden rounded-xl bg-terminal-surface transition-all duration-500"
                         style={{
                           border: `1px solid ${
-                            isActive ? `${c.branchColor}8c` : "rgb(var(--color-terminal-border))"
+                            isActive ? `${c.branchColor}80` : "rgb(var(--color-terminal-border))"
                           }`,
+                          borderLeft: `3px solid ${c.branchColor}`,
                           boxShadow: isActive
-                            ? `0 0 40px ${c.branchColor}1f`
+                            ? `0 8px 30px ${c.branchColor}1f`
                             : "none",
                         }}
                       >
-                        <div className="flex items-start gap-3 mb-3">
+                        {/* Header */}
+                        <div className="flex items-start gap-3 p-5 pb-3">
                           <div
-                            className="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center font-mono text-base"
+                            className="shrink-0 w-11 h-11 rounded-lg flex items-center justify-center font-mono text-lg transition-transform duration-300 group-hover:scale-105"
                             style={{
                               background: `${c.branchColor}1f`,
                               border: `1px solid ${c.branchColor}4d`,
@@ -159,55 +161,62 @@ export function ExperienceSection({ timeline }: ExperienceSectionProps) {
                           >
                             {kind.glyph}
                           </div>
+
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                              <span
-                                className="px-1.5 py-0.5 rounded font-mono text-[10px] font-semibold uppercase tracking-wider"
-                                style={{
-                                  background: `${c.branchColor}26`,
-                                  color: c.branchColor,
-                                }}
-                              >
-                                {kind.label}
-                              </span>
-                              <span className="font-mono text-[10px] text-text-faint">
+                            <h3 className="font-semibold text-base sm:text-lg leading-snug text-text-primary font-sans">
+                              {c.title}
+                            </h3>
+                            <div className="flex items-center gap-2 flex-wrap mt-1 font-mono text-xs">
+                              <span className="text-git-blue">@ {c.org}</span>
+                              <span className="text-text-faint">·</span>
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-terminal-bg/60 text-text-muted">
+                                <GitCommitHorizontal
+                                  size={11}
+                                  style={{ color: c.branchColor }}
+                                />
                                 {c.hash}
                               </span>
                             </div>
-                            <h3 className="font-semibold text-base leading-snug text-text-primary font-sans">
-                              {c.title}
-                            </h3>
-                            <div className="text-xs mt-0.5 text-text-muted font-sans">
-                              <span className="text-git-blue">@ {c.org}</span>
-                            </div>
                           </div>
-                          <div
-                            className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-mono text-[10px] bg-terminal-bg/60 border border-terminal-border text-text-muted"
-                          >
-                            <Clock
-                              size={10}
-                              style={{ color: c.branchColor, opacity: 0.85 }}
-                            />
-                            {c.date}
-                            {c.dateEnd && ` — ${c.dateEnd}`}
+
+                          <div className="shrink-0 flex flex-col items-end gap-1.5">
+                            <span
+                              className="px-2 py-0.5 rounded-full font-mono text-[10px] font-semibold uppercase tracking-wider"
+                              style={{
+                                background: `${c.branchColor}26`,
+                                color: c.branchColor,
+                              }}
+                            >
+                              {kind.label}
+                            </span>
+                            <span className="inline-flex items-center gap-1 font-mono text-[10px] text-text-muted whitespace-nowrap">
+                              <Clock
+                                size={10}
+                                style={{ color: c.branchColor, opacity: 0.85 }}
+                              />
+                              {c.date}
+                              {c.dateEnd && ` — ${c.dateEnd}`}
+                            </span>
                           </div>
                         </div>
 
-                        <ul className="space-y-1.5" style={{ paddingLeft: 52 }}>
-                          {c.description.map((line, j) => (
-                            <li
-                              key={j}
-                              className="flex gap-2 text-[13px] leading-relaxed text-text-secondary font-sans"
-                            >
-                              <span
-                                className="shrink-0 mt-1.5 w-1 h-1 rounded-full"
-                                style={{ background: c.branchColor }}
-                              />
-                              <span>{line}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                        {/* Diff-style description */}
+                        <div className="border-t border-terminal-border/60 bg-terminal-bg/30 px-5 py-3">
+                          <ul className="space-y-1">
+                            {c.description.map((line, j) => (
+                              <li
+                                key={j}
+                                className="flex gap-2 text-[13px] leading-relaxed text-text-secondary font-sans"
+                              >
+                                <span className="shrink-0 select-none font-mono text-git-green">
+                                  +
+                                </span>
+                                <span>{line}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </article>
                     </ScrollReveal>
                   </div>
                 );
