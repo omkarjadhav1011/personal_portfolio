@@ -43,12 +43,12 @@ function AIBubble({ message }: { message: AIMessage }) {
   if (message.role === "user") {
     return (
       <motion.div
-        initial={{ opacity: 0, x: 12 }}
-        animate={{ opacity: 1, x: 0 }}
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.18 }}
         className="flex justify-end"
       >
-        <div className="max-w-[85%] px-3 py-2 rounded-xl rounded-br-sm bg-git-green/10 border border-git-green/20 text-text-primary text-xs leading-relaxed">
+        <div className="max-w-[80%] px-3.5 py-2 rounded-2xl rounded-br-md bg-git-green/10 text-text-primary text-xs leading-relaxed">
           {message.content}
         </div>
       </motion.div>
@@ -56,33 +56,27 @@ function AIBubble({ message }: { message: AIMessage }) {
   }
   return (
     <motion.div
-      initial={{ opacity: 0, x: -12 }}
-      animate={{ opacity: 1, x: 0 }}
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.18 }}
-      className="flex justify-start"
+      className="text-xs text-text-secondary leading-relaxed"
     >
-      <div className="max-w-[92%] px-3 py-2.5 rounded-xl rounded-bl-sm bg-terminal-surface border border-terminal-border text-xs text-text-secondary leading-relaxed">
-        <InlineMarkdown content={message.content} />
-      </div>
+      <InlineMarkdown content={message.content} />
     </motion.div>
   );
 }
 
 function TypingIndicator() {
   return (
-    <div className="flex justify-start">
-      <div className="px-3 py-2.5 rounded-xl rounded-bl-sm bg-terminal-surface border border-terminal-border">
-        <div className="flex gap-1 items-center h-3">
-          {[0, 1, 2].map((i) => (
-            <motion.span
-              key={i}
-              className="w-1.5 h-1.5 rounded-full bg-git-green/50"
-              animate={{ opacity: [0.3, 1, 0.3], y: [0, -2, 0] }}
-              transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15 }}
-            />
-          ))}
-        </div>
-      </div>
+    <div className="flex gap-1 items-center h-4">
+      {[0, 1, 2].map((i) => (
+        <motion.span
+          key={i}
+          className="w-1.5 h-1.5 rounded-full bg-git-green/50"
+          animate={{ opacity: [0.3, 1, 0.3], y: [0, -2, 0] }}
+          transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15 }}
+        />
+      ))}
     </div>
   );
 }
@@ -341,50 +335,34 @@ export function CommandPalette() {
                       >
                         {messages.length === 0 && !isTyping ? (
                           /* Empty state: suggested prompts */
-                          <div className="space-y-3">
-                            <Link
-                              to="/recruiter"
-                              onClick={() => setOpen(false)}
-                              className="group flex items-center gap-3 px-3 py-2.5 rounded-lg bg-git-green/5 border border-git-green/30 hover:bg-git-green/10 transition-colors cursor-pointer"
-                            >
-                              <FileSearch size={14} className="text-git-green shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-1.5 text-xs font-semibold text-git-green">
-                                  Recruiter mode
-                                  <span className="text-[9px] px-1 py-px rounded bg-git-green/20 border border-git-green/30 uppercase tracking-wider">
-                                    new
-                                  </span>
-                                </div>
-                                <p className="text-[11px] text-text-muted leading-snug truncate">
-                                  Paste a JD → get matched projects + a tailored pitch
-                                </p>
-                              </div>
-                              <ChevronRight
-                                size={14}
-                                className="text-git-green/60 group-hover:text-git-green group-hover:translate-x-0.5 transition-all shrink-0"
-                              />
-                            </Link>
-                            <div className="flex items-center gap-2 pt-1">
-                              <Sparkles size={12} className="text-git-green/60" />
-                              <p className="text-xs text-text-faint">
-                                …or ask me anything about this developer:
-                              </p>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div className="space-y-4 py-1">
+                            <p className="text-xs text-text-muted leading-relaxed">
+                              Ask me anything about Omkar&apos;s skills, projects, or background.
+                            </p>
+                            <div className="space-y-0.5">
                               {AI_PROMPTS.map((prompt) => (
                                 <button
                                   key={prompt}
                                   onClick={() => handlePromptClick(prompt)}
-                                  className="text-left px-3 py-2 rounded-lg text-xs bg-terminal-bg border border-terminal-border text-text-muted hover:text-text-primary hover:border-git-green/30 hover:bg-terminal-surface transition-all duration-150 cursor-pointer leading-snug"
+                                  className="block w-full text-left px-3 py-2 rounded-lg text-xs text-text-muted hover:text-text-primary hover:bg-terminal-surface transition-colors cursor-pointer"
                                 >
                                   {prompt}
                                 </button>
                               ))}
                             </div>
+                            <Link
+                              to="/recruiter"
+                              onClick={() => setOpen(false)}
+                              className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-text-faint hover:text-git-green hover:bg-terminal-surface transition-colors cursor-pointer"
+                            >
+                              <FileSearch size={13} className="text-git-green/60 shrink-0" />
+                              <span className="flex-1 truncate">Recruiter mode — paste a JD for matched projects</span>
+                              <ChevronRight size={13} className="shrink-0" />
+                            </Link>
                           </div>
                         ) : (
                           /* Chat messages */
-                          <div className="space-y-2.5">
+                          <div className="space-y-4">
                             {messages.map((msg) => (
                               <AIBubble key={msg.id} message={msg} />
                             ))}
@@ -426,7 +404,7 @@ export function CommandPalette() {
                       <button
                         onClick={handleSend}
                         disabled={!localInput.trim() || isTyping}
-                        className="p-1 text-text-faint hover:text-git-green disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer shrink-0"
+                        className="shrink-0 p-1 text-text-faint hover:text-git-green disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
                         aria-label="Send message"
                       >
                         <Send size={14} />
