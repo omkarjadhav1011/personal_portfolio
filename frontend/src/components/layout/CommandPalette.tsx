@@ -90,7 +90,7 @@ function TypingIndicator() {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function CommandPalette() {
-  const { open, mode, setOpen, setMode } = useCommandPaletteStore();
+  const { open, mode, setOpen } = useCommandPaletteStore();
   const { history, submit, navigateHistory } = useTerminal();
   // AI mode — commented out for future use
   // const { messages, isTyping, ask, clearChat } = useAI();
@@ -222,68 +222,23 @@ export function CommandPalette() {
                       <span className="w-3 h-3 rounded-full bg-dot-green" />
                     </div>
 
-                    {/* Mode tabs */}
-                    <div className="flex items-center gap-1 bg-terminal-bg rounded-lg p-1">
-                      <button
-                        onClick={() => setMode("terminal")}
-                        className={cn(
-                          "flex items-center gap-1.5 px-3 py-1 rounded-md text-xs transition-all duration-200 cursor-pointer select-none",
-                          mode === "terminal"
-                            ? "bg-terminal-surface text-text-primary shadow-sm border border-terminal-border"
-                            : "text-text-faint hover:text-text-muted"
-                        )}
-                      >
-                        <Terminal size={11} />
-                        Terminal
-                      </button>
-                      {/* AI mode — commented out for future use */}
-                      {/* <button
-                        onClick={() => setMode("ai")}
-                        className={cn(
-                          "flex items-center gap-1.5 px-3 py-1 rounded-md text-xs transition-all duration-200 cursor-pointer select-none",
-                          mode === "ai"
-                            ? "bg-git-green/10 text-git-green border border-git-green/30"
-                            : "text-text-faint hover:text-text-muted"
-                        )}
-                      >
-                        <Sparkles size={11} />
-                        Ask AI
-                      </button> */}
+                    {/* Title */}
+                    <div className="flex items-center gap-1.5 text-text-muted text-xs select-none">
+                      <Terminal size={11} className="text-git-green/70" />
+                      terminal
                     </div>
 
-                    {/* Right actions */}
-                    <div className="flex items-center gap-2">
-                      {/* AI mode — commented out for future use */}
-                      {/* {mode === "ai" && messages.length > 0 && (
-                        <button
-                          onClick={clearChat}
-                          className="text-text-faint hover:text-text-muted transition-colors cursor-pointer"
-                          title="Clear chat"
-                        >
-                          <RotateCcw size={12} />
-                        </button>
-                      )} */}
-                      <button
-                        onClick={() => setOpen(false)}
-                        className="text-text-faint hover:text-text-muted text-xs px-1 transition-colors cursor-pointer"
-                      >
-                        ESC
-                      </button>
-                    </div>
+                    {/* Close */}
+                    <button
+                      onClick={() => setOpen(false)}
+                      className="text-text-faint hover:text-text-muted text-xs px-1 transition-colors cursor-pointer"
+                    >
+                      ESC
+                    </button>
                   </div>
 
                   {/* ── Content area ──────────────────────────────────────── */}
-                  <AnimatePresence mode="wait">
-                    {/* AI mode removed — terminal panel always rendered */}
-                    {mode === "terminal" && (
-                      <motion.div
-                        key="terminal"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.1 }}
-                        className="min-h-[160px] max-h-[calc(100vh-180px)] sm:max-h-72 overflow-y-auto p-4 space-y-3 text-sm flex-1"
-                      >
+                  <div className="min-h-[160px] max-h-[calc(100vh-180px)] sm:max-h-72 overflow-y-auto p-4 space-y-3 text-sm flex-1">
                         {history.length === 0 && (
                           <div className="space-y-3">
                             <p className="text-text-faint text-xs">
@@ -338,9 +293,7 @@ export function CommandPalette() {
                           </div>
                         ))}
                         <div ref={terminalBottomRef} />
-                      </motion.div>
-                    )}
-                    {/* AI mode — commented out for future use
+                  {/* AI mode panel — commented out for future use
                       <motion.div
                         key="ai"
                         initial={{ opacity: 0 }}
@@ -388,14 +341,10 @@ export function CommandPalette() {
                         )}
                       </motion.div>
                     */}
-                  </AnimatePresence>
+                  </div>
 
                   {/* ── Input bar ─────────────────────────────────────────── */}
                   <div className="flex items-center gap-2 px-4 py-3 border-t border-terminal-border bg-terminal-bg">
-                    {/* AI mode prefix — commented out for future use */}
-                    {/* {mode === "ai" ? (
-                      <Sparkles size={14} className="text-git-green/60 shrink-0" />
-                    ) : ( ... )} */}
                     <span className="text-git-green text-sm shrink-0 select-none">$</span>
 
                     <input
@@ -404,30 +353,18 @@ export function CommandPalette() {
                       onChange={(e) => setLocalInput(e.target.value)}
                       onKeyDown={handleKeyDown}
                       placeholder="git checkout projects"
-                      // AI mode placeholder: "Ask me anything about Omkar..."
-                      // AI mode disabled while typing: disabled={mode === "ai" && isTyping}
-                      className="flex-1 bg-transparent text-sm text-text-primary placeholder-text-faint outline-none focus-visible:ring-1 focus-visible:ring-git-green/40 rounded font-mono disabled:opacity-50"
+                      className="flex-1 bg-transparent text-sm text-text-primary placeholder-text-faint outline-none focus-visible:ring-1 focus-visible:ring-git-green/40 rounded font-mono"
                       autoComplete="off"
                       spellCheck={false}
                     />
 
                     <span className="w-2 h-4 bg-git-green animate-cursor-blink shrink-0" />
-                    {/* AI mode send button — commented out for future use */}
-                    {/* <button
-                      onClick={handleSend}
-                      disabled={!localInput.trim() || isTyping}
-                      className="shrink-0 p-1 text-text-faint hover:text-git-green disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                      aria-label="Send message"
-                    >
-                      <Send size={14} />
-                    </button> */}
                   </div>
 
                   {/* ── Footer hint ───────────────────────────────────────── */}
                   <div className="flex items-center justify-between px-4 py-1.5 bg-terminal-surface border-t border-terminal-border">
                     <span className="text-2xs text-text-faint">
                       Arrow Up/Down to navigate history
-                      {/* AI mode hint: "Powered by portfolio knowledge base" */}
                     </span>
                     <span className="text-2xs text-text-faint">
                       <kbd className="px-1 py-0.5 rounded bg-terminal-bg border border-terminal-border text-2xs">
