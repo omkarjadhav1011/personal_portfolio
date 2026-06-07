@@ -2,9 +2,12 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileSearch, Sparkles } from "lucide-react";
+import { FileSearch } from "lucide-react";
+// Sparkles — used by the commented-out AI trigger; restore when re-enabling AI
+// import { FileSearch, Sparkles } from "lucide-react";
 import { useScrollProgress } from "@/hooks/useScrollProgress";
-import { useCommandPaletteStore } from "@/store/commandPalette";
+// useCommandPaletteStore — used by the commented-out AI trigger; restore when re-enabling AI
+// import { useCommandPaletteStore } from "@/store/commandPalette";
 import { profile as staticProfile } from "@/data/profile";
 import { useProfile } from "@/api/profile";
 import { cn } from "@/lib/utils";
@@ -27,7 +30,8 @@ export function Navbar() {
   const profile = profileData ?? staticProfile;
   const { progress, activeSection } = useScrollProgress();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { openInMode } = useCommandPaletteStore();
+  // openInMode — used by the commented-out AI trigger; restore when re-enabling AI
+  // const { openInMode } = useCommandPaletteStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -104,8 +108,9 @@ export function Navbar() {
               <ThemeToggle />
             </div>
 
+            {/* AI trigger — commented out for future use */}
             {/* Prominent clickable AI trigger — opens palette in AI mode */}
-            <button
+            {/* <button
               onClick={() => openInMode("ai")}
               className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-terminal-border bg-terminal-surface hover:border-git-green/50 hover:bg-git-green/5 text-text-faint hover:text-text-muted text-xs font-mono transition-all duration-200 group cursor-pointer"
               aria-label="Open AI assistant (Ctrl+K)"
@@ -126,7 +131,7 @@ export function Navbar() {
                   K
                 </kbd>
               </div>
-            </button>
+            </button> */}
 
             {/* Mobile hamburger */}
             <button
@@ -153,14 +158,14 @@ export function Navbar() {
             exit={{ opacity: 0, y: -16, transition: { duration: 0.2, ease: "easeIn" } }}
             className="fixed top-14 left-0 right-0 z-40 bg-terminal-bg/95 backdrop-blur-md border-b border-terminal-border p-4 font-mono space-y-1 md:hidden"
           >
-            {/* AI trigger */}
-            <button
+            {/* AI trigger — commented out for future use */}
+            {/* <button
               onClick={() => { openInMode("ai"); setMobileOpen(false); }}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-git-green bg-git-green/5 border border-git-green/20 hover:bg-git-green/10 transition-colors cursor-pointer"
             >
               <Sparkles size={14} className="text-git-green/70" />
               <span>Ask AI about this developer</span>
-            </button>
+            </button> */}
 
             <Link
               to="/recruiter"

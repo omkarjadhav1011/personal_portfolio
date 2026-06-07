@@ -4,7 +4,8 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { CommandPalette } from "@/components/layout/CommandPalette";
 import { StatusBar } from "@/components/layout/StatusBar";
-import { FloatingAIButton } from "@/components/ui/FloatingAIButton";
+// AI assistant — commented out for future use
+// import { FloatingAIButton } from "@/components/ui/FloatingAIButton";
 import { RouteFallback } from "./RouteFallback";
 
 /**
@@ -25,7 +26,8 @@ export function MainLayout() {
       </main>
       <Footer />
       <StatusBar />
-      <FloatingAIButton />
+      {/* AI assistant — commented out for future use */}
+      {/* <FloatingAIButton /> */}
     </>
   );
 }

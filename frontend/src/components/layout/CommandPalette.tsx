@@ -1,32 +1,36 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+// AI mode — commented out for future use
+// import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
   Terminal,
-  Sparkles,
-  Send,
-  RotateCcw,
-  FileSearch,
-  ChevronRight,
+  // AI-only icons — restore when re-enabling AI mode
+  // Sparkles,
+  // Send,
+  // RotateCcw,
+  // FileSearch,
+  // ChevronRight,
 } from "lucide-react";
 import { useTerminal } from "@/hooks/useTerminal";
-import { useAI, type AIMessage } from "@/hooks/useAI";
+// AI mode — commented out for future use
+// import { useAI, type AIMessage } from "@/hooks/useAI";
 import { useCommandPaletteStore } from "@/store/commandPalette";
 import { cn } from "@/lib/utils";
-import { InlineMarkdown } from "@/components/ui/InlineMarkdown";
+// import { InlineMarkdown } from "@/components/ui/InlineMarkdown";
 
 // ─── Suggested content ────────────────────────────────────────────────────────
 
-const AI_PROMPTS = [
-  "What are Omkar's main skills?",
-  "Tell me about his projects",
-  "Is he available to hire?",
-  "What's his educational background?",
-  "Any fun facts about him?",
-  "How can I contact him?",
-];
+// AI mode — commented out for future use
+// const AI_PROMPTS = [
+//   "What are Omkar's main skills?",
+//   "Tell me about his projects",
+//   "Is he available to hire?",
+//   "What's his educational background?",
+//   "Any fun facts about him?",
+//   "How can I contact him?",
+// ];
 
 const COMMAND_CHIPS = [
   { label: "help", cmd: "help" },
@@ -38,7 +42,8 @@ const COMMAND_CHIPS = [
 ];
 
 // ─── AI chat bubble ───────────────────────────────────────────────────────────
-
+// AI mode — commented out for future use
+/*
 function AIBubble({ message }: { message: AIMessage }) {
   if (message.role === "user") {
     return (
@@ -80,17 +85,19 @@ function TypingIndicator() {
     </div>
   );
 }
+*/
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function CommandPalette() {
   const { open, mode, setOpen, setMode } = useCommandPaletteStore();
   const { history, submit, navigateHistory } = useTerminal();
-  const { messages, isTyping, ask, clearChat } = useAI();
+  // AI mode — commented out for future use
+  // const { messages, isTyping, ask, clearChat } = useAI();
 
   const inputRef = useRef<HTMLInputElement>(null);
   const terminalBottomRef = useRef<HTMLDivElement>(null);
-  const aiBottomRef = useRef<HTMLDivElement>(null);
+  // const aiBottomRef = useRef<HTMLDivElement>(null);
   const [localInput, setLocalInput] = useState("");
 
   // Global keyboard handler — uses getState() to avoid stale closure
@@ -112,10 +119,11 @@ export function CommandPalette() {
       terminalBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [history, mode]);
 
-  useEffect(() => {
-    if (mode === "ai")
-      aiBottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isTyping, mode]);
+  // AI mode — commented out for future use
+  // useEffect(() => {
+  //   if (mode === "ai")
+  //     aiBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  // }, [messages, isTyping, mode]);
 
   // Focus input when opened or mode changes
   useEffect(() => {
@@ -136,9 +144,11 @@ export function CommandPalette() {
         if (!val) return;
         if (mode === "terminal") {
           submit(val);
-        } else {
-          ask(val);
         }
+        // AI mode — commented out for future use
+        // else {
+        //   ask(val);
+        // }
         setLocalInput("");
       } else if (mode === "terminal") {
         if (e.key === "ArrowUp") {
@@ -150,19 +160,20 @@ export function CommandPalette() {
         }
       }
     },
-    [localInput, mode, submit, ask, navigateHistory]
+    [localInput, mode, submit, navigateHistory]
   );
 
-  const handleSend = useCallback(() => {
-    const val = localInput.trim();
-    if (!val || isTyping) return;
-    ask(val);
-    setLocalInput("");
-  }, [localInput, isTyping, ask]);
+  // AI mode — commented out for future use
+  // const handleSend = useCallback(() => {
+  //   const val = localInput.trim();
+  //   if (!val || isTyping) return;
+  //   ask(val);
+  //   setLocalInput("");
+  // }, [localInput, isTyping, ask]);
 
-  function handlePromptClick(prompt: string) {
-    ask(prompt);
-  }
+  // function handlePromptClick(prompt: string) {
+  //   ask(prompt);
+  // }
 
   function handleCommandChip(cmd: string) {
     submit(cmd);
@@ -225,7 +236,8 @@ export function CommandPalette() {
                         <Terminal size={11} />
                         Terminal
                       </button>
-                      <button
+                      {/* AI mode — commented out for future use */}
+                      {/* <button
                         onClick={() => setMode("ai")}
                         className={cn(
                           "flex items-center gap-1.5 px-3 py-1 rounded-md text-xs transition-all duration-200 cursor-pointer select-none",
@@ -236,12 +248,13 @@ export function CommandPalette() {
                       >
                         <Sparkles size={11} />
                         Ask AI
-                      </button>
+                      </button> */}
                     </div>
 
                     {/* Right actions */}
                     <div className="flex items-center gap-2">
-                      {mode === "ai" && messages.length > 0 && (
+                      {/* AI mode — commented out for future use */}
+                      {/* {mode === "ai" && messages.length > 0 && (
                         <button
                           onClick={clearChat}
                           className="text-text-faint hover:text-text-muted transition-colors cursor-pointer"
@@ -249,7 +262,7 @@ export function CommandPalette() {
                         >
                           <RotateCcw size={12} />
                         </button>
-                      )}
+                      )} */}
                       <button
                         onClick={() => setOpen(false)}
                         className="text-text-faint hover:text-text-muted text-xs px-1 transition-colors cursor-pointer"
@@ -261,7 +274,8 @@ export function CommandPalette() {
 
                   {/* ── Content area ──────────────────────────────────────── */}
                   <AnimatePresence mode="wait">
-                    {mode === "terminal" ? (
+                    {/* AI mode removed — terminal panel always rendered */}
+                    {mode === "terminal" && (
                       <motion.div
                         key="terminal"
                         initial={{ opacity: 0 }}
@@ -286,7 +300,8 @@ export function CommandPalette() {
                                 </button>
                               ))}
                             </div>
-                            <p className="text-text-faint text-2xs pt-1">
+                            {/* AI mode tip — commented out for future use */}
+                            {/* <p className="text-text-faint text-2xs pt-1">
                               Tip: switch to{" "}
                               <button
                                 onClick={() => setMode("ai")}
@@ -295,7 +310,7 @@ export function CommandPalette() {
                                 Ask AI
                               </button>{" "}
                               for natural language queries about this developer.
-                            </p>
+                            </p> */}
                           </div>
                         )}
 
@@ -324,7 +339,8 @@ export function CommandPalette() {
                         ))}
                         <div ref={terminalBottomRef} />
                       </motion.div>
-                    ) : (
+                    )}
+                    {/* AI mode — commented out for future use
                       <motion.div
                         key="ai"
                         initial={{ opacity: 0 }}
@@ -334,7 +350,7 @@ export function CommandPalette() {
                         className="min-h-[160px] max-h-[calc(100vh-180px)] sm:max-h-72 overflow-y-auto p-4 flex-1"
                       >
                         {messages.length === 0 && !isTyping ? (
-                          /* Empty state: suggested prompts */
+                          // Empty state: suggested prompts
                           <div className="space-y-4 py-1">
                             <p className="text-xs text-text-muted leading-relaxed">
                               Ask me anything about Omkar&apos;s skills, projects, or background.
@@ -361,7 +377,7 @@ export function CommandPalette() {
                             </Link>
                           </div>
                         ) : (
-                          /* Chat messages */
+                          // Chat messages
                           <div className="space-y-4">
                             {messages.map((msg) => (
                               <AIBubble key={msg.id} message={msg} />
@@ -371,53 +387,47 @@ export function CommandPalette() {
                           </div>
                         )}
                       </motion.div>
-                    )}
+                    */}
                   </AnimatePresence>
 
                   {/* ── Input bar ─────────────────────────────────────────── */}
                   <div className="flex items-center gap-2 px-4 py-3 border-t border-terminal-border bg-terminal-bg">
-                    {mode === "terminal" ? (
-                      <span className="text-git-green text-sm shrink-0 select-none">$</span>
-                    ) : (
+                    {/* AI mode prefix — commented out for future use */}
+                    {/* {mode === "ai" ? (
                       <Sparkles size={14} className="text-git-green/60 shrink-0" />
-                    )}
+                    ) : ( ... )} */}
+                    <span className="text-git-green text-sm shrink-0 select-none">$</span>
 
                     <input
                       ref={inputRef}
                       value={localInput}
                       onChange={(e) => setLocalInput(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      placeholder={
-                        mode === "terminal"
-                          ? "git checkout projects"
-                          : "Ask me anything about Omkar..."
-                      }
-                      disabled={mode === "ai" && isTyping}
+                      placeholder="git checkout projects"
+                      // AI mode placeholder: "Ask me anything about Omkar..."
+                      // AI mode disabled while typing: disabled={mode === "ai" && isTyping}
                       className="flex-1 bg-transparent text-sm text-text-primary placeholder-text-faint outline-none focus-visible:ring-1 focus-visible:ring-git-green/40 rounded font-mono disabled:opacity-50"
                       autoComplete="off"
                       spellCheck={false}
                     />
 
-                    {mode === "terminal" ? (
-                      <span className="w-2 h-4 bg-git-green animate-cursor-blink shrink-0" />
-                    ) : (
-                      <button
-                        onClick={handleSend}
-                        disabled={!localInput.trim() || isTyping}
-                        className="shrink-0 p-1 text-text-faint hover:text-git-green disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                        aria-label="Send message"
-                      >
-                        <Send size={14} />
-                      </button>
-                    )}
+                    <span className="w-2 h-4 bg-git-green animate-cursor-blink shrink-0" />
+                    {/* AI mode send button — commented out for future use */}
+                    {/* <button
+                      onClick={handleSend}
+                      disabled={!localInput.trim() || isTyping}
+                      className="shrink-0 p-1 text-text-faint hover:text-git-green disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                      aria-label="Send message"
+                    >
+                      <Send size={14} />
+                    </button> */}
                   </div>
 
                   {/* ── Footer hint ───────────────────────────────────────── */}
                   <div className="flex items-center justify-between px-4 py-1.5 bg-terminal-surface border-t border-terminal-border">
                     <span className="text-2xs text-text-faint">
-                      {mode === "terminal"
-                        ? "Arrow Up/Down to navigate history"
-                        : "Powered by portfolio knowledge base"}
+                      Arrow Up/Down to navigate history
+                      {/* AI mode hint: "Powered by portfolio knowledge base" */}
                     </span>
                     <span className="text-2xs text-text-faint">
                       <kbd className="px-1 py-0.5 rounded bg-terminal-bg border border-terminal-border text-2xs">
