@@ -16,12 +16,15 @@ import com.portfolio.skill.SkillDiffRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.stereotype.Component;
+// Auto-seeding disabled — @Component commented out so this runner does NOT execute
+// on startup/rebuild. It was re-inserting deleted placeholder rows every rebuild.
+// Re-enable by uncommenting @Component (and its import) to bootstrap a fresh DB.
+// import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-@Component
+// @Component
 public class DataSeeder implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
