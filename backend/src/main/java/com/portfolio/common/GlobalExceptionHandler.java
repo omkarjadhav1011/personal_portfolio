@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * Normalises all error responses to {@code {"error":{"code":"...","message":"..."}}} so the
@@ -31,6 +32,17 @@ public class GlobalExceptionHandler {
                 .body(new ErrorBody(new ErrorDetail(
                         statusToCode(ex.getStatusCode()),
                         ex.getReason() != null ? ex.getReason() : "Request failed")));
+    }
+
+    /**
+     * A request that matches no controller mapping resolves to a missing static resource. This is
+     * an ordinary 404 (bots, scanners, and bare-URL pings hit it constantly), not a server fault —
+     * answer with a clean 404 and skip the stack trace so logs stay readable.
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorBody> handleNoResource(NoResourceFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorBody(new ErrorDetail("NOT_FOUND", "Resource not found")));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
