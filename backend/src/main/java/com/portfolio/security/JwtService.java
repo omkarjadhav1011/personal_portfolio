@@ -55,10 +55,14 @@ public class JwtService {
      * Throws {@link io.jsonwebtoken.JwtException} if the token is invalid, tampered, or expired.
      */
     public String validate(String token) {
+        return parseClaims(token).getSubject();
+    }
+
+    public Claims parseClaims(String token) {
         Jws<Claims> jws = Jwts.parser()
                 .verifyWith(key)
                 .build()
                 .parseSignedClaims(token);
-        return jws.getPayload().getSubject();
+        return jws.getPayload();
     }
 }

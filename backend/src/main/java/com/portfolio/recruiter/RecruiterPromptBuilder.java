@@ -117,6 +117,14 @@ public class RecruiterPromptBuilder {
         this.objectMapper = objectMapper;
     }
 
+    static String neutralizeDelimiters(String untrusted) {
+        if (untrusted == null) {
+            return "";
+        }
+        return untrusted.replaceAll(
+                "(?i)</?\\s*(job_description|portfolio_data|my_profile|match_analysis)\\s*>", "");
+    }
+
     public String buildMatchPrompt(PortfolioContext ctx, String jobDescription) {
         String portfolioJson;
         try {
@@ -124,7 +132,8 @@ public class RecruiterPromptBuilder {
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Failed to serialize portfolio context", e);
         }
-        return MATCH_TEMPLATE.formatted(ctx.profile().name(), portfolioJson, jobDescription);
+        return MATCH_TEMPLATE.formatted(
+                ctx.profile().name(), portfolioJson, neutralizeDelimiters(jobDescription));
     }
 
     public String buildLetterPrompt(PortfolioContext ctx, String jobDescription, MatchResult match) {
@@ -137,6 +146,6 @@ public class RecruiterPromptBuilder {
         PortfolioContext.ProfileSummary p = ctx.profile();
         return LETTER_TEMPLATE.formatted(
                 p.name(), p.headline(), p.bio(), p.location(),
-                p.availableForWork(), jobDescription, matchSummary);
+                p.availableForWork(), neutralizeDelimiters(jobDescription), matchSummary);
     }
 }

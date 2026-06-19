@@ -69,13 +69,6 @@ public class RateLimiter {
 
     /** Client IP: first x-forwarded-for entry, else x-real-ip, else the socket address. */
     public static String clientIp(HttpServletRequest request) {
-        String xff = request.getHeader("x-forwarded-for");
-        if (xff != null && !xff.isBlank()) {
-            String first = xff.split(",")[0].trim();
-            if (!first.isEmpty()) {
-                return first;
-            }
-        }
         String real = request.getHeader("x-real-ip");
         if (real != null && !real.isBlank()) {
             return real.trim();
