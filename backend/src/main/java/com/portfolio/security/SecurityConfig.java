@@ -79,14 +79,22 @@ public class SecurityConfig {
                         // OAuth2 authorization + provider callback endpoints must be reachable
                         // before any token exists. The success handler then mints the JWT.
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
-                        // Logout revokes sessions — it must be authenticated, else anyone
-                        // could force the admin's token to be invalidated (availability DoS).
-                        // Listed before the /api/auth/** permitAll so this rule wins.
-                        .requestMatchers(HttpMethod.POST, "/api/auth/logout").hasRole("ADMIN")
-                        .requestMatchers("/api/auth/**").permitAll()
+                        // Public auth endpoints — an EXPLICIT allowlist, not a blanket
+                        // /api/auth/** permit. New auth routes (logout, and the Phase 6 MFA
+                        // setup/enable/disable + mfa/verify) are therefore NOT public by
+                        // default; each must be opened here deliberately.
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/oauth/exchange").permitAll()
+                        // Everything else under /api/auth/** (incl. logout) and all of
+                        // /api/admin/** requires ADMIN — for ALL methods, and listed BEFORE the
+                        // public GET catch-all so a GET on these prefixes can never slip through.
+                        .requestMatchers("/api/auth/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // Public portfolio POSTs (contact form, chatbot, recruiter tools).
                         .requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/chat").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/recruiter/**").permitAll()
+                        // Public portfolio reads. Admin/auth GETs are already caught above.
                         .requestMatchers(HttpMethod.GET, "/**").permitAll()
                         .anyRequest().hasRole("ADMIN"))
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(

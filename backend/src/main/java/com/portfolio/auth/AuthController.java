@@ -3,12 +3,15 @@ package com.portfolio.auth;
 import com.portfolio.chatbot.RateLimiter;
 import com.portfolio.security.JwtService;
 import com.portfolio.security.JwtSessionGuard;
+import com.portfolio.security.LoginAttemptTracker;
 import com.portfolio.security.OneTimeCodeStore;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,6 +34,8 @@ import java.util.Map;
 @RequestMapping("/api/auth")
 public class AuthController {
 
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
+
     private static final String RATE_LIMIT_KEY_PREFIX = "auth-login:";
     private static final String RATE_LIMIT_USER_PREFIX = "auth-login-user:";
     private static final String RATE_LIMIT_EXCHANGE_PREFIX = "auth-exchange:";
@@ -39,6 +44,7 @@ public class AuthController {
     private final JwtSessionGuard sessionGuard;
     private final PasswordEncoder passwordEncoder;
     private final RateLimiter rateLimiter;
+    private final LoginAttemptTracker attemptTracker;
     private final OneTimeCodeStore oneTimeCodeStore;
     private final String adminUsername;
     private final String adminPasswordHash;
@@ -47,6 +53,7 @@ public class AuthController {
                           JwtSessionGuard sessionGuard,
                           PasswordEncoder passwordEncoder,
                           RateLimiter rateLimiter,
+                          LoginAttemptTracker attemptTracker,
                           OneTimeCodeStore oneTimeCodeStore,
                           @Value("${ADMIN_USERNAME:}") String adminUsername,
                           @Value("${ADMIN_PASSWORD_HASH:}") String adminPasswordHash) {
@@ -54,6 +61,7 @@ public class AuthController {
         this.sessionGuard = sessionGuard;
         this.passwordEncoder = passwordEncoder;
         this.rateLimiter = rateLimiter;
+        this.attemptTracker = attemptTracker;
         this.oneTimeCodeStore = oneTimeCodeStore;
         this.adminUsername = adminUsername;
         this.adminPasswordHash = adminPasswordHash;
@@ -66,8 +74,10 @@ public class AuthController {
     public LoginResponse login(@RequestBody(required = false) LoginRequest req,
                                HttpServletRequest request,
                                HttpServletResponse response) {
+        String ip = RateLimiter.clientIp(request);
+
         // Per-IP throttle (IP derived from the trusted X-Real-IP, not spoofable XFF).
-        RateLimiter.Result limit = rateLimiter.check(RATE_LIMIT_KEY_PREFIX + RateLimiter.clientIp(request));
+        RateLimiter.Result limit = rateLimiter.check(RATE_LIMIT_KEY_PREFIX + ip);
         if (!limit.ok()) {
             response.setHeader("Retry-After", String.valueOf(limit.retryAfterSeconds()));
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many login attempts. Please slow down.");
@@ -88,11 +98,26 @@ public class AuthController {
             response.setHeader("Retry-After", String.valueOf(userLimit.retryAfterSeconds()));
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many login attempts. Please slow down.");
         }
+
+        // Progressive lockout: after repeated FAILURES for this identity, refuse further
+        // attempts for a window (shared with the Phase 6 MFA step). Tripwire-logged.
+        LoginAttemptTracker.Result lockout = attemptTracker.check(req.username());
+        if (lockout.locked()) {
+            response.setHeader("Retry-After", String.valueOf(lockout.retryAfterSeconds()));
+            log.warn("Login blocked by lockout (too many failed attempts) ip={}", ip);
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Too many failed attempts. Please try again later.");
+        }
+
         boolean ok = req.username().equals(adminUsername)
                 && passwordEncoder.matches(req.password(), adminPasswordHash);
         if (!ok) {
+            attemptTracker.recordFailure(req.username());
+            log.warn("Failed admin login attempt ip={}", ip);
             throw unauthorized();
         }
+        attemptTracker.recordSuccess(req.username());
+        log.info("Admin login succeeded (password) ip={}", ip);
         return new LoginResponse(jwtService.generate(req.username()), jwtService.getExpirySeconds());
     }
 
@@ -105,16 +130,23 @@ public class AuthController {
     public LoginResponse exchange(@RequestBody(required = false) OAuthExchangeRequest req,
                                   HttpServletRequest request,
                                   HttpServletResponse response) {
+        String ip = RateLimiter.clientIp(request);
+
         // Same per-IP throttle as login: an attacker shouldn't be able to brute-force codes.
-        RateLimiter.Result limit = rateLimiter.check(RATE_LIMIT_EXCHANGE_PREFIX + RateLimiter.clientIp(request));
+        RateLimiter.Result limit = rateLimiter.check(RATE_LIMIT_EXCHANGE_PREFIX + ip);
         if (!limit.ok()) {
             response.setHeader("Retry-After", String.valueOf(limit.retryAfterSeconds()));
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many attempts. Please slow down.");
         }
 
         String code = req == null ? null : req.code();
-        return oneTimeCodeStore.redeem(code)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid or expired code"));
+        LoginResponse loginResponse = oneTimeCodeStore.redeem(code).orElse(null);
+        if (loginResponse == null) {
+            log.warn("OAuth code exchange failed (unknown/expired code) ip={}", ip);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid or expired code");
+        }
+        log.info("OAuth code exchanged for token ip={}", ip);
+        return loginResponse;
     }
 
     @Operation(summary = "Logout",
