@@ -13,6 +13,7 @@ const ProjectDetail = lazy(() => import("@/pages/ProjectDetail"));
 const RecruiterPage = lazy(() => import("@/pages/RecruiterPage"));
 const ScratchProjects = lazy(() => import("@/pages/ScratchProjects"));
 const Login = lazy(() => import("@/pages/admin/Login"));
+const OAuthCallback = lazy(() => import("@/pages/admin/OAuthCallback"));
 const AdminLayout = lazy(() =>
   import("@/routes/AdminLayout").then((m) => ({ default: m.AdminLayout })),
 );
@@ -41,6 +42,9 @@ export const router = createBrowserRouter([
         element: <RedirectIfAuthed />,
         children: [{ index: true, element: <Login /> }],
       },
+      // OAuth2 redirect target. Sibling of admin/login — NOT under RequireAuth (runs before
+      // a token exists) and NOT under RedirectIfAuthed (it is what sets the token).
+      { path: "admin/oauth/callback", element: <OAuthCallback /> },
       {
         path: "admin",
         element: <RequireAuth />,

@@ -1,13 +1,30 @@
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
-import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState, type FormEvent } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/auth";
-import { apiFetch, ApiError } from "@/lib/api";
+import { apiFetch, ApiError, BASE_URL } from "@/lib/api";
 
 interface LoginResponse {
   token: string;
   expiresIn: number;
+}
+
+/** Maps a backend `?error=` code from the OAuth redirect to a user-facing message. */
+function oauthErrorMessage(code: string | null): string {
+  switch (code) {
+    case "oauth_denied":
+      return "Access denied — this account is not authorized for the admin panel.";
+    case null:
+      return "";
+    default:
+      return "OAuth sign-in failed — please try again.";
+  }
+}
+
+/** Full-page redirect to the backend's OAuth2 authorization endpoint (not apiFetch). */
+function startOAuth(provider: "google" | "github") {
+  window.location.assign(`${BASE_URL}/oauth2/authorization/${provider}`);
 }
 
 /**
@@ -22,10 +39,17 @@ export default function Login() {
   const queryClient = useQueryClient();
   const setToken = useAuthStore((s) => s.setToken);
 
+  const [searchParams] = useSearchParams();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Surface an OAuth redirect error (e.g. non-allowlisted account) on the same error line.
+  useEffect(() => {
+    const message = oauthErrorMessage(searchParams.get("error"));
+    if (message) setError(message);
+  }, [searchParams]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -101,6 +125,29 @@ export default function Login() {
               {loading ? "Authenticating..." : "$ git authenticate --admin"}
             </button>
           </form>
+
+          {/* OAuth2 sign-in — full-page redirect, not apiFetch. */}
+          <div className="px-6 pb-6 space-y-3 font-mono">
+            <div className="flex items-center gap-3">
+              <span className="h-px flex-1 bg-terminal-border" />
+              <span className="text-text-faint text-[10px] uppercase tracking-wider">or</span>
+              <span className="h-px flex-1 bg-terminal-border" />
+            </div>
+            <button
+              type="button"
+              onClick={() => startOAuth("google")}
+              className="w-full py-2.5 rounded-lg border border-terminal-border bg-terminal-bg text-text-primary text-xs hover:border-git-blue/50 hover:bg-git-blue/5 transition-all duration-200"
+            >
+              $ login --with google
+            </button>
+            <button
+              type="button"
+              onClick={() => startOAuth("github")}
+              className="w-full py-2.5 rounded-lg border border-terminal-border bg-terminal-bg text-text-primary text-xs hover:border-git-blue/50 hover:bg-git-blue/5 transition-all duration-200"
+            >
+              $ login --with github
+            </button>
+          </div>
         </div>
 
         <p className="text-center text-text-faint text-xs font-mono mt-4">Portfolio Admin Panel</p>

@@ -1,7 +1,7 @@
 import { getAuthToken, clearAuthToken } from "@/store/auth";
 
 /** Backend base URL. Empty in dev — relative paths hit the Vite proxy. */
-const BASE_URL = import.meta.env.VITE_API_URL ?? "";
+export const BASE_URL = import.meta.env.VITE_API_URL ?? "";
 
 /**
  * Resolves a backend asset path (e.g. "/api/profile/avatar") to an absolute URL.
