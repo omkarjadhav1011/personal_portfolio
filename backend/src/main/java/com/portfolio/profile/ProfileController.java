@@ -87,8 +87,10 @@ public class ProfileController {
         if (file.getSize() > MAX_AVATAR_BYTES) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File must be ≤ 5 MB");
         }
+        byte[] data = file.getBytes();
+        verifyMagicBytes(data, contentType);
         Profile profile = repository.findAll().stream().findFirst().orElseGet(Profile::new);
-        profile.setAvatarData(file.getBytes());
+        profile.setAvatarData(data);
         profile.setAvatarContentType(contentType);
         repository.save(profile);
         return Map.of("avatarUrl", "/api/profile/avatar");
@@ -123,8 +125,10 @@ public class ProfileController {
         if (file.getSize() > MAX_RESUME_BYTES) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File must be ≤ 5 MB");
         }
+        byte[] data = file.getBytes();
+        verifyMagicBytes(data, contentType);
         Profile profile = repository.findAll().stream().findFirst().orElseGet(Profile::new);
-        profile.setResumeData(file.getBytes());
+        profile.setResumeData(data);
         profile.setResumeContentType(contentType);
         profile.setResumeFilename(sanitizeFilename(file.getOriginalFilename()));
         repository.save(profile);
@@ -153,6 +157,48 @@ public class ProfileController {
         headers.setContentDisposition(ContentDisposition.attachment().filename(filename).build());
         headers.setCacheControl("no-cache, no-store, must-revalidate");
         return new ResponseEntity<>(p.getResumeData(), headers, HttpStatus.OK);
+    }
+
+    /**
+     * Confirms the uploaded bytes actually start with the magic-number signature for the
+     * declared {@code Content-Type}. The browser-supplied content type is trivially spoofable
+     * (CWE-434), so we verify the real file format before persisting it.
+     */
+    private static void verifyMagicBytes(byte[] data, String contentType) {
+        boolean ok = switch (contentType) {
+            case "image/jpeg" -> startsWith(data, 0xFF, 0xD8, 0xFF);
+            case "image/png"  -> startsWith(data, 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A);
+            case "image/gif"  -> startsWith(data, 0x47, 0x49, 0x46, 0x38); // "GIF8"
+            case "image/webp" -> startsWith(data, 0x52, 0x49, 0x46, 0x46)   // "RIFF"
+                    && regionMatches(data, 8, 0x57, 0x45, 0x42, 0x50);      // "WEBP"
+            case "application/pdf" -> startsWith(data, 0x25, 0x50, 0x44, 0x46); // "%PDF"
+            // Legacy .doc is an OLE compound file.
+            case "application/msword" -> startsWith(data, 0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1);
+            // .docx is a ZIP container ("PK\x03\x04").
+            case "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ->
+                    startsWith(data, 0x50, 0x4B, 0x03, 0x04);
+            default -> false;
+        };
+        if (!ok) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "File content does not match its declared type");
+        }
+    }
+
+    private static boolean startsWith(byte[] data, int... signature) {
+        return regionMatches(data, 0, signature);
+    }
+
+    private static boolean regionMatches(byte[] data, int offset, int... signature) {
+        if (data == null || data.length < offset + signature.length) {
+            return false;
+        }
+        for (int i = 0; i < signature.length; i++) {
+            if ((data[offset + i] & 0xFF) != signature[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /** Strips any directory components a browser may include so we store a bare file name. */

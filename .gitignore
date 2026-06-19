@@ -28,6 +28,13 @@ coverage/
 *.pem
 *.key
 *.crt
+target/
+
+# IDE
+.idea/
+
+# uploaded user files (served from DB/volume, never from the repo)
+uploads/
 
 # misc
 CLAUDE.md

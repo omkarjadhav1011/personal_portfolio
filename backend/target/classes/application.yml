@@ -37,19 +37,23 @@ management:
       show-details: never
 
 springdoc:
-  swagger-ui:
-    path: /swagger-ui.html
+  # API docs & Swagger UI are OFF by default (don't expose the API surface in prod).
+  # Enable for local dev by setting SWAGGER_ENABLED=true.
   api-docs:
+    enabled: ${SWAGGER_ENABLED:false}
     path: /v3/api-docs
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:false}
+    path: /swagger-ui.html
 
-# JWT — override in production by setting the JWT_SECRET environment variable.
-# Env vars take precedence over this file; this literal is a local-dev fallback only.
-JWT_SECRET: dev-only-local-secret-key-not-for-production-use-min32b
+# JWT — REQUIRED environment variable in EVERY environment (no in-file fallback).
+# JwtService fails startup if JWT_SECRET is unset or < 32 bytes. Generate one with:
+#   openssl rand -base64 48
 JWT_EXPIRY_HOURS: 8
 
 # CORS — Vite dev server runs on 5173. Override with CORS_ALLOWED_ORIGIN env var in production.
 CORS_ALLOWED_ORIGIN: http://localhost:5173
 
-# Admin credentials — local dev fallback only. Override both env vars in production.
-ADMIN_USERNAME: admin
-ADMIN_PASSWORD_HASH: "$2b$10$.HpAVUX/TqltNusc6NXXyObUOj3BxxcpgCf.oI7uxeM7jsp4AKsLS"
+# Admin credentials — REQUIRED env vars (no in-file fallback). AuthController rejects
+# all logins when ADMIN_USERNAME / ADMIN_PASSWORD_HASH are unset. ADMIN_PASSWORD_HASH is
+# a BCrypt hash (cost 12), NOT plaintext. Set both via env / .env in every environment.

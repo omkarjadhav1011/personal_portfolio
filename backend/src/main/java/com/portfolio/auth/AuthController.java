@@ -2,6 +2,7 @@ package com.portfolio.auth;
 
 import com.portfolio.chatbot.RateLimiter;
 import com.portfolio.security.JwtService;
+import com.portfolio.security.JwtSessionGuard;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,19 +31,23 @@ import java.util.Map;
 public class AuthController {
 
     private static final String RATE_LIMIT_KEY_PREFIX = "auth-login:";
+    private static final String RATE_LIMIT_USER_PREFIX = "auth-login-user:";
 
     private final JwtService jwtService;
+    private final JwtSessionGuard sessionGuard;
     private final PasswordEncoder passwordEncoder;
     private final RateLimiter rateLimiter;
     private final String adminUsername;
     private final String adminPasswordHash;
 
     public AuthController(JwtService jwtService,
+                          JwtSessionGuard sessionGuard,
                           PasswordEncoder passwordEncoder,
                           RateLimiter rateLimiter,
                           @Value("${ADMIN_USERNAME:}") String adminUsername,
                           @Value("${ADMIN_PASSWORD_HASH:}") String adminPasswordHash) {
         this.jwtService = jwtService;
+        this.sessionGuard = sessionGuard;
         this.passwordEncoder = passwordEncoder;
         this.rateLimiter = rateLimiter;
         this.adminUsername = adminUsername;
@@ -56,6 +61,7 @@ public class AuthController {
     public LoginResponse login(@RequestBody(required = false) LoginRequest req,
                                HttpServletRequest request,
                                HttpServletResponse response) {
+        // Per-IP throttle (IP derived from the trusted X-Real-IP, not spoofable XFF).
         RateLimiter.Result limit = rateLimiter.check(RATE_LIMIT_KEY_PREFIX + RateLimiter.clientIp(request));
         if (!limit.ok()) {
             response.setHeader("Retry-After", String.valueOf(limit.retryAfterSeconds()));
@@ -69,6 +75,14 @@ public class AuthController {
         if (req == null || isBlank(req.username()) || isBlank(req.password())) {
             throw unauthorized();
         }
+
+        // Per-account throttle: caps attempts against a single username regardless of source
+        // IP, so a distributed attempt can't brute-force one account (CWE-307).
+        RateLimiter.Result userLimit = rateLimiter.check(RATE_LIMIT_USER_PREFIX + req.username());
+        if (!userLimit.ok()) {
+            response.setHeader("Retry-After", String.valueOf(userLimit.retryAfterSeconds()));
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many login attempts. Please slow down.");
+        }
         boolean ok = req.username().equals(adminUsername)
                 && passwordEncoder.matches(req.password(), adminPasswordHash);
         if (!ok) {
@@ -77,10 +91,13 @@ public class AuthController {
         return new LoginResponse(jwtService.generate(req.username()), jwtService.getExpirySeconds());
     }
 
-    @Operation(summary = "Logout", description = "No-op; the client discards its token")
+    @Operation(summary = "Logout",
+            description = "Revokes all tokens issued before now (server-side kill switch)")
     @ApiResponse(responseCode = "200", description = "OK")
     @PostMapping("/logout")
     public Map<String, Boolean> logout() {
+        // Invalidate every previously-issued token so a discarded/leaked token can't be reused.
+        sessionGuard.invalidateAll();
         return Map.of("ok", true);
     }
 

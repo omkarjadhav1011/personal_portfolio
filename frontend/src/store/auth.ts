@@ -1,10 +1,11 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
 /**
- * Admin auth state. Per the migration's locked decision the JWT is held
- * client-side and sent as `Authorization: Bearer <token>` (no cookies).
- * Persisted to localStorage so a refresh keeps the admin signed in.
+ * Admin auth state. The JWT is held in MEMORY ONLY and sent as
+ * `Authorization: Bearer <token>` (no cookies). It is intentionally NOT persisted
+ * to localStorage/sessionStorage: persisted tokens are exfiltratable by any XSS on
+ * the origin (CWE-922). The trade-off is that a full page refresh requires the admin
+ * to log in again — acceptable for a single-admin panel.
  */
 interface AuthState {
   token: string | null;
@@ -12,16 +13,11 @@ interface AuthState {
   clear: () => void;
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      token: null,
-      setToken: (token) => set({ token }),
-      clear: () => set({ token: null }),
-    }),
-    { name: "portfolio-auth" },
-  ),
-);
+export const useAuthStore = create<AuthState>()((set) => ({
+  token: null,
+  setToken: (token) => set({ token }),
+  clear: () => set({ token: null }),
+}));
 
 /** Non-React accessor so the API client can read the token outside components. */
 export const getAuthToken = (): string | null => useAuthStore.getState().token;
