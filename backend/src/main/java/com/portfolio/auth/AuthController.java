@@ -3,6 +3,7 @@ package com.portfolio.auth;
 import com.portfolio.chatbot.RateLimiter;
 import com.portfolio.security.JwtService;
 import com.portfolio.security.JwtSessionGuard;
+import com.portfolio.security.OneTimeCodeStore;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,11 +33,13 @@ public class AuthController {
 
     private static final String RATE_LIMIT_KEY_PREFIX = "auth-login:";
     private static final String RATE_LIMIT_USER_PREFIX = "auth-login-user:";
+    private static final String RATE_LIMIT_EXCHANGE_PREFIX = "auth-exchange:";
 
     private final JwtService jwtService;
     private final JwtSessionGuard sessionGuard;
     private final PasswordEncoder passwordEncoder;
     private final RateLimiter rateLimiter;
+    private final OneTimeCodeStore oneTimeCodeStore;
     private final String adminUsername;
     private final String adminPasswordHash;
 
@@ -44,12 +47,14 @@ public class AuthController {
                           JwtSessionGuard sessionGuard,
                           PasswordEncoder passwordEncoder,
                           RateLimiter rateLimiter,
+                          OneTimeCodeStore oneTimeCodeStore,
                           @Value("${ADMIN_USERNAME:}") String adminUsername,
                           @Value("${ADMIN_PASSWORD_HASH:}") String adminPasswordHash) {
         this.jwtService = jwtService;
         this.sessionGuard = sessionGuard;
         this.passwordEncoder = passwordEncoder;
         this.rateLimiter = rateLimiter;
+        this.oneTimeCodeStore = oneTimeCodeStore;
         this.adminUsername = adminUsername;
         this.adminPasswordHash = adminPasswordHash;
     }
@@ -89,6 +94,27 @@ public class AuthController {
             throw unauthorized();
         }
         return new LoginResponse(jwtService.generate(req.username()), jwtService.getExpirySeconds());
+    }
+
+    @Operation(summary = "Exchange a one-time code for a JWT",
+            description = "Redeems the single-use 60s code minted by a redirect-based login for a Bearer JWT. "
+                    + "Keeps the token out of the redirect URL.")
+    @ApiResponse(responseCode = "200", description = "Code valid; token returned")
+    @ApiResponse(responseCode = "400", description = "Unknown or expired code")
+    @PostMapping("/oauth/exchange")
+    public LoginResponse exchange(@RequestBody(required = false) OAuthExchangeRequest req,
+                                  HttpServletRequest request,
+                                  HttpServletResponse response) {
+        // Same per-IP throttle as login: an attacker shouldn't be able to brute-force codes.
+        RateLimiter.Result limit = rateLimiter.check(RATE_LIMIT_EXCHANGE_PREFIX + RateLimiter.clientIp(request));
+        if (!limit.ok()) {
+            response.setHeader("Retry-After", String.valueOf(limit.retryAfterSeconds()));
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many attempts. Please slow down.");
+        }
+
+        String code = req == null ? null : req.code();
+        return oneTimeCodeStore.redeem(code)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid or expired code"));
     }
 
     @Operation(summary = "Logout",
