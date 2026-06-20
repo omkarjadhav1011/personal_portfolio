@@ -26,6 +26,10 @@ server:
   # Render injects PORT at runtime; locally and in docker-compose this falls back to 8081.
   port: ${PORT:8081}
   shutdown: graceful
+  # Honor X-Forwarded-* behind Render's TLS proxy so the OAuth2 redirect-uri is built with
+  # https (and the public host), not the internal http://host:port. A mismatch here is the
+  # #1 cause of OAuth redirect-uri failures.
+  forward-headers-strategy: framework
 
 management:
   endpoints:
@@ -57,3 +61,14 @@ CORS_ALLOWED_ORIGIN: http://localhost:5173
 # Admin credentials — REQUIRED env vars (no in-file fallback). AuthController rejects
 # all logins when ADMIN_USERNAME / ADMIN_PASSWORD_HASH are unset. ADMIN_PASSWORD_HASH is
 # a BCrypt hash (cost 12), NOT plaintext. Set both via env / .env in every environment.
+
+# OAuth2 login (Google + GitHub) — ALL OPTIONAL. Registrations are built in code
+# (OAuth2ClientConfig) only when a provider's client-id is present, so the app boots
+# password-only with none of these set (local/test). Set per environment to enable:
+#   GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET   — Google Cloud OAuth client
+#   GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET   — GitHub OAuth App (scope read:user,user:email)
+#   OAUTH_ALLOWED_EMAILS — comma-separated allowlist; ONLY these emails may enter (fail-closed)
+#   APP_FRONTEND_URL     — SPA origin for the post-login redirect
+#                          (dev http://localhost:5173 / compose http://localhost:3000 / Vercel prod)
+#   APP_COOKIE_SECURE    — true in prod (HTTPS) so the auth-request cookie carries the Secure flag
+# Provider redirect URIs must point at {backend}/login/oauth2/code/{google|github} (see DEPLOY.md).

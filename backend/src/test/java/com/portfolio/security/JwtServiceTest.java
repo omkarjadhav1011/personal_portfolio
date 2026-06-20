@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JwtServiceTest {
 
@@ -37,5 +38,22 @@ class JwtServiceTest {
                 new JwtService("a-totally-different-secret-key-also-32-bytes-plus", 8L);
         String foreign = other.generate("omkar");
         assertThrows(JwtException.class, () -> jwt.validate(foreign));
+    }
+
+    @Test
+    void fullTokenCarriesAdminRole() {
+        String token = jwt.generate("omkar");
+        assertEquals(JwtService.ROLE_ADMIN,
+                jwt.parseClaims(token).get(JwtService.ROLE_CLAIM, String.class));
+    }
+
+    @Test
+    void preAuthTokenCarriesPreAuthRoleAndShorterTtl() {
+        String token = jwt.generatePreAuth("omkar");
+        assertEquals("omkar", jwt.validate(token));
+        assertEquals(JwtService.ROLE_PRE_AUTH,
+                jwt.parseClaims(token).get(JwtService.ROLE_CLAIM, String.class));
+        // PRE_AUTH lifetime (5 min default) is far shorter than the 8h full-token lifetime.
+        assertTrue(jwt.getPreAuthExpirySeconds() < jwt.getExpirySeconds());
     }
 }

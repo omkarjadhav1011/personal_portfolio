@@ -2,6 +2,7 @@ package com.portfolio.security;
 
 import java.util.List;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,6 +12,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
@@ -46,7 +48,12 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http, JwtService jwtService,
                                     JwtSessionGuard sessionGuard,
-                                    CorsConfigurationSource corsConfigurationSource) throws Exception {
+                                    CorsConfigurationSource corsConfigurationSource,
+                                    ObjectProvider<ClientRegistrationRepository> clientRegistrationRepository,
+                                    HttpCookieOAuth2AuthorizationRequestRepository cookieAuthRequestRepository,
+                                    GitHubEmailOAuth2UserService gitHubUserService,
+                                    OAuth2SuccessHandler oauth2SuccessHandler,
+                                    OAuth2FailureHandler oauth2FailureHandler) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(AbstractHttpConfigurer::disable)
@@ -69,20 +76,48 @@ public class SecurityConfig {
                                         + "style-src 'self' 'unsafe-inline'")))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/error").permitAll()
-                        // Logout revokes sessions — it must be authenticated, else anyone
-                        // could force the admin's token to be invalidated (availability DoS).
-                        // Listed before the /api/auth/** permitAll so this rule wins.
-                        .requestMatchers(HttpMethod.POST, "/api/auth/logout").hasRole("ADMIN")
-                        .requestMatchers("/api/auth/**").permitAll()
+                        // OAuth2 authorization + provider callback endpoints must be reachable
+                        // before any token exists. The success handler then mints the JWT.
+                        .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
+                        // Public auth endpoints — an EXPLICIT allowlist, not a blanket
+                        // /api/auth/** permit. New auth routes (logout, and the Phase 6 MFA
+                        // setup/enable/disable + mfa/verify) are therefore NOT public by
+                        // default; each must be opened here deliberately.
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/oauth/exchange").permitAll()
+                        // The MFA second-factor gate: reachable ONLY by a PRE_AUTH token (first
+                        // factor passed). A full ADMIN token doesn't have ROLE_PRE_AUTH, and a
+                        // PRE_AUTH token has ONLY this — so it can reach nothing else admin.
+                        .requestMatchers(HttpMethod.POST, "/api/auth/mfa/verify").hasRole("PRE_AUTH")
+                        // Everything else under /api/auth/** (incl. logout + MFA setup/enable/
+                        // disable) and all of /api/admin/** requires ADMIN — for ALL methods, and
+                        // listed BEFORE the public GET catch-all so a GET can never slip through.
+                        .requestMatchers("/api/auth/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // Public portfolio POSTs (contact form, chatbot, recruiter tools).
                         .requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/chat").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/recruiter/**").permitAll()
+                        // Public portfolio reads. Admin/auth GETs are already caught above.
                         .requestMatchers(HttpMethod.GET, "/**").permitAll()
                         .anyRequest().hasRole("ADMIN"))
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(
                         (request, response, authEx) ->
                                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")))
                 .addFilterBefore(new JwtAuthFilter(jwtService, sessionGuard), UsernamePasswordAuthenticationFilter.class);
+
+        // OAuth2 login is wired ONLY when a ClientRegistrationRepository exists (i.e. at least
+        // one provider's client-id is configured). Without keys the bean is absent and the chain
+        // boots password-only — so local/test runs need no OAuth credentials. The cookie-based
+        // request repository keeps the flow STATELESS (no JSESSIONID).
+        if (clientRegistrationRepository.getIfAvailable() != null) {
+            http.oauth2Login(oauth -> oauth
+                    .authorizationEndpoint(a -> a.authorizationRequestRepository(cookieAuthRequestRepository))
+                    .userInfoEndpoint(u -> u.userService(gitHubUserService)) // Google uses the default OIDC service
+                    .successHandler(oauth2SuccessHandler)
+                    .failureHandler(oauth2FailureHandler));
+        }
+
         return http.build();
     }
 

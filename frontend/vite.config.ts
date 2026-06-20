@@ -25,6 +25,16 @@ export default defineConfig({
         target: "http://localhost:8081",
         changeOrigin: true,
       },
+      // OAuth2 sign-in initiation + provider callback must reach the backend in dev
+      // (BASE_URL is empty, so the buttons navigate to same-origin /oauth2/...).
+      "/oauth2": {
+        target: "http://localhost:8081",
+        changeOrigin: true,
+      },
+      "/login/oauth2": {
+        target: "http://localhost:8081",
+        changeOrigin: true,
+      },
     },
   },
   build: {
