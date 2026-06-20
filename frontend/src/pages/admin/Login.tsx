@@ -8,6 +8,7 @@ import { apiFetch, ApiError, BASE_URL } from "@/lib/api";
 interface LoginResponse {
   token: string;
   expiresIn: number;
+  mfaRequired?: boolean;
 }
 
 /** Maps a backend `?error=` code from the OAuth redirect to a user-facing message. */
@@ -60,6 +61,11 @@ export default function Login() {
         method: "POST",
         body: JSON.stringify({ username, password }),
       });
+      if (res.mfaRequired) {
+        // First factor OK; carry the PRE_AUTH token to the verify page (not the auth store).
+        navigate("/admin/mfa/verify", { state: { preAuthToken: res.token } });
+        return;
+      }
       setToken(res.token);
       await queryClient.invalidateQueries();
       navigate("/admin");

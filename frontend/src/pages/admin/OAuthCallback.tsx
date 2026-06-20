@@ -8,6 +8,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 interface LoginResponse {
   token: string;
   expiresIn: number;
+  mfaRequired?: boolean;
 }
 
 /**
@@ -45,6 +46,11 @@ export default function OAuthCallback() {
           method: "POST",
           body: JSON.stringify({ code }),
         });
+        if (res.mfaRequired) {
+          // OAuth first factor OK; route to the second-factor page with the PRE_AUTH token.
+          navigate("/admin/mfa/verify", { state: { preAuthToken: res.token }, replace: true });
+          return;
+        }
         setToken(res.token);
         await queryClient.invalidateQueries();
         navigate("/admin", { replace: true });

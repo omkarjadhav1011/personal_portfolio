@@ -14,6 +14,8 @@ const RecruiterPage = lazy(() => import("@/pages/RecruiterPage"));
 const ScratchProjects = lazy(() => import("@/pages/ScratchProjects"));
 const Login = lazy(() => import("@/pages/admin/Login"));
 const OAuthCallback = lazy(() => import("@/pages/admin/OAuthCallback"));
+const MfaVerify = lazy(() => import("@/pages/admin/MfaVerify"));
+const MfaSetup = lazy(() => import("@/pages/admin/MfaSetup"));
 const AdminLayout = lazy(() =>
   import("@/routes/AdminLayout").then((m) => ({ default: m.AdminLayout })),
 );
@@ -45,6 +47,9 @@ export const router = createBrowserRouter([
       // OAuth2 redirect target. Sibling of admin/login — NOT under RequireAuth (runs before
       // a token exists) and NOT under RedirectIfAuthed (it is what sets the token).
       { path: "admin/oauth/callback", element: <OAuthCallback /> },
+      // MFA second-factor gate. Sibling of admin/login: runs with a PRE_AUTH token (carried in
+      // router state), before the ADMIN token exists — so it's outside both guards.
+      { path: "admin/mfa/verify", element: <MfaVerify /> },
       {
         path: "admin",
         element: <RequireAuth />,
@@ -57,6 +62,7 @@ export const router = createBrowserRouter([
               { path: "experience", element: <ExperienceAdmin /> },
               { path: "skills", element: <SkillsAdmin /> },
               { path: "profile", element: <ProfileAdmin /> },
+              { path: "mfa/setup", element: <MfaSetup /> },
             ],
           },
         ],
