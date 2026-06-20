@@ -1,14 +1,28 @@
 # dependencies
 node_modules/
 
-# next.js
-.next/
+# build
+target/
+dist/
+build/
 out/
+coverage/
+.next/
+*.class
+*.lst
+
+# IDE / editor
+*.iml
+.idea/
+.vscode/
+*.swp
 
 # env files
 .env
 .env.local
-.env*.local
+.env.*.local
+*.env
+*.env.*
 
 # build
 dist/
@@ -20,10 +34,16 @@ target/
 
 # uploaded user files (served from DB/volume, never from the repo)
 uploads/
+# secrets
+*.pem
+*.key
+*.crt
 
 # misc
+CLAUDE.md
+MIGRATION_PLAN.md
 *.log
+*.tmp
+*.bak
 .DS_Store
 Thumbs.db
-*.class
-*.lst
