@@ -56,6 +56,12 @@ springdoc:
 # JwtService fails startup if JWT_SECRET is unset or < 32 bytes. Generate one with:
 #   openssl rand -base64 48
 JWT_EXPIRY_HOURS: 8
+# Lifetime of the interim PRE_AUTH token issued between the first factor and MFA verify.
+JWT_PREAUTH_MINUTES: 5
+
+# TOTP MFA — no new env var required. The at-rest encryption key for the TOTP secret is
+# derived from JWT_SECRET (domain-separated), and MFA is OPTIONAL at startup: until the owner
+# enrolls (admin_mfa row with enabled=true), login behaves exactly as before.
 
 # CORS — Vite dev server runs on 5173. Override with CORS_ALLOWED_ORIGIN env var in production.
 CORS_ALLOWED_ORIGIN: http://localhost:5173
