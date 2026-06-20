@@ -85,9 +85,13 @@ public class SecurityConfig {
                         // default; each must be opened here deliberately.
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/oauth/exchange").permitAll()
-                        // Everything else under /api/auth/** (incl. logout) and all of
-                        // /api/admin/** requires ADMIN — for ALL methods, and listed BEFORE the
-                        // public GET catch-all so a GET on these prefixes can never slip through.
+                        // The MFA second-factor gate: reachable ONLY by a PRE_AUTH token (first
+                        // factor passed). A full ADMIN token doesn't have ROLE_PRE_AUTH, and a
+                        // PRE_AUTH token has ONLY this — so it can reach nothing else admin.
+                        .requestMatchers(HttpMethod.POST, "/api/auth/mfa/verify").hasRole("PRE_AUTH")
+                        // Everything else under /api/auth/** (incl. logout + MFA setup/enable/
+                        // disable) and all of /api/admin/** requires ADMIN — for ALL methods, and
+                        // listed BEFORE the public GET catch-all so a GET can never slip through.
                         .requestMatchers("/api/auth/**").hasRole("ADMIN")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // Public portfolio POSTs (contact form, chatbot, recruiter tools).

@@ -52,8 +52,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     throw new JwtException("Token revoked");
                 }
                 String subject = claims.getSubject();
+                // Interim PRE_AUTH tokens (first factor passed, MFA pending) grant ONLY
+                // ROLE_PRE_AUTH — never ROLE_ADMIN. Full and legacy tokens grant ROLE_ADMIN.
+                String role = claims.get(JwtService.ROLE_CLAIM, String.class);
+                String authority = JwtService.ROLE_PRE_AUTH.equals(role) ? "ROLE_PRE_AUTH" : "ROLE_ADMIN";
                 var authentication = new UsernamePasswordAuthenticationToken(
-                        subject, null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+                        subject, null, List.of(new SimpleGrantedAuthority(authority)));
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (Exception e) {

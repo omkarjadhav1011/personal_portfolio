@@ -1,5 +1,6 @@
 package com.portfolio.security;
 
+import com.portfolio.mfa.MfaService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -31,17 +32,20 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     private final OneTimeCodeStore oneTimeCodeStore;
     private final OAuthEmailAllowlist allowlist;
     private final HttpCookieOAuth2AuthorizationRequestRepository cookieRepository;
+    private final MfaService mfaService;
     private final String frontendUrl;
 
     public OAuth2SuccessHandler(JwtService jwtService,
                                 OneTimeCodeStore oneTimeCodeStore,
                                 OAuthEmailAllowlist allowlist,
                                 HttpCookieOAuth2AuthorizationRequestRepository cookieRepository,
+                                MfaService mfaService,
                                 @Value("${APP_FRONTEND_URL:http://localhost:5173}") String frontendUrl) {
         this.jwtService = jwtService;
         this.oneTimeCodeStore = oneTimeCodeStore;
         this.allowlist = allowlist;
         this.cookieRepository = cookieRepository;
+        this.mfaService = mfaService;
         this.frontendUrl = frontendUrl;
     }
 
@@ -57,6 +61,20 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             response.sendRedirect(UriComponentsBuilder.fromUriString(frontendUrl)
                     .path("/admin/login")
                     .queryParam("error", "oauth_denied")
+                    .build().toUriString());
+            return;
+        }
+
+        // If MFA is enrolled, hand back only a PRE_AUTH token (mfa=1) so the SPA routes to the
+        // verify page; the full ADMIN token is minted only after the second factor succeeds.
+        if (mfaService.isEnabled()) {
+            String preAuth = jwtService.generatePreAuth(email);
+            String code = oneTimeCodeStore.issue(preAuth, jwtService.getPreAuthExpirySeconds(), true);
+            log.info("OAuth2 sign-in accepted; MFA required, PRE_AUTH code issued");
+            response.sendRedirect(UriComponentsBuilder.fromUriString(frontendUrl)
+                    .path("/admin/oauth/callback")
+                    .queryParam("code", code)
+                    .queryParam("mfa", "1")
                     .build().toUriString());
             return;
         }

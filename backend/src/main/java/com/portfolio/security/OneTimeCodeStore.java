@@ -46,12 +46,20 @@ public class OneTimeCodeStore {
 
     /** Stores {@code (token, expiresIn)} under a fresh cryptographically-random code and returns the code. */
     public String issue(String token, long expiresIn) {
+        return issue(token, expiresIn, false);
+    }
+
+    /**
+     * Stores a {@link LoginResponse} (carrying {@code mfaRequired}) under a fresh random code.
+     * Used by the OAuth success handler to hand back either a full token or a PRE_AUTH token.
+     */
+    public String issue(String token, long expiresIn, boolean mfaRequired) {
         long now = clock.getAsLong();
         evictExpired(now);
         byte[] buf = new byte[CODE_BYTES];
         random.nextBytes(buf);
         String code = encoder.encodeToString(buf);
-        codes.put(code, new Entry(new LoginResponse(token, expiresIn), now + TTL_MS));
+        codes.put(code, new Entry(new LoginResponse(token, expiresIn, mfaRequired), now + TTL_MS));
         return code;
     }
 

@@ -1,6 +1,7 @@
 package com.portfolio.auth;
 
 import com.portfolio.chatbot.RateLimiter;
+import com.portfolio.mfa.MfaService;
 import com.portfolio.security.JwtService;
 import com.portfolio.security.JwtSessionGuard;
 import com.portfolio.security.LoginAttemptTracker;
@@ -46,6 +47,7 @@ public class AuthController {
     private final RateLimiter rateLimiter;
     private final LoginAttemptTracker attemptTracker;
     private final OneTimeCodeStore oneTimeCodeStore;
+    private final MfaService mfaService;
     private final String adminUsername;
     private final String adminPasswordHash;
 
@@ -55,6 +57,7 @@ public class AuthController {
                           RateLimiter rateLimiter,
                           LoginAttemptTracker attemptTracker,
                           OneTimeCodeStore oneTimeCodeStore,
+                          MfaService mfaService,
                           @Value("${ADMIN_USERNAME:}") String adminUsername,
                           @Value("${ADMIN_PASSWORD_HASH:}") String adminPasswordHash) {
         this.jwtService = jwtService;
@@ -63,6 +66,7 @@ public class AuthController {
         this.rateLimiter = rateLimiter;
         this.attemptTracker = attemptTracker;
         this.oneTimeCodeStore = oneTimeCodeStore;
+        this.mfaService = mfaService;
         this.adminUsername = adminUsername;
         this.adminPasswordHash = adminPasswordHash;
     }
@@ -117,6 +121,14 @@ public class AuthController {
             throw unauthorized();
         }
         attemptTracker.recordSuccess(req.username());
+
+        // First factor passed. If MFA is enrolled, hand back ONLY a short-lived PRE_AUTH token —
+        // no ADMIN access until the second factor is verified. Otherwise issue the full token.
+        if (mfaService.isEnabled()) {
+            log.info("Password factor OK; MFA required ip={}", ip);
+            return new LoginResponse(jwtService.generatePreAuth(req.username()),
+                    jwtService.getPreAuthExpirySeconds(), true);
+        }
         log.info("Admin login succeeded (password) ip={}", ip);
         return new LoginResponse(jwtService.generate(req.username()), jwtService.getExpirySeconds());
     }
