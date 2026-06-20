@@ -70,6 +70,19 @@ CORS_ALLOWED_ORIGIN: http://localhost:5173
 # all logins when ADMIN_USERNAME / ADMIN_PASSWORD_HASH are unset. ADMIN_PASSWORD_HASH is
 # a BCrypt hash (cost 12), NOT plaintext. Set both via env / .env in every environment.
 
+# Secure Document Vault ("Drive") — S3-compatible object storage. The subsystem is
+# wired in code (DriveStorageConfig) ONLY when STORAGE_ENDPOINT is set, so the app boots
+# without it (non-drive local dev / tests). Bytes are stored as ciphertext (envelope
+# encryption, a later phase); a MinIO + Postgres dump yields only ciphertext.
+# Local dev: `docker compose -f backend/docker-compose.yml up -d minio`, then set in .env:
+#   STORAGE_ENDPOINT     # e.g. http://localhost:9000 (MinIO); R2/S3 URL in prod
+#   STORAGE_BUCKET       # e.g. portfolio-drive (defaults to portfolio-drive if unset)
+#   STORAGE_ACCESS_KEY   # MinIO root user / S3 access key (compose default: minioadmin)
+#   STORAGE_SECRET_KEY   # MinIO root password / S3 secret key (compose default: minioadmin)
+#   STORAGE_REGION       # e.g. us-east-1 (MinIO ignores it; AWS S3 / R2 require it)
+# The bucket is auto-created at startup (StorageBucketInitializer); a down MinIO logs an
+# error but does NOT fail app startup.
+
 # OAuth2 login (Google + GitHub) — ALL OPTIONAL. Registrations are built in code
 # (OAuth2ClientConfig) only when a provider's client-id is present, so the app boots
 # password-only with none of these set (local/test). Set per environment to enable:
