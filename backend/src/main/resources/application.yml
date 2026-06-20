@@ -1,6 +1,8 @@
 spring:
   application:
     name: portfolio-backend
+  config:
+    import: optional:file:.env[.properties],optional:file:../.env[.properties]
   datasource:
     # Prod (Render): the managed Postgres injects DB_HOST/DB_PORT/DB_NAME/DB_USERNAME/
     # DB_PASSWORD, which compose the JDBC URL below. Docker-compose sets DATABASE_URL
