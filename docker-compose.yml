@@ -6,11 +6,14 @@ services:
     container_name: portfolio-postgres
     environment:
       POSTGRES_USER: portfolio
-      POSTGRES_PASSWORD: portfolio
+      # Strong password injected from env/.env; falls back to a dev value locally only.
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-portfolio}
       POSTGRES_DB: portfolio
     ports:
-      # Expose on 5433 so local dev tools can still connect without conflict.
-      - "5433:5432"
+      # Bind to loopback ONLY so the DB is reachable by local dev tools but never from
+      # the host's external network interfaces. Drop this mapping entirely in production
+      # (the backend reaches Postgres over the internal compose network on 5432).
+      - "127.0.0.1:5433:5432"
     volumes:
       - portfolio_pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -18,6 +21,11 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
 
   # ── Backend ──────────────────────────────────────────────────────────────
   backend:
@@ -28,14 +36,39 @@ services:
     environment:
       # Override the localhost default so the backend reaches the postgres service.
       DATABASE_URL: jdbc:postgresql://postgres:5432/portfolio
+      # Must match the postgres password above.
+      DB_PASSWORD: ${DB_PASSWORD:-portfolio}
       # Allow requests originating from the nginx frontend container.
       CORS_ALLOWED_ORIGIN: http://localhost:3000
+      # JWT signing key — REQUIRED. Read from the host env or the repo-root .env file.
+      # `:?` aborts `docker compose up` with an error if it is not set, so the backend
+      # can never start with a missing/known signing key.
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set (see .env / openssl rand -base64 48)}
+      # Admin login — REQUIRED (no in-file fallback). Set in .env / host env.
+      ADMIN_USERNAME: ${ADMIN_USERNAME:?ADMIN_USERNAME must be set}
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:?ADMIN_PASSWORD_HASH must be set (BCrypt hash)}
+      # OAuth2 login — OPTIONAL (default empty → password-only). `:-` so compose boots without
+      # them; set in .env to enable Google/GitHub sign-in. OAUTH_ALLOWED_EMAILS gates who may
+      # enter even after a valid provider sign-in; APP_FRONTEND_URL is the SPA origin to redirect
+      # back to (the nginx frontend container is on :3000).
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      OAUTH_ALLOWED_EMAILS: ${OAUTH_ALLOWED_EMAILS:-}
+      APP_FRONTEND_URL: ${APP_FRONTEND_URL:-http://localhost:3000}
+      APP_COOKIE_SECURE: ${APP_COOKIE_SECURE:-false}
     volumes:
       # Persist uploaded files (avatars, etc.) across container restarts.
       - uploads_data:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 768M
 
   # ── Frontend ─────────────────────────────────────────────────────────────
   frontend:
@@ -45,6 +78,11 @@ services:
       - "3000:80"
     depends_on:
       - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
 
 volumes:
   portfolio_pgdata:

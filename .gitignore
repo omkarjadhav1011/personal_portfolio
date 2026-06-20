@@ -24,6 +24,16 @@ coverage/
 *.env
 *.env.*
 
+# build
+dist/
+build/
+target/
+
+# IDE
+.idea/
+
+# uploaded user files (served from DB/volume, never from the repo)
+uploads/
 # secrets
 *.pem
 *.key

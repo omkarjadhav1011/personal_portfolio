@@ -15,6 +15,7 @@ import {
   Terminal,
   LogOut,
   Upload,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 import { useToast } from "./ToastProvider";
@@ -122,6 +123,19 @@ export function AdminSidebar() {
         >
           <Upload size={11} className="text-git-green" />
           View live site
+        </Link>
+        <Link
+          to="/admin/mfa/setup"
+          onClick={() => setMobileOpen(false)}
+          className="w-full flex items-center gap-2 px-2 py-1.5 rounded font-mono text-[11px] text-text-muted hover:text-text-primary hover:brightness-125 transition-all"
+          style={{
+            color: isActive(pathname, "/admin/mfa/setup")
+              ? "rgb(var(--color-git-green))"
+              : undefined,
+          }}
+        >
+          <ShieldCheck size={11} className="text-git-yellow" />
+          Enable 2FA
         </Link>
         <button
           onClick={handleLogout}
