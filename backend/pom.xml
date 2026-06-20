@@ -48,6 +48,13 @@
             <artifactId>googleauth</artifactId>
             <version>1.5.0</version>
         </dependency>
+        <!-- googleauth uses commons-codec (Base32) but only bundles it at runtime via a
+             transitive that isn't on the launch classpath — declare it explicitly so
+             createCredentials() doesn't NoClassDefFoundError at runtime. Boot manages the version. -->
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+        </dependency>
         <!-- QR code rendering for the authenticator enrollment (otpauth:// → PNG). -->
         <dependency>
             <groupId>com.google.zxing</groupId>
