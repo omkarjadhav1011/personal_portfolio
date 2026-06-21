@@ -7,6 +7,7 @@ import com.portfolio.drive.DriveDtos.FolderDto;
 import com.portfolio.drive.EnvelopeCryptoService.EncryptedPayload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -54,15 +55,21 @@ public class DriveService {
     private final StorageService storage;
     private final EnvelopeCryptoService crypto;
     private final DownloadTokenService downloadTokens;
+    private final EmailOtpService emailOtp;
+    /** Optional: present only when email is configured (MAIL_HOST). */
+    private final ObjectProvider<DriveMailService> mailProvider;
 
     public DriveService(DriveFolderRepository folders, DriveFileRepository files,
                         StorageService storage, EnvelopeCryptoService crypto,
-                        DownloadTokenService downloadTokens) {
+                        DownloadTokenService downloadTokens, EmailOtpService emailOtp,
+                        ObjectProvider<DriveMailService> mailProvider) {
         this.folders = folders;
         this.files = files;
         this.storage = storage;
         this.crypto = crypto;
         this.downloadTokens = downloadTokens;
+        this.emailOtp = emailOtp;
+        this.mailProvider = mailProvider;
     }
 
     // ── Listing ──────────────────────────────────────────────────────────────
@@ -188,18 +195,57 @@ public class DriveService {
     }
 
     /**
-     * Issues a 5-minute single-use download token for a file (ADMIN only). Sensitive files are
-     * gated behind an email-OTP step — implemented in Phase 6; until then this fails closed so a
-     * sensitive file cannot be downloaded without the second factor.
+     * Issues a 5-minute single-use download token for a file (ADMIN only). A sensitive file also
+     * requires a valid email OTP (see {@link #requestOtp}) — the second factor against a leaked token.
      */
-    public DownloadTokenResponse issueDownloadToken(UUID id) {
-        DriveFile file = files.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found"));
-        if (file.isSensitive()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "This file is marked sensitive and requires email verification (coming soon)");
-        }
+    public DownloadTokenResponse issueDownloadToken(UUID id, String otp) {
+        DriveFile file = requireFile(id);
+        assertSensitiveAccessAllowed(file, otp);
         return new DownloadTokenResponse(downloadTokens.issue(id), downloadTokens.getExpirySeconds());
+    }
+
+    /** Emails a fresh verification code for a sensitive file to the owner's address. */
+    public void requestOtp(UUID id) {
+        DriveFile file = requireFile(id);
+        if (!file.isSensitive()) {
+            throw badRequest("This file is not marked sensitive; no verification is required");
+        }
+        DriveMailService mail = requireMail();
+        mail.sendOtp(emailOtp.generate(file.getId()), file.getOriginalFilename());
+    }
+
+    /** Sends a file to the owner's email (attachment if small, else a download link). */
+    public void sendFileToEmail(UUID id, String otp) {
+        DriveFile file = requireFile(id);
+        DriveMailService mail = requireMail();
+        assertSensitiveAccessAllowed(file, otp);
+        byte[] plain = crypto.decrypt(storage.get(file.getStorageKey()), file.getEncIv(), file.getEncWrappedKey());
+        mail.sendFile(file, plain);
+    }
+
+    /** Enforces the email-OTP second factor for sensitive files; a no-op for ordinary files. */
+    private void assertSensitiveAccessAllowed(DriveFile file, String otp) {
+        if (!file.isSensitive()) {
+            return;
+        }
+        if (mailProvider.getIfAvailable() == null) {
+            // Fail closed: a sensitive file can't be released without the email second factor.
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "This file is sensitive and requires email verification, which is not configured");
+        }
+        if (otp == null || otp.isBlank() || !emailOtp.verify(file.getId(), otp)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "A valid verification code is required for this sensitive file");
+        }
+    }
+
+    private DriveMailService requireMail() {
+        DriveMailService mail = mailProvider.getIfAvailable();
+        if (mail == null) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "Email delivery is not configured");
+        }
+        return mail;
     }
 
     /**
@@ -223,6 +269,11 @@ public class DriveService {
     private DriveFolder requireFolder(UUID id) {
         return folders.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Folder not found"));
+    }
+
+    private DriveFile requireFile(UUID id) {
+        return files.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found"));
     }
 
     private static String requireName(String name) {

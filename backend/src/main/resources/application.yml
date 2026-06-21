@@ -23,6 +23,20 @@ spring:
       # request limit allows a little overhead above a single 50MB file for multipart framing.
       max-file-size: 50MB
       max-request-size: 55MB
+  mail:
+    # SMTP for the document vault's "send to my email" + sensitive-file OTP (separate from the
+    # contact form's Resend mailer). Inactive until MAIL_HOST is set (DriveMailService is gated on
+    # STORAGE_ENDPOINT + MAIL_HOST). Empty defaults keep the placeholders resolvable when unset.
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS:true}
   lifecycle:
     timeout-per-shutdown-phase: 30s
 
@@ -43,6 +57,11 @@ management:
   endpoint:
     health:
       show-details: never
+  health:
+    # Don't let the SMTP probe affect overall health — mail is an optional vault convenience, and
+    # an unconfigured/empty MAIL_HOST must never make /actuator/health (used by the host) DOWN.
+    mail:
+      enabled: false
 
 springdoc:
   # API docs & Swagger UI are OFF by default (don't expose the API surface in prod).
@@ -87,6 +106,15 @@ CORS_ALLOWED_ORIGIN: http://localhost:5173
 #                        # or not 32 bytes. Generate one with: openssl rand -base64 32
 # The bucket is auto-created at startup (StorageBucketInitializer); a down MinIO logs an
 # error but does NOT fail app startup.
+#
+# Email delivery (vault "send to my email" + sensitive-file OTP) — OPTIONAL; wired only when
+# MAIL_HOST is set (in addition to STORAGE_ENDPOINT):
+#   MAIL_HOST / MAIL_PORT / MAIL_USERNAME / MAIL_PASSWORD   # SMTP server
+#   MAIL_SMTP_AUTH       # default true; set false for a local catcher (e.g. Mailpit)
+#   MAIL_SMTP_STARTTLS   # default true; set false for a local catcher
+#   DRIVE_NOTIFY_EMAIL   # owner's fixed destination address (also the fallback From)
+#   MAIL_FROM            # From address (defaults to MAIL_USERNAME, then DRIVE_NOTIFY_EMAIL)
+#   DRIVE_PUBLIC_BASE_URL # backend base for emailed download links (default http://localhost:8081)
 
 # OAuth2 login (Google + GitHub) — ALL OPTIONAL. Registrations are built in code
 # (OAuth2ClientConfig) only when a provider's client-id is present, so the app boots

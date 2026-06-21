@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -99,10 +100,28 @@ public class DriveController {
         service.deleteFile(id);
     }
 
-    @Operation(summary = "Issue a 5-minute single-use download token for a file (ADMIN)")
+    @Operation(summary = "Issue a 5-minute single-use download token for a file (ADMIN). "
+            + "Sensitive files require a valid email OTP via the otp parameter.")
     @GetMapping("/files/{id}/download-token")
-    public DownloadTokenResponse downloadToken(@PathVariable UUID id) {
-        return service.issueDownloadToken(id);
+    public DownloadTokenResponse downloadToken(@PathVariable UUID id,
+                                               @RequestParam(value = "otp", required = false) String otp) {
+        return service.issueDownloadToken(id, otp);
+    }
+
+    @Operation(summary = "Email a verification code for a sensitive file to the owner (ADMIN)")
+    @PostMapping("/files/{id}/request-otp")
+    public Map<String, String> requestOtp(@PathVariable UUID id) {
+        service.requestOtp(id);
+        return Map.of("status", "sent");
+    }
+
+    @Operation(summary = "Send a file to the owner's email — attachment if small, else a link (ADMIN). "
+            + "Sensitive files require a valid email OTP via the otp parameter.")
+    @PostMapping("/files/{id}/send-email")
+    public Map<String, String> sendEmail(@PathVariable UUID id,
+                                         @RequestParam(value = "otp", required = false) String otp) {
+        service.sendFileToEmail(id, otp);
+        return Map.of("status", "sent");
     }
 
     /**
