@@ -19,8 +19,10 @@ spring:
     enabled: true
   servlet:
     multipart:
-      max-file-size: 5MB
-      max-request-size: 5MB
+      # Sized for the document vault uploads (avatar/resume uploads are far smaller). The
+      # request limit allows a little overhead above a single 50MB file for multipart framing.
+      max-file-size: 50MB
+      max-request-size: 55MB
   lifecycle:
     timeout-per-shutdown-phase: 30s
 

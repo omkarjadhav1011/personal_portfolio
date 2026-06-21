@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -43,6 +44,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorBody> handleNoResource(NoResourceFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ErrorBody(new ErrorDetail("NOT_FOUND", "Resource not found")));
+    }
+
+    /** An upload past the configured multipart limit — answer with a clean 413, not a 500. */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorBody> handleMaxUpload(MaxUploadSizeExceededException ex) {
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(new ErrorBody(new ErrorDetail("PAYLOAD_TOO_LARGE", "File exceeds the maximum allowed size")));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
