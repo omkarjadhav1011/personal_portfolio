@@ -80,6 +80,9 @@ CORS_ALLOWED_ORIGIN: http://localhost:5173
 #   STORAGE_ACCESS_KEY   # MinIO root user / S3 access key (compose default: minioadmin)
 #   STORAGE_SECRET_KEY   # MinIO root password / S3 secret key (compose default: minioadmin)
 #   STORAGE_REGION       # e.g. us-east-1 (MinIO ignores it; AWS S3 / R2 require it)
+#   DRIVE_MASTER_KEY     # base64 32-byte AES-256 master key (KEK) for envelope encryption.
+#                        # REQUIRED when the vault is enabled — startup fails fast if it is unset
+#                        # or not 32 bytes. Generate one with: openssl rand -base64 32
 # The bucket is auto-created at startup (StorageBucketInitializer); a down MinIO logs an
 # error but does NOT fail app startup.
 
