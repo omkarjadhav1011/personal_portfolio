@@ -62,7 +62,7 @@ services:
 
       # ── Secure Document Vault ("Drive") — ALL OPTIONAL. The vault stays OFF until
       #    STORAGE_ENDPOINT is set, so leaving these blank is safe. Recommended prod:
-      #    Cloudflare R2 (storage) + Resend SMTP (email). Full steps in DEPLOY.md. ──
+      #    Cloudflare R2 (storage) + Resend SMTP (email). Full steps in docs/DEPLOY.md. ──
       # Object storage (S3-compatible). R2 endpoint: https://<accountid>.r2.cloudflarestorage.com
       - key: STORAGE_ENDPOINT
         sync: false

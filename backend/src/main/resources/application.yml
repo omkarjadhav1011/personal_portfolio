@@ -125,4 +125,4 @@ CORS_ALLOWED_ORIGIN: http://localhost:5173
 #   APP_FRONTEND_URL     — SPA origin for the post-login redirect
 #                          (dev http://localhost:5173 / compose http://localhost:3000 / Vercel prod)
 #   APP_COOKIE_SECURE    — true in prod (HTTPS) so the auth-request cookie carries the Secure flag
-# Provider redirect URIs must point at {backend}/login/oauth2/code/{google|github} (see DEPLOY.md).
+# Provider redirect URIs must point at {backend}/login/oauth2/code/{google|github} (see docs/DEPLOY.md).
