@@ -1,5 +1,6 @@
 package com.portfolio.drive;
 
+import com.portfolio.drive.DriveDtos.DownloadTokenResponse;
 import com.portfolio.drive.DriveDtos.FileDto;
 import com.portfolio.drive.DriveDtos.FolderContentsDto;
 import com.portfolio.drive.DriveDtos.FolderDto;
@@ -52,13 +53,16 @@ public class DriveService {
     private final DriveFileRepository files;
     private final StorageService storage;
     private final EnvelopeCryptoService crypto;
+    private final DownloadTokenService downloadTokens;
 
     public DriveService(DriveFolderRepository folders, DriveFileRepository files,
-                        StorageService storage, EnvelopeCryptoService crypto) {
+                        StorageService storage, EnvelopeCryptoService crypto,
+                        DownloadTokenService downloadTokens) {
         this.folders = folders;
         this.files = files;
         this.storage = storage;
         this.crypto = crypto;
+        this.downloadTokens = downloadTokens;
     }
 
     // ── Listing ──────────────────────────────────────────────────────────────
@@ -175,6 +179,43 @@ public class DriveService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found"));
         files.delete(file); // metadata first → never leaves a row pointing at a deleted object
         deleteObjectQuietly(file.getStorageKey());
+    }
+
+    // ── Secure download ─────────────────────────────────────────────────────────
+
+    /** A decrypted file ready to stream to the client (internal — not a JSON DTO). */
+    public record DownloadedFile(byte[] content, String filename, String contentType) {
+    }
+
+    /**
+     * Issues a 5-minute single-use download token for a file (ADMIN only). Sensitive files are
+     * gated behind an email-OTP step — implemented in Phase 6; until then this fails closed so a
+     * sensitive file cannot be downloaded without the second factor.
+     */
+    public DownloadTokenResponse issueDownloadToken(UUID id) {
+        DriveFile file = files.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found"));
+        if (file.isSensitive()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "This file is marked sensitive and requires email verification (coming soon)");
+        }
+        return new DownloadTokenResponse(downloadTokens.issue(id), downloadTokens.getExpirySeconds());
+    }
+
+    /**
+     * Redeems a download token (single-use): validates and burns it, fetches the ciphertext,
+     * decrypts it, and returns the plaintext with its original filename and content type. An
+     * unknown / expired / already-used token is a 410 Gone.
+     */
+    public DownloadedFile download(String token) {
+        UUID fileId = downloadTokens.redeem(token)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.GONE,
+                        "Download link has expired or already been used"));
+        DriveFile file = files.findById(fileId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "File no longer exists"));
+        byte[] ciphertext = storage.get(file.getStorageKey());
+        byte[] plain = crypto.decrypt(ciphertext, file.getEncIv(), file.getEncWrappedKey());
+        return new DownloadedFile(plain, file.getOriginalFilename(), file.getContentType());
     }
 
     // ── Internals ──────────────────────────────────────────────────────────────

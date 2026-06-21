@@ -1,15 +1,20 @@
 package com.portfolio.drive;
 
 import com.portfolio.drive.DriveDtos.CreateFolderRequest;
+import com.portfolio.drive.DriveDtos.DownloadTokenResponse;
 import com.portfolio.drive.DriveDtos.FileDto;
 import com.portfolio.drive.DriveDtos.FolderContentsDto;
 import com.portfolio.drive.DriveDtos.FolderDto;
 import com.portfolio.drive.DriveDtos.UpdateFolderRequest;
+import com.portfolio.drive.DriveService.DownloadedFile;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -92,5 +97,27 @@ public class DriveController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteFile(@PathVariable UUID id) {
         service.deleteFile(id);
+    }
+
+    @Operation(summary = "Issue a 5-minute single-use download token for a file (ADMIN)")
+    @GetMapping("/files/{id}/download-token")
+    public DownloadTokenResponse downloadToken(@PathVariable UUID id) {
+        return service.issueDownloadToken(id);
+    }
+
+    /**
+     * Public download endpoint — the single-use token in the path IS the authorization (see the
+     * permitAll carve-out in SecurityConfig). Redeems/burns the token, decrypts the file, and
+     * streams the plaintext as an attachment under its original filename.
+     */
+    @Operation(summary = "Download a file via a single-use token (the token is the auth)")
+    @GetMapping("/download/{token}")
+    public ResponseEntity<byte[]> download(@PathVariable String token) {
+        DownloadedFile file = service.download(token);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType(file.contentType()));
+        headers.setContentDisposition(ContentDisposition.attachment().filename(file.filename()).build());
+        headers.setCacheControl("no-cache, no-store, must-revalidate");
+        return new ResponseEntity<>(file.content(), headers, HttpStatus.OK);
     }
 }

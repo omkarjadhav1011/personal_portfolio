@@ -34,6 +34,10 @@ public final class DriveDtos {
     public record FolderContentsDto(FolderDto folder, List<FolderDto> folders, List<FileDto> files) {
     }
 
+    /** Response of the download-token endpoint: the single-use token + how long it stays valid. */
+    public record DownloadTokenResponse(String token, long expiresInSeconds) {
+    }
+
     public record CreateFolderRequest(@NotBlank @Size(max = 255) String name, UUID parentId) {
     }
 
