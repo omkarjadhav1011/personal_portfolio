@@ -133,7 +133,7 @@ function FunCard({ glyph, text }: { glyph: string; text: string }) {
       >
         {glyph}
       </span>
-      <span className="text-sm leading-snug pt-1 text-text-secondary">{text}</span>
+      <span className="text-sm leading-snug pt-1 text-text-secondary font-mono">{text}</span>
     </div>
   );
 }
@@ -231,7 +231,7 @@ export function AboutSection({ profile, topSkills }: AboutSectionProps) {
                   <div className="font-mono text-xs mt-1 text-text-muted">
                     @{profile.handle} · {profile.location}
                   </div>
-                  <p className="text-sm mt-2 leading-relaxed text-git-green font-sans">
+                  <p className="text-sm mt-2 leading-relaxed text-git-green font-mono">
                     {profile.headline}
                   </p>
                 </div>
@@ -345,7 +345,7 @@ export function AboutSection({ profile, topSkills }: AboutSectionProps) {
 
               {/* About prose */}
               <h2 className="font-mono text-sm mb-3 text-git-blue">## About Me</h2>
-              <div className="space-y-3 text-sm leading-relaxed text-text-secondary font-sans">
+              <div className="space-y-3 text-sm leading-relaxed text-text-secondary font-mono">
                 {profile.bio.split(/\n\s*\n/).map((para, i) => (
                   <p key={i}>{para}</p>
                 ))}
