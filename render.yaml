@@ -59,3 +59,42 @@ services:
         sync: false
       - key: CONTACT_TO_EMAIL
         sync: false
+
+      # ── Secure Document Vault ("Drive") — ALL OPTIONAL. The vault stays OFF until
+      #    STORAGE_ENDPOINT is set, so leaving these blank is safe. Recommended prod:
+      #    Cloudflare R2 (storage) + Resend SMTP (email). Full steps in DEPLOY.md. ──
+      # Object storage (S3-compatible). R2 endpoint: https://<accountid>.r2.cloudflarestorage.com
+      - key: STORAGE_ENDPOINT
+        sync: false
+      - key: STORAGE_BUCKET
+        sync: false
+      - key: STORAGE_ACCESS_KEY
+        sync: false
+      - key: STORAGE_SECRET_KEY
+        sync: false
+      # R2 uses "auto"; AWS S3 uses its real region (e.g. us-east-1).
+      - key: STORAGE_REGION
+        sync: false
+      # AES-256 master key (KEK) = base64 of 32 bytes: openssl rand -base64 32
+      # SET ONCE AND NEVER CHANGE — rotating it makes every stored file undecryptable.
+      # Do NOT use generateValue (Render's random value isn't a base64 32-byte key).
+      - key: DRIVE_MASTER_KEY
+        sync: false
+      # This service's own public URL — used to build emailed download links.
+      - key: DRIVE_PUBLIC_BASE_URL
+        sync: false
+      # Owner's fixed address: "send to my email" destination + sensitive-file OTP.
+      - key: DRIVE_NOTIFY_EMAIL
+        sync: false
+      # SMTP. Resend: MAIL_HOST=smtp.resend.com, MAIL_PORT=587, MAIL_USERNAME=resend,
+      # MAIL_PASSWORD=<Resend API key>, MAIL_FROM=<verified sender>. (auth/STARTTLS default true.)
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_PORT
+        sync: false
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_FROM
+        sync: false
