@@ -16,6 +16,7 @@ import {
   LogOut,
   Upload,
   ShieldCheck,
+  HardDrive,
   type LucideIcon,
 } from "lucide-react";
 import { useToast } from "./ToastProvider";
@@ -34,6 +35,7 @@ const FILES: FileEntry[] = [
   { id: "projects",   label: "projects.json",   path: "/admin/projects",   icon: Code2,     colorClass: "text-git-purple" },
   { id: "experience", label: "experience.json", path: "/admin/experience", icon: GitCommit, colorClass: "text-git-orange" },
   { id: "skills",     label: "skills.json",     path: "/admin/skills",     icon: GitBranch, colorClass: "text-git-yellow" },
+  { id: "drive",      label: "drive.json",      path: "/admin/drive",      icon: HardDrive, colorClass: "text-git-blue" },
 ];
 
 function isActive(pathname: string, path: string) {
