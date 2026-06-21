@@ -34,9 +34,11 @@ export function OtpDialog({ file, action, onClose, onResult }: OtpDialogProps) {
         await requestOtp(file.id);
         if (active) setInfo("We emailed you a 6-digit code. Enter it below.");
       } catch (e) {
+        // Can't send a code (e.g. email not configured → 503). Don't strand the user in a
+        // dead dialog — surface a toast and close.
         if (active) {
-          setError(e instanceof Error ? e.message : "Could not send the code");
-          setInfo("");
+          onResult(e instanceof Error ? e.message : "Could not send the verification code", "error");
+          onClose();
         }
       } finally {
         if (active) setSending(false);
