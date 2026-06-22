@@ -94,6 +94,13 @@ public class SecurityConfig {
                         // listed BEFORE the public GET catch-all so a GET can never slip through.
                         .requestMatchers("/api/auth/**").hasRole("ADMIN")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // Secure Document Vault. The download endpoint authenticates via a
+                        // single-use token in the path (NOT a JWT), so it must stay public — listed
+                        // BEFORE the ADMIN matcher for the rest of the vault, which is itself BEFORE
+                        // the public GET /** below so a drive GET (folder listing, file metadata)
+                        // can never slip through as a public read. ← keystone.
+                        .requestMatchers(HttpMethod.GET, "/api/drive/download/**").permitAll()
+                        .requestMatchers("/api/drive/**").hasRole("ADMIN")
                         // Public portfolio POSTs (contact form, chatbot, recruiter tools).
                         .requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/chat").permitAll()

@@ -30,7 +30,7 @@ export default function RecruiterPage() {
           <h1 className="font-mono font-bold text-3xl sm:text-4xl md:text-5xl mb-2 text-text-primary">
             Recruiter Mode
           </h1>
-          <p className="text-text-muted text-sm sm:text-base font-sans max-w-2xl">
+          <p className="text-text-muted text-sm sm:text-base font-mono max-w-2xl">
             Paste the job description below. {profile.name} will be matched against it —
             relevant projects, overlapping skills, honest gaps, and a short pitch tailored
             to the role.

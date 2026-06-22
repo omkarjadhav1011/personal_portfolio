@@ -65,6 +65,23 @@ class SecurityConfigTest {
     }
 
     @Test
+    void unauthenticatedDriveAccessIsRejected() throws Exception {
+        // The keystone: drive reads AND writes are ADMIN-only — a GET must not slip through the
+        // public GET /** catch-all. (No controller is wired here, but security runs first → 401.)
+        mvc.perform(get("/api/drive/folders")).andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/drive/folders").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void driveDownloadTokenRouteIsPublic() throws Exception {
+        // The single-use token IS the auth, so this route is permitAll and placed above the ADMIN
+        // matcher. With no controller wired it resolves to 404 — proving it passed the security
+        // layer (a blocked route would be 401), i.e. the matcher ordering is correct.
+        mvc.perform(get("/api/drive/download/some-token")).andExpect(status().isNotFound());
+    }
+
+    @Test
     void securityHeadersArePresent() throws Exception {
         // Always-on hardening headers (HSTS is emitted only over HTTPS, so not asserted here).
         mvc.perform(get("/api/projects"))

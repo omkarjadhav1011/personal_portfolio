@@ -46,7 +46,7 @@ export function ProjectsSection({ projects, githubUrl }: ProjectsSectionProps) {
           <h2 className="font-mono font-bold text-3xl sm:text-4xl md:text-5xl mb-2 text-text-primary">
             Projects
           </h2>
-          <p className="text-text-muted text-sm font-sans mb-6">
+          <p className="text-text-muted text-sm font-mono mb-6">
             each project as a pull request — review the changes and peek the diff
           </p>
         </ScrollReveal>

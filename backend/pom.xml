@@ -114,6 +114,42 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+        <!-- Secure Document Vault: SMTP delivery ("send a file to my email" + email OTP for
+             sensitive files). Separate from the contact form's Resend mailer. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+        <!-- Secure Document Vault: S3-compatible object storage client (MinIO
+             locally; Cloudflare R2 / AWS S3 in prod via endpoint override).
+             Not Boot-managed, so the version is pinned explicitly like the
+             zxing/googleauth deps above.
+
+             The default Apache/Netty transports are excluded: the SDK's
+             apache-client needs httpclient5 5.4+ (TlsSocketStrategy), which
+             clashes with the older httpclient5 Spring Boot manages. We use the
+             dependency-free JDK UrlConnectionHttpClient instead (sync-only,
+             which is all S3Client needs). -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <version>2.46.15</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>software.amazon.awssdk</groupId>
+                    <artifactId>apache-client</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>software.amazon.awssdk</groupId>
+                    <artifactId>netty-nio-client</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>url-connection-client</artifactId>
+            <version>2.46.15</version>
+        </dependency>
     </dependencies>
 
     <build>
