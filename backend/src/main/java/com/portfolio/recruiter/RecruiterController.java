@@ -1,6 +1,7 @@
 package com.portfolio.recruiter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.portfolio.chatbot.DailyBudgetGuard;
 import com.portfolio.chatbot.GeminiClient;
 import com.portfolio.chatbot.PortfolioContext;
 import com.portfolio.chatbot.PortfolioContextService;
@@ -42,17 +43,20 @@ public class RecruiterController {
     private static final String LETTER_RATE_LIMIT_PREFIX = "recruiter-letter";
 
     private final RateLimiter rateLimiter;
+    private final DailyBudgetGuard budgetGuard;
     private final PortfolioContextService contextService;
     private final RecruiterPromptBuilder promptBuilder;
     private final GeminiClient geminiClient;
     private final ObjectMapper objectMapper;
 
     public RecruiterController(RateLimiter rateLimiter,
+                               DailyBudgetGuard budgetGuard,
                                PortfolioContextService contextService,
                                RecruiterPromptBuilder promptBuilder,
                                GeminiClient geminiClient,
                                ObjectMapper objectMapper) {
         this.rateLimiter = rateLimiter;
+        this.budgetGuard = budgetGuard;
         this.contextService = contextService;
         this.promptBuilder = promptBuilder;
         this.geminiClient = geminiClient;
@@ -84,6 +88,11 @@ public class RecruiterController {
 
         if (!geminiClient.isConfigured()) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Recruiter mode is temporarily unavailable.");
+        }
+
+        if (!budgetGuard.tryAcquire()) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "The AI assistant is resting for today. Please try again tomorrow.");
         }
 
         String prompt;
@@ -127,6 +136,11 @@ public class RecruiterController {
 
         if (!geminiClient.isConfigured()) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Recruiter mode is temporarily unavailable.");
+        }
+
+        if (!budgetGuard.tryAcquire()) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "The AI assistant is resting for today. Please try again tomorrow.");
         }
 
         String prompt;

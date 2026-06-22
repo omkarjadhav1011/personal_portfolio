@@ -30,15 +30,18 @@ public class ChatController {
     private static final int MAX_CONTENT = 2000;
 
     private final RateLimiter rateLimiter;
+    private final DailyBudgetGuard budgetGuard;
     private final PortfolioContextService contextService;
     private final PromptBuilder promptBuilder;
     private final GeminiClient geminiClient;
 
     public ChatController(RateLimiter rateLimiter,
+                          DailyBudgetGuard budgetGuard,
                           PortfolioContextService contextService,
                           PromptBuilder promptBuilder,
                           GeminiClient geminiClient) {
         this.rateLimiter = rateLimiter;
+        this.budgetGuard = budgetGuard;
         this.contextService = contextService;
         this.promptBuilder = promptBuilder;
         this.geminiClient = geminiClient;
@@ -65,6 +68,12 @@ public class ChatController {
 
         if (!geminiClient.isConfigured()) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Chat is temporarily unavailable.");
+        }
+
+        // Daily quota ceiling (shared chat + recruiter) — stay inside Gemini's free-tier RPD.
+        if (!budgetGuard.tryAcquire()) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "The AI assistant is resting for today. Please try again tomorrow.");
         }
 
         String systemPrompt;

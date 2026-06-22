@@ -123,6 +123,8 @@ CORS_ALLOWED_ORIGIN: http://localhost:5173
 #   GEMINI_MODEL    # default gemini-2.5-flash; swap to gemini-2.5-flash-lite (higher daily quota)
 #                   # or gemini-2.5-pro without a code change
 #   GEMINI_API_URL  # default https://generativelanguage.googleapis.com/v1beta
+#   AI_DAILY_REQUEST_CAP  # hard daily ceiling on AI calls (chat + recruiter), default 200.
+#                         # Set BELOW the model's free-tier RPD so the bot never blows the quota.
 
 # OAuth2 login (Google + GitHub) — ALL OPTIONAL. Registrations are built in code
 # (OAuth2ClientConfig) only when a provider's client-id is present, so the app boots
