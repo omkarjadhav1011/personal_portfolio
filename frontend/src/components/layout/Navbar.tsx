@@ -19,6 +19,10 @@ const NAV_SECTIONS = [
   { id: "contact", label: "contact" },
 ];
 
+// The "new" badge on the recruiter link auto-retires after this date so it
+// doesn't live in the navbar forever (suggestion #3 — time-box the badge).
+const RECRUITER_BADGE_UNTIL = new Date("2026-08-31T23:59:59");
+
 function scrollTo(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 }
@@ -31,6 +35,7 @@ export function Navbar() {
   const { openInMode } = useCommandPaletteStore();
   const navigate = useNavigate();
   const location = useLocation();
+  const showRecruiterBadge = new Date() < RECRUITER_BADGE_UNTIL;
 
   // Section anchors only exist on the home page. When we're on another route
   // (e.g. a project detail page), route home first and let Home scroll to the
@@ -74,9 +79,11 @@ export function Navbar() {
                 key={s.id}
                 onClick={() => goTo(s.id)}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg transition-all duration-200",
+                  "px-3 py-1.5 rounded-lg transition-colors duration-200",
+                  // #1 — one signal for active: green text + the `*` marker.
+                  // The bordered/tinted pill was removed to lighten the bar.
                   activeSection === s.id
-                    ? "text-git-green bg-git-green/10 border border-git-green/30"
+                    ? "text-git-green"
                     : "text-text-muted hover:text-text-primary hover:bg-terminal-surface"
                 )}
               >
@@ -86,15 +93,24 @@ export function Navbar() {
                 {s.label}
               </button>
             ))}
+
+            {/* #2 — divider separates content nav from the recruiter CTA */}
+            <span className="mx-2 h-4 w-px bg-terminal-border" aria-hidden="true" />
+
+            {/* #4 — recruiter reads as a deliberate CTA: same shape/weight as the
+                nav links, set apart by the divider rather than extra chrome. */}
             <Link
               to="/recruiter"
-              className="ml-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-200 text-text-muted hover:text-git-green border border-transparent hover:border-git-green/30 hover:bg-git-green/5"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors duration-200 text-text-muted hover:text-git-green hover:bg-terminal-surface"
             >
               <FileSearch size={12} className="text-git-green/70" />
               recruiter
-              <span className="text-[9px] px-1 py-px rounded bg-git-green/15 border border-git-green/30 text-git-green uppercase tracking-wider">
-                new
-              </span>
+              {/* #3 — softer badge (no harsh border), auto-retires after the date */}
+              {showRecruiterBadge && (
+                <span className="text-[9px] px-1 py-px rounded bg-git-green/15 text-git-green uppercase tracking-wider">
+                  new
+                </span>
+              )}
             </Link>
           </div>
 
@@ -110,7 +126,7 @@ export function Navbar() {
                 size={12}
                 className="text-git-green/50 group-hover:text-git-green transition-colors shrink-0"
               />
-              <span className="hidden lg:block text-text-faint group-hover:text-text-muted transition-colors">
+              <span className="hidden md:block text-text-faint group-hover:text-text-muted transition-colors">
                 terminal
               </span>
               <div className="hidden lg:flex items-center gap-0.5 ml-0.5 opacity-50 group-hover:opacity-70 transition-opacity">
@@ -124,20 +140,9 @@ export function Navbar() {
               </div>
             </button>
 
-            {/* Prominent clickable AI trigger — opens palette in AI mode */}
-            <button
-              onClick={() => openInMode("ai")}
-              className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-terminal-border bg-terminal-surface hover:border-git-green/50 hover:bg-git-green/5 text-text-faint hover:text-text-muted text-xs font-mono transition-all duration-200 group cursor-pointer"
-              aria-label="Open AI assistant"
-            >
-              <Sparkles
-                size={12}
-                className="text-git-green/50 group-hover:text-git-green transition-colors shrink-0"
-              />
-              <span className="hidden lg:block text-text-faint group-hover:text-text-muted transition-colors">
-                Ask me anything...
-              </span>
-            </button>
+            {/* AI trigger removed from navbar — the floating "Ask AI" button
+                (FloatingAIButton) already opens the palette in AI mode, and the
+                terminal button above exposes AI mode via its tabs. */}
 
             {/* Mobile hamburger */}
             <button
