@@ -4,7 +4,7 @@
 -- (docker-compose uses pgvector/pgvector:pg16); the extension is created here.
 CREATE EXTENSION IF NOT EXISTS vector;
 
-CREATE TABLE embedding (
+CREATE TABLE IF NOT EXISTS embedding (
     id          uuid                        NOT NULL DEFAULT gen_random_uuid(),
     -- source_type + source_id identify the chunk's origin so a single row can be re-indexed or
     -- deleted when its source changes (Phase D). UNIQUE together => upsert key (no duplicates).
@@ -20,4 +20,4 @@ CREATE TABLE embedding (
 
 -- HNSW approximate-nearest-neighbour index for cosine distance (the <=> operator with
 -- vector_cosine_ops). No training step needed (unlike IVFFlat), good for a small/growing corpus.
-CREATE INDEX embedding_cosine_idx ON embedding USING hnsw (embedding vector_cosine_ops);
+CREATE INDEX IF NOT EXISTS embedding_cosine_idx ON embedding USING hnsw (embedding vector_cosine_ops);
