@@ -14,7 +14,6 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 
 /*
@@ -101,8 +100,9 @@ public class GeminiClient {
                 .bodyValue(buildRequestBody(systemInstruction, messages))
                 .retrieve()
                 .bodyToFlux(new ParameterizedTypeReference<ServerSentEvent<String>>() {})
-                .map(ServerSentEvent::data)
-                .filter(Objects::nonNull)
+                // mapNotNull: Gemini sometimes emits an SSE event with no data field; a plain
+                // map(ServerSentEvent::data) would return null and Reactor throws on null map output.
+                .mapNotNull(ServerSentEvent::data)
                 .map(this::extractText)
                 .filter(text -> !text.isEmpty())
                 .timeout(REQUEST_TIMEOUT);
@@ -121,8 +121,9 @@ public class GeminiClient {
                 .bodyValue(body)
                 .retrieve()
                 .bodyToFlux(new ParameterizedTypeReference<ServerSentEvent<String>>() {})
-                .map(ServerSentEvent::data)
-                .filter(Objects::nonNull)
+                // mapNotNull: Gemini sometimes emits an SSE event with no data field; a plain
+                // map(ServerSentEvent::data) would return null and Reactor throws on null map output.
+                .mapNotNull(ServerSentEvent::data)
                 .map(this::extractText)
                 .filter(text -> !text.isEmpty())
                 .timeout(REQUEST_TIMEOUT);

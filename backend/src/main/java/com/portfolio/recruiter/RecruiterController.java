@@ -1,6 +1,7 @@
 package com.portfolio.recruiter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.portfolio.chatbot.AbuseLog;
 import com.portfolio.chatbot.DailyBudgetGuard;
 import com.portfolio.chatbot.GeminiClient;
 import com.portfolio.chatbot.PortfolioContext;
@@ -44,6 +45,7 @@ public class RecruiterController {
 
     private final RateLimiter rateLimiter;
     private final DailyBudgetGuard budgetGuard;
+    private final AbuseLog abuseLog;
     private final PortfolioContextService contextService;
     private final RecruiterPromptBuilder promptBuilder;
     private final GeminiClient geminiClient;
@@ -51,12 +53,14 @@ public class RecruiterController {
 
     public RecruiterController(RateLimiter rateLimiter,
                                DailyBudgetGuard budgetGuard,
+                               AbuseLog abuseLog,
                                PortfolioContextService contextService,
                                RecruiterPromptBuilder promptBuilder,
                                GeminiClient geminiClient,
                                ObjectMapper objectMapper) {
         this.rateLimiter = rateLimiter;
         this.budgetGuard = budgetGuard;
+        this.abuseLog = abuseLog;
         this.contextService = contextService;
         this.promptBuilder = promptBuilder;
         this.geminiClient = geminiClient;
@@ -74,7 +78,8 @@ public class RecruiterController {
     public MatchResult match(@RequestBody(required = false) MatchRequest req,
                              HttpServletRequest request,
                              HttpServletResponse response) {
-        RateLimiter.Result limit = rateLimiter.check(RATE_LIMIT_PREFIX + ":" + RateLimiter.clientIp(request));
+        String clientIp = RateLimiter.clientIp(request);
+        RateLimiter.Result limit = rateLimiter.check(RATE_LIMIT_PREFIX + ":" + clientIp);
         if (!limit.ok()) {
             response.setHeader("Retry-After", String.valueOf(limit.retryAfterSeconds()));
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many submissions. Try again in a minute.");
@@ -84,6 +89,11 @@ public class RecruiterController {
         if (jd == null || jd.length() < JD_MIN || jd.length() > JD_MAX) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Job description must be between " + JD_MIN + " and " + JD_MAX + " characters.");
+        }
+
+        // A pasted JD is untrusted input — flag injection attempts (it's neutralized before the model too).
+        if (abuseLog.isSuspicious(jd)) {
+            abuseLog.warnSuspicious("recruiter-match", clientIp, jd);
         }
 
         if (!geminiClient.isConfigured()) {
@@ -123,7 +133,8 @@ public class RecruiterController {
     public Flux<ServerSentEvent<Map<String, Object>>> letter(@RequestBody(required = false) LetterRequest req,
                                                              HttpServletRequest request,
                                                              HttpServletResponse response) {
-        RateLimiter.Result limit = rateLimiter.check(LETTER_RATE_LIMIT_PREFIX + ":" + RateLimiter.clientIp(request));
+        String clientIp = RateLimiter.clientIp(request);
+        RateLimiter.Result limit = rateLimiter.check(LETTER_RATE_LIMIT_PREFIX + ":" + clientIp);
         if (!limit.ok()) {
             response.setHeader("Retry-After", String.valueOf(limit.retryAfterSeconds()));
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many submissions. Try again in a minute.");
@@ -154,8 +165,11 @@ public class RecruiterController {
         return geminiClient.streamPrompt(prompt, LETTER_MAX_TOKENS, LETTER_TEMPERATURE)
                 .map(text -> event(Map.of("type", "delta", "text", text)))
                 .concatWithValues(event(Map.of("type", "done")))
-                .onErrorResume(e -> Flux.just(
-                        event(Map.of("type", "error", "message", "The cover letter ran into a problem."))));
+                .onErrorResume(e -> {
+                    abuseLog.warnStreamError("recruiter-letter", clientIp, e);
+                    return Flux.just(
+                            event(Map.of("type", "error", "message", "The cover letter ran into a problem.")));
+                });
     }
 
     private static ServerSentEvent<Map<String, Object>> event(Map<String, Object> data) {

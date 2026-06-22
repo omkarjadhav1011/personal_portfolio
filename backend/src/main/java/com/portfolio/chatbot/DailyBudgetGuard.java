@@ -1,5 +1,6 @@
 package com.portfolio.chatbot;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -23,6 +24,7 @@ public class DailyBudgetGuard {
     private LocalDate currentDay;
     private int count;
 
+    @Autowired
     public DailyBudgetGuard(@Value("${AI_DAILY_REQUEST_CAP:200}") int dailyCap) {
         this(dailyCap, Clock.systemUTC());
     }

@@ -31,17 +31,20 @@ public class ChatController {
 
     private final RateLimiter rateLimiter;
     private final DailyBudgetGuard budgetGuard;
+    private final AbuseLog abuseLog;
     private final PortfolioContextService contextService;
     private final PromptBuilder promptBuilder;
     private final GeminiClient geminiClient;
 
     public ChatController(RateLimiter rateLimiter,
                           DailyBudgetGuard budgetGuard,
+                          AbuseLog abuseLog,
                           PortfolioContextService contextService,
                           PromptBuilder promptBuilder,
                           GeminiClient geminiClient) {
         this.rateLimiter = rateLimiter;
         this.budgetGuard = budgetGuard;
+        this.abuseLog = abuseLog;
         this.contextService = contextService;
         this.promptBuilder = promptBuilder;
         this.geminiClient = geminiClient;
@@ -55,7 +58,8 @@ public class ChatController {
     public Flux<ServerSentEvent<Map<String, Object>>> chat(@RequestBody(required = false) ChatRequest req,
                                                            HttpServletRequest request,
                                                            HttpServletResponse response) {
-        RateLimiter.Result limit = rateLimiter.check(RateLimiter.clientIp(request));
+        String clientIp = RateLimiter.clientIp(request);
+        RateLimiter.Result limit = rateLimiter.check(clientIp);
         if (!limit.ok()) {
             response.setHeader("Retry-After", String.valueOf(limit.retryAfterSeconds()));
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many requests. Please slow down.");
@@ -65,6 +69,11 @@ public class ChatController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid request payload");
         }
         validate(req.messages());
+
+        String lastUserMessage = req.messages().get(req.messages().size() - 1).content();
+        if (abuseLog.isSuspicious(lastUserMessage)) {
+            abuseLog.warnSuspicious("chat", clientIp, lastUserMessage);
+        }
 
         if (!geminiClient.isConfigured()) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Chat is temporarily unavailable.");
@@ -86,8 +95,11 @@ public class ChatController {
         return geminiClient.streamGenerateContent(systemPrompt, req.messages())
                 .map(text -> event(Map.of("type", "delta", "text", text)))
                 .concatWithValues(event(Map.of("type", "done")))
-                .onErrorResume(e -> Flux.just(
-                        event(Map.of("type", "error", "message", "The assistant ran into a problem."))));
+                .onErrorResume(e -> {
+                    abuseLog.warnStreamError("chat", clientIp, e);
+                    return Flux.just(
+                            event(Map.of("type", "error", "message", "The assistant ran into a problem.")));
+                });
     }
 
     private static void validate(List<ChatMessage> messages) {
