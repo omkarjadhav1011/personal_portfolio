@@ -1,36 +1,32 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
-// AI mode — commented out for future use
-// import { Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
   Terminal,
-  // AI-only icons — restore when re-enabling AI mode
-  // Sparkles,
-  // Send,
-  // RotateCcw,
-  // FileSearch,
-  // ChevronRight,
+  Sparkles,
+  Send,
+  RotateCcw,
+  FileSearch,
+  ChevronRight,
 } from "lucide-react";
 import { useTerminal } from "@/hooks/useTerminal";
-// AI mode — commented out for future use
-// import { useAI, type AIMessage } from "@/hooks/useAI";
+import { useAI, type AIMessage } from "@/hooks/useAI";
 import { useCommandPaletteStore } from "@/store/commandPalette";
 import { cn } from "@/lib/utils";
-// import { InlineMarkdown } from "@/components/ui/InlineMarkdown";
+import { InlineMarkdown } from "@/components/ui/InlineMarkdown";
 
 // ─── Suggested content ────────────────────────────────────────────────────────
 
-// AI mode — commented out for future use
-// const AI_PROMPTS = [
-//   "What are Omkar's main skills?",
-//   "Tell me about his projects",
-//   "Is he available to hire?",
-//   "What's his educational background?",
-//   "Any fun facts about him?",
-//   "How can I contact him?",
-// ];
+const AI_PROMPTS = [
+  "What are Omkar's main skills?",
+  "Tell me about his projects",
+  "Is he available to hire?",
+  "What's his educational background?",
+  "Any fun facts about him?",
+  "How can I contact him?",
+];
 
 const COMMAND_CHIPS = [
   { label: "help", cmd: "help" },
@@ -42,8 +38,7 @@ const COMMAND_CHIPS = [
 ];
 
 // ─── AI chat bubble ───────────────────────────────────────────────────────────
-// AI mode — commented out for future use
-/*
+
 function AIBubble({ message }: { message: AIMessage }) {
   if (message.role === "user") {
     return (
@@ -85,19 +80,17 @@ function TypingIndicator() {
     </div>
   );
 }
-*/
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function CommandPalette() {
-  const { open, mode, setOpen } = useCommandPaletteStore();
+  const { open, mode, setOpen, setMode } = useCommandPaletteStore();
   const { history, submit, navigateHistory } = useTerminal();
-  // AI mode — commented out for future use
-  // const { messages, isTyping, ask, clearChat } = useAI();
+  const { messages, isTyping, ask, clearChat } = useAI();
 
   const inputRef = useRef<HTMLInputElement>(null);
   const terminalBottomRef = useRef<HTMLDivElement>(null);
-  // const aiBottomRef = useRef<HTMLDivElement>(null);
+  const aiBottomRef = useRef<HTMLDivElement>(null);
   const [localInput, setLocalInput] = useState("");
 
   // Global keyboard handler — uses getState() to avoid stale closure
@@ -119,11 +112,10 @@ export function CommandPalette() {
       terminalBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [history, mode]);
 
-  // AI mode — commented out for future use
-  // useEffect(() => {
-  //   if (mode === "ai")
-  //     aiBottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  // }, [messages, isTyping, mode]);
+  useEffect(() => {
+    if (mode === "ai")
+      aiBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isTyping, mode]);
 
   // Focus input when opened or mode changes
   useEffect(() => {
@@ -144,11 +136,10 @@ export function CommandPalette() {
         if (!val) return;
         if (mode === "terminal") {
           submit(val);
+        } else {
+          if (isTyping) return;
+          ask(val);
         }
-        // AI mode — commented out for future use
-        // else {
-        //   ask(val);
-        // }
         setLocalInput("");
       } else if (mode === "terminal") {
         if (e.key === "ArrowUp") {
@@ -160,25 +151,27 @@ export function CommandPalette() {
         }
       }
     },
-    [localInput, mode, submit, navigateHistory]
+    [localInput, mode, submit, navigateHistory, ask, isTyping]
   );
 
-  // AI mode — commented out for future use
-  // const handleSend = useCallback(() => {
-  //   const val = localInput.trim();
-  //   if (!val || isTyping) return;
-  //   ask(val);
-  //   setLocalInput("");
-  // }, [localInput, isTyping, ask]);
+  const handleSend = useCallback(() => {
+    const val = localInput.trim();
+    if (!val || isTyping) return;
+    ask(val);
+    setLocalInput("");
+  }, [localInput, isTyping, ask]);
 
-  // function handlePromptClick(prompt: string) {
-  //   ask(prompt);
-  // }
+  function handlePromptClick(prompt: string) {
+    if (isTyping) return;
+    ask(prompt);
+  }
 
   function handleCommandChip(cmd: string) {
     submit(cmd);
     setLocalInput("");
   }
+
+  const isAI = mode === "ai";
 
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
@@ -222,10 +215,40 @@ export function CommandPalette() {
                       <span className="w-3 h-3 rounded-full bg-dot-green" />
                     </div>
 
-                    {/* Title */}
-                    <div className="flex items-center gap-1.5 text-text-muted text-xs select-none">
-                      <Terminal size={11} className="text-git-green/70" />
-                      terminal
+                    {/* Mode toggle */}
+                    <div
+                      role="tablist"
+                      aria-label="Command palette mode"
+                      className="flex items-center gap-1 rounded-lg bg-terminal-bg p-0.5 border border-terminal-border"
+                    >
+                      <button
+                        role="tab"
+                        aria-selected={!isAI}
+                        onClick={() => setMode("terminal")}
+                        className={cn(
+                          "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-2xs transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-git-green/40",
+                          !isAI
+                            ? "bg-terminal-surface text-git-green"
+                            : "text-text-faint hover:text-text-muted"
+                        )}
+                      >
+                        <Terminal size={11} />
+                        terminal
+                      </button>
+                      <button
+                        role="tab"
+                        aria-selected={isAI}
+                        onClick={() => setMode("ai")}
+                        className={cn(
+                          "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-2xs transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-git-green/40",
+                          isAI
+                            ? "bg-terminal-surface text-git-green"
+                            : "text-text-faint hover:text-text-muted"
+                        )}
+                      >
+                        <Sparkles size={11} />
+                        Ask AI
+                      </button>
                     </div>
 
                     {/* Close */}
@@ -239,132 +262,170 @@ export function CommandPalette() {
 
                   {/* ── Content area ──────────────────────────────────────── */}
                   <div className="min-h-[160px] max-h-[calc(100vh-180px)] sm:max-h-72 overflow-y-auto p-4 space-y-3 text-sm flex-1">
-                        {history.length === 0 && (
-                          <div className="space-y-3">
-                            <p className="text-text-faint text-xs">
-                              Type a command or pick one to get started:
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                              {COMMAND_CHIPS.map(({ label, cmd }) => (
-                                <button
-                                  key={cmd}
-                                  onClick={() => handleCommandChip(cmd)}
-                                  className="px-2.5 py-1 rounded-md text-xs bg-terminal-bg border border-terminal-border text-text-muted hover:text-git-green hover:border-git-green/40 transition-colors cursor-pointer"
-                                >
-                                  {label}
-                                </button>
-                              ))}
-                            </div>
-                            {/* AI mode tip — commented out for future use */}
-                            {/* <p className="text-text-faint text-2xs pt-1">
-                              Tip: switch to{" "}
-                              <button
-                                onClick={() => setMode("ai")}
-                                className="text-git-green/70 hover:text-git-green underline underline-offset-2 cursor-pointer transition-colors"
-                              >
-                                Ask AI
-                              </button>{" "}
-                              for natural language queries about this developer.
-                            </p> */}
-                          </div>
-                        )}
-
-                        {history.map((h, i) => (
-                          <div key={i} className="space-y-1">
-                            <div className="flex gap-2">
-                              <span className="text-git-green shrink-0">$</span>
-                              <span className="text-text-primary">{h.command}</span>
-                            </div>
-                            {h.result.output.map((line, li) => (
-                              <div
-                                key={li}
-                                className={cn(
-                                  "pl-4 text-xs",
-                                  h.result.type === "error"
-                                    ? "text-git-red"
-                                    : line.startsWith("*")
-                                    ? "text-git-green"
-                                    : "text-text-muted"
-                                )}
-                              >
-                                {line || "\u00A0"}
+                    <AnimatePresence mode="wait">
+                      {!isAI ? (
+                        <motion.div
+                          key="terminal"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.1 }}
+                          className="space-y-3"
+                        >
+                          {history.length === 0 && (
+                            <div className="space-y-3">
+                              <p className="text-text-faint text-xs">
+                                Type a command or pick one to get started:
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {COMMAND_CHIPS.map(({ label, cmd }) => (
+                                  <button
+                                    key={cmd}
+                                    onClick={() => handleCommandChip(cmd)}
+                                    className="px-2.5 py-1 rounded-md text-xs bg-terminal-bg border border-terminal-border text-text-muted hover:text-git-green hover:border-git-green/40 transition-colors cursor-pointer"
+                                  >
+                                    {label}
+                                  </button>
+                                ))}
                               </div>
-                            ))}
-                          </div>
-                        ))}
-                        <div ref={terminalBottomRef} />
-                  {/* AI mode panel — commented out for future use
-                      <motion.div
-                        key="ai"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.1 }}
-                        className="min-h-[160px] max-h-[calc(100vh-180px)] sm:max-h-72 overflow-y-auto p-4 flex-1"
-                      >
-                        {messages.length === 0 && !isTyping ? (
-                          // Empty state: suggested prompts
-                          <div className="space-y-4 py-1">
-                            <p className="text-xs text-text-muted leading-relaxed">
-                              Ask me anything about Omkar&apos;s skills, projects, or background.
-                            </p>
-                            <div className="space-y-0.5">
-                              {AI_PROMPTS.map((prompt) => (
+                              <p className="text-text-faint text-2xs pt-1">
+                                Tip: switch to{" "}
                                 <button
-                                  key={prompt}
-                                  onClick={() => handlePromptClick(prompt)}
-                                  className="block w-full text-left px-3 py-2 rounded-lg text-xs text-text-muted hover:text-text-primary hover:bg-terminal-surface transition-colors cursor-pointer"
+                                  onClick={() => setMode("ai")}
+                                  className="text-git-green/70 hover:text-git-green underline underline-offset-2 cursor-pointer transition-colors"
                                 >
-                                  {prompt}
-                                </button>
+                                  Ask AI
+                                </button>{" "}
+                                for natural language queries about this developer.
+                              </p>
+                            </div>
+                          )}
+
+                          {history.map((h, i) => (
+                            <div key={i} className="space-y-1">
+                              <div className="flex gap-2">
+                                <span className="text-git-green shrink-0">$</span>
+                                <span className="text-text-primary">{h.command}</span>
+                              </div>
+                              {h.result.output.map((line, li) => (
+                                <div
+                                  key={li}
+                                  className={cn(
+                                    "pl-4 text-xs",
+                                    h.result.type === "error"
+                                      ? "text-git-red"
+                                      : line.startsWith("*")
+                                      ? "text-git-green"
+                                      : "text-text-muted"
+                                  )}
+                                >
+                                  {line || " "}
+                                </div>
                               ))}
                             </div>
-                            <Link
-                              to="/recruiter"
-                              onClick={() => setOpen(false)}
-                              className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-text-faint hover:text-git-green hover:bg-terminal-surface transition-colors cursor-pointer"
-                            >
-                              <FileSearch size={13} className="text-git-green/60 shrink-0" />
-                              <span className="flex-1 truncate">Recruiter mode — paste a JD for matched projects</span>
-                              <ChevronRight size={13} className="shrink-0" />
-                            </Link>
-                          </div>
-                        ) : (
-                          // Chat messages
-                          <div className="space-y-4">
-                            {messages.map((msg) => (
-                              <AIBubble key={msg.id} message={msg} />
-                            ))}
-                            {isTyping && <TypingIndicator />}
-                            <div ref={aiBottomRef} />
-                          </div>
-                        )}
-                      </motion.div>
-                    */}
+                          ))}
+                          <div ref={terminalBottomRef} />
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="ai"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.1 }}
+                        >
+                          {messages.length === 0 && !isTyping ? (
+                            // Empty state: suggested prompts
+                            <div className="space-y-4 py-1">
+                              <p className="text-xs text-text-muted leading-relaxed">
+                                Ask me anything about Omkar&apos;s skills, projects, or background.
+                              </p>
+                              <div className="space-y-0.5">
+                                {AI_PROMPTS.map((prompt) => (
+                                  <button
+                                    key={prompt}
+                                    onClick={() => handlePromptClick(prompt)}
+                                    className="block w-full text-left px-3 py-2 rounded-lg text-xs text-text-muted hover:text-text-primary hover:bg-terminal-surface transition-colors cursor-pointer"
+                                  >
+                                    {prompt}
+                                  </button>
+                                ))}
+                              </div>
+                              <Link
+                                to="/recruiter"
+                                onClick={() => setOpen(false)}
+                                className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-text-faint hover:text-git-green hover:bg-terminal-surface transition-colors cursor-pointer"
+                              >
+                                <FileSearch size={13} className="text-git-green/60 shrink-0" />
+                                <span className="flex-1 truncate">Recruiter mode — paste a JD for matched projects</span>
+                                <ChevronRight size={13} className="shrink-0" />
+                              </Link>
+                            </div>
+                          ) : (
+                            // Chat messages
+                            <div className="space-y-4">
+                              {messages.map((msg) => (
+                                <AIBubble key={msg.id} message={msg} />
+                              ))}
+                              {isTyping && <TypingIndicator />}
+                              <div ref={aiBottomRef} />
+                            </div>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
 
                   {/* ── Input bar ─────────────────────────────────────────── */}
                   <div className="flex items-center gap-2 px-4 py-3 border-t border-terminal-border bg-terminal-bg">
-                    <span className="text-git-green text-sm shrink-0 select-none">$</span>
+                    {isAI ? (
+                      <Sparkles size={14} className="text-git-green shrink-0" />
+                    ) : (
+                      <span className="text-git-green text-sm shrink-0 select-none">$</span>
+                    )}
 
                     <input
                       ref={inputRef}
                       value={localInput}
                       onChange={(e) => setLocalInput(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      placeholder="git checkout projects"
+                      placeholder={isAI ? "Ask about his skills, projects, experience…" : "git checkout projects"}
                       className="flex-1 bg-transparent text-sm text-text-primary placeholder-text-faint outline-none focus-visible:ring-1 focus-visible:ring-git-green/40 rounded font-mono"
                       autoComplete="off"
                       spellCheck={false}
                     />
 
-                    <span className="w-2 h-4 bg-git-green animate-cursor-blink shrink-0" />
+                    {isAI ? (
+                      <>
+                        {messages.length > 0 && (
+                          <button
+                            onClick={clearChat}
+                            aria-label="Clear conversation"
+                            className="text-text-faint hover:text-text-muted transition-colors p-1 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-git-green/40 rounded"
+                          >
+                            <RotateCcw size={14} />
+                          </button>
+                        )}
+                        <button
+                          onClick={handleSend}
+                          disabled={!localInput.trim() || isTyping}
+                          aria-label="Send message"
+                          className="text-git-green hover:text-git-green/80 transition-colors p-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-git-green/40 rounded"
+                        >
+                          <Send size={14} />
+                        </button>
+                      </>
+                    ) : (
+                      <span className="w-2 h-4 bg-git-green animate-cursor-blink shrink-0" />
+                    )}
                   </div>
 
                   {/* ── Footer hint ───────────────────────────────────────── */}
                   <div className="flex items-center justify-between px-4 py-1.5 bg-terminal-surface border-t border-terminal-border">
                     <span className="text-2xs text-text-faint">
-                      Arrow Up/Down to navigate history
+                      {isAI
+                        ? "Enter to send · grounded in public portfolio data"
+                        : "Arrow Up/Down to navigate history"}
                     </span>
                     <span className="text-2xs text-text-faint">
                       <kbd className="px-1 py-0.5 rounded bg-terminal-bg border border-terminal-border text-2xs">
