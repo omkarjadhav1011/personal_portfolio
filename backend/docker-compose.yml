@@ -1,6 +1,8 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    # pgvector/pgvector:pg16 = stock Postgres 16 + the `vector` extension (Phase C1 RAG).
+    # Drop-in for postgres:16-alpine; the V9 migration runs CREATE EXTENSION vector against it.
+    image: pgvector/pgvector:pg16
     container_name: portfolio-postgres
     environment:
       POSTGRES_USER: portfolio
