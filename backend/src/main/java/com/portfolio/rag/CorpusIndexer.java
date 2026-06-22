@@ -21,10 +21,10 @@ public class CorpusIndexer {
 
     private static final Logger log = LoggerFactory.getLogger(CorpusIndexer.class);
 
-    /** Corpus types owned by reindexAll. Resume (Phase F) is indexed by its own upload path. */
+    /** Corpus types owned by reindexAll (resume text now flows in via PortfolioContext. */
     private static final List<String> MANAGED_TYPES = List.of(
             IndexableChunk.TYPE_PROFILE, IndexableChunk.TYPE_PROJECT, IndexableChunk.TYPE_EXPERIENCE,
-            IndexableChunk.TYPE_SKILLS, IndexableChunk.TYPE_SKILL_DIFF);
+            IndexableChunk.TYPE_SKILLS, IndexableChunk.TYPE_SKILL_DIFF, IndexableChunk.TYPE_RESUME);
 
     private final PortfolioContextService contextService;
     private final CorpusChunker chunker;

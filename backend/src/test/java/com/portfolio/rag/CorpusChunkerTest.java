@@ -60,9 +60,29 @@ class CorpusChunkerTest {
         var profile = new ProfileSummary("Solo Dev", "solo", "Builder", "Bio", "main", "OK", false,
                 "s@x.com", "Earth", List.of(), List.of(), List.of());
         List<IndexableChunk> chunks = chunker.chunk(
-                new PortfolioContext(profile, List.of(), List.of(), List.of(), List.of()));
+                new PortfolioContext(profile, List.of(), List.of(), List.of(), List.of(), null));
         assertEquals(1, chunks.size());
         assertEquals(IndexableChunk.TYPE_PROFILE, chunks.get(0).sourceType());
+    }
+
+    @Test
+    void windowsResumeTextIntoSectionChunks() {
+        var profile = new ProfileSummary("Solo Dev", "solo", "Builder", "Bio", "main", "OK", false,
+                "s@x.com", "Earth", List.of(), List.of(), List.of());
+        String resume = ("Experienced engineer. ".repeat(120)).trim(); // ~2600 chars
+        List<IndexableChunk> chunks = chunker.chunk(
+                new PortfolioContext(profile, List.of(), List.of(), List.of(), List.of(), resume));
+
+        List<IndexableChunk> resumeChunks = chunks.stream()
+                .filter(c -> c.sourceType().equals(IndexableChunk.TYPE_RESUME)).toList();
+        assertTrue(resumeChunks.size() >= 2, "long resume text splits into multiple windows");
+        // Stable, ordered section ids and the excerpt prefix.
+        assertEquals("section-0", resumeChunks.get(0).sourceId());
+        assertEquals("section-1", resumeChunks.get(1).sourceId());
+        for (IndexableChunk c : resumeChunks) {
+            assertTrue(c.text().startsWith("Resume excerpt:"), "resume chunk is labelled");
+            assertTrue(c.text().length() <= CorpusChunker.RESUME_CHUNK_CHARS + 32, "windows are bounded");
+        }
     }
 
     private static IndexableChunk findOne(List<IndexableChunk> chunks, String type) {
@@ -93,6 +113,6 @@ class CorpusChunkerTest {
         var frontend = new SkillBranchSummary("frontend",
                 List.of(new SkillSummary("React", 4, "daily")));
         var diff = List.of(new SkillDiffSummary("Rust", "learning", "exploring systems programming"));
-        return new PortfolioContext(profile, List.of(p1, p2), List.of(exp), List.of(backend, frontend), diff);
+        return new PortfolioContext(profile, List.of(p1, p2), List.of(exp), List.of(backend, frontend), diff, null);
     }
 }

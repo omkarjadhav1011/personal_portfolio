@@ -141,7 +141,8 @@ public class PortfolioContextService {
                 .map(d -> new SkillDiffSummary(d.getName(), d.getType(), d.getNote()))
                 .toList();
 
-        return new PortfolioContext(profileSummary, projects, experience, skillBranches, skillDiff);
+        return new PortfolioContext(profileSummary, projects, experience, skillBranches, skillDiff,
+                profile.getResumeText());
     }
 
     private static <T> List<T> orEmpty(List<T> list) {

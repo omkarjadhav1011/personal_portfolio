@@ -13,7 +13,9 @@ public record PortfolioContext(
         List<ProjectSummary> projects,
         List<ExperienceSummary> experience,
         List<SkillBranchSummary> skillBranches,
-        List<SkillDiffSummary> skillDiff
+        List<SkillDiffSummary> skillDiff,
+        // Curated resume text, or null. Part of the corpus; raw bytes are never here.
+        String resumeText
 ) {
     public record ProfileSummary(
             String name,

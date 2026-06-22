@@ -44,7 +44,44 @@ public class CorpusChunker {
         if (diff != null) {
             chunks.add(diff);
         }
+        chunks.addAll(resumeChunks(ctx.resumeText()));
         return chunks;
+    }
+
+    /** Target size for a resume window, in characters (broken at whitespace, not mid-word). */
+    static final int RESUME_CHUNK_CHARS = 900;
+
+    /**
+     * Splits curated resume text into ~{@value #RESUME_CHUNK_CHARS}-char windows at
+     * whitespace boundaries. PDF-extracted text has no reliable section structure, so fixed-size
+     * windowing is the robust default; each window becomes one retrievable chunk.
+     */
+    private List<IndexableChunk> resumeChunks(String resumeText) {
+        if (!notBlank(resumeText)) {
+            return List.of();
+        }
+        String normalized = resumeText.replaceAll("[ \\t\\x0B\\f\\r]+", " ")
+                .replaceAll("\n{3,}", "\n\n").trim();
+        List<IndexableChunk> out = new ArrayList<>();
+        int start = 0;
+        int section = 0;
+        while (start < normalized.length()) {
+            int end = Math.min(start + RESUME_CHUNK_CHARS, normalized.length());
+            if (end < normalized.length()) {
+                int lastBreak = normalized.lastIndexOf(' ', end);
+                if (lastBreak > start) {
+                    end = lastBreak;
+                }
+            }
+            String piece = normalized.substring(start, end).trim();
+            if (!piece.isBlank()) {
+                out.add(new IndexableChunk(IndexableChunk.TYPE_RESUME, "section-" + section,
+                        "Resume excerpt: " + piece));
+                section++;
+            }
+            start = end;
+        }
+        return out;
     }
 
     private IndexableChunk profileChunk(PortfolioContext.ProfileSummary p) {
