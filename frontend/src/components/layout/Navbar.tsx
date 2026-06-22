@@ -1,12 +1,8 @@
 
 import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-// Link — used by the commented-out recruiter link; restore when re-enabling it
-// import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Terminal } from "lucide-react";
-// FileSearch — used by the commented-out recruiter link (Phase E1)
-// import { FileSearch, Sparkles, Terminal } from "lucide-react";
+import { FileSearch, Sparkles, Terminal } from "lucide-react";
 import { useScrollProgress } from "@/hooks/useScrollProgress";
 import { useCommandPaletteStore } from "@/store/commandPalette";
 import { profile as staticProfile } from "@/data/profile";
@@ -90,8 +86,7 @@ export function Navbar() {
                 {s.label}
               </button>
             ))}
-            {/* Recruiter link — not developed yet; commented out for future use */}
-            {/* <Link
+            <Link
               to="/recruiter"
               className="ml-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-200 text-text-muted hover:text-git-green border border-transparent hover:border-git-green/30 hover:bg-git-green/5"
             >
@@ -100,7 +95,7 @@ export function Navbar() {
               <span className="text-[9px] px-1 py-px rounded bg-git-green/15 border border-git-green/30 text-git-green uppercase tracking-wider">
                 new
               </span>
-            </Link> */}
+            </Link>
           </div>
 
           {/* Terminal trigger + mobile toggle */}
@@ -186,8 +181,7 @@ export function Navbar() {
               <span>Open terminal</span>
             </button>
 
-            {/* Recruiter link — not developed yet; commented out for future use */}
-            {/* <Link
+            <Link
               to="/recruiter"
               onClick={() => setMobileOpen(false)}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-text-muted hover:text-git-green hover:bg-terminal-surface border border-terminal-border"
@@ -197,7 +191,7 @@ export function Navbar() {
               <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-git-green/15 border border-git-green/30 text-git-green uppercase tracking-wider">
                 new
               </span>
-            </Link> */}
+            </Link>
 
             <div className="border-t border-terminal-border my-1" />
 
