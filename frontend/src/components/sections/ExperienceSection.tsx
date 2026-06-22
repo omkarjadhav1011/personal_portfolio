@@ -32,6 +32,12 @@ export function ExperienceSection({ timeline }: ExperienceSectionProps) {
     (a, b) => parseDateToMs(b.date) - parseDateToMs(a.date)
   );
   const [active, setActive] = useState(0);
+
+  const railGradient = `linear-gradient(to bottom, ${sorted
+    .map((c, i) => `${c.branchColor} ${((i + 0.5) / sorted.length) * 100}%`)
+    .join(", ")})`;
+  const fillPct = ((active + 1) / sorted.length) * 100;
+  const activeColor = sorted[active]?.branchColor ?? "rgb(var(--color-git-green))";
   const refs = useRef<Array<HTMLDivElement | null>>([]);
 
   useEffect(() => {
@@ -78,11 +84,13 @@ export function ExperienceSection({ timeline }: ExperienceSectionProps) {
                 style={{ background: "rgb(var(--color-terminal-border))" }}
               />
               <div
-                className="absolute left-1/2 top-4 w-px -translate-x-1/2 transition-all duration-500"
+                className="absolute left-1/2 top-4 bottom-4 w-px -translate-x-1/2 transition-all duration-500"
                 style={{
-                  height: `${((active + 1) / sorted.length) * 100}%`,
-                  background: "rgb(var(--color-git-green))",
-                  boxShadow: "0 0 8px rgb(var(--color-git-green) / 0.5)",
+                  background: railGradient,
+                  // Reveal the multi-color line top-down as the active dot advances.
+                  clipPath: `inset(0 0 ${100 - fillPct}% 0)`,
+                  // drop-shadow (unlike box-shadow) follows the clipped shape.
+                  filter: `drop-shadow(0 0 6px ${activeColor}80)`,
                 }}
               />
               {sorted.map((c, i) => (
