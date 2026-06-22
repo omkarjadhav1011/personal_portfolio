@@ -1,12 +1,8 @@
 
 import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-// Link — used by the commented-out recruiter link; restore when re-enabling it
-// import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Terminal } from "lucide-react";
-// FileSearch — used by the commented-out recruiter link; Sparkles by the AI trigger
-// import { FileSearch, Sparkles, Terminal } from "lucide-react";
+import { FileSearch, Sparkles, Terminal } from "lucide-react";
 import { useScrollProgress } from "@/hooks/useScrollProgress";
 import { useCommandPaletteStore } from "@/store/commandPalette";
 import { profile as staticProfile } from "@/data/profile";
@@ -90,8 +86,7 @@ export function Navbar() {
                 {s.label}
               </button>
             ))}
-            {/* Recruiter link — not developed yet; commented out for future use */}
-            {/* <Link
+            <Link
               to="/recruiter"
               className="ml-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-200 text-text-muted hover:text-git-green border border-transparent hover:border-git-green/30 hover:bg-git-green/5"
             >
@@ -100,7 +95,7 @@ export function Navbar() {
               <span className="text-[9px] px-1 py-px rounded bg-git-green/15 border border-git-green/30 text-git-green uppercase tracking-wider">
                 new
               </span>
-            </Link> */}
+            </Link>
           </div>
 
           {/* Terminal trigger + mobile toggle */}
@@ -129,12 +124,11 @@ export function Navbar() {
               </div>
             </button>
 
-            {/* AI trigger — commented out for future use */}
             {/* Prominent clickable AI trigger — opens palette in AI mode */}
-            {/* <button
+            <button
               onClick={() => openInMode("ai")}
               className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-terminal-border bg-terminal-surface hover:border-git-green/50 hover:bg-git-green/5 text-text-faint hover:text-text-muted text-xs font-mono transition-all duration-200 group cursor-pointer"
-              aria-label="Open AI assistant (Ctrl+K)"
+              aria-label="Open AI assistant"
             >
               <Sparkles
                 size={12}
@@ -143,16 +137,7 @@ export function Navbar() {
               <span className="hidden lg:block text-text-faint group-hover:text-text-muted transition-colors">
                 Ask me anything...
               </span>
-              <div className="hidden lg:flex items-center gap-0.5 ml-0.5 opacity-50 group-hover:opacity-70 transition-opacity">
-                <kbd className="px-1 py-0.5 rounded text-2xs bg-terminal-bg border border-terminal-border leading-none">
-                  Ctrl
-                </kbd>
-                <span className="text-2xs">+</span>
-                <kbd className="px-1 py-0.5 rounded text-2xs bg-terminal-bg border border-terminal-border leading-none">
-                  K
-                </kbd>
-              </div>
-            </button> */}
+            </button>
 
             {/* Mobile hamburger */}
             <button
@@ -179,14 +164,13 @@ export function Navbar() {
             exit={{ opacity: 0, y: -16, transition: { duration: 0.2, ease: "easeIn" } }}
             className="fixed top-14 left-0 right-0 z-40 bg-terminal-bg/95 backdrop-blur-md border-b border-terminal-border p-4 font-mono space-y-1 md:hidden"
           >
-            {/* AI trigger — commented out for future use */}
-            {/* <button
+            <button
               onClick={() => { openInMode("ai"); setMobileOpen(false); }}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-git-green bg-git-green/5 border border-git-green/20 hover:bg-git-green/10 transition-colors cursor-pointer"
             >
               <Sparkles size={14} className="text-git-green/70" />
               <span>Ask AI about this developer</span>
-            </button> */}
+            </button>
 
             {/* Terminal trigger — opens the command palette */}
             <button
@@ -197,8 +181,7 @@ export function Navbar() {
               <span>Open terminal</span>
             </button>
 
-            {/* Recruiter link — not developed yet; commented out for future use */}
-            {/* <Link
+            <Link
               to="/recruiter"
               onClick={() => setMobileOpen(false)}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-text-muted hover:text-git-green hover:bg-terminal-surface border border-terminal-border"
@@ -208,7 +191,7 @@ export function Navbar() {
               <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-git-green/15 border border-git-green/30 text-git-green uppercase tracking-wider">
                 new
               </span>
-            </Link> */}
+            </Link>
 
             <div className="border-t border-terminal-border my-1" />
 

@@ -41,9 +41,11 @@ public class ProfileController {
     private static final String DEFAULT_RESUME_FILENAME = "resume.pdf";
 
     private final ProfileRepository repository;
+    private final ResumeTextExtractor resumeTextExtractor;
 
-    public ProfileController(ProfileRepository repository) {
+    public ProfileController(ProfileRepository repository, ResumeTextExtractor resumeTextExtractor) {
         this.repository = repository;
+        this.resumeTextExtractor = resumeTextExtractor;
     }
 
     @Operation(summary = "Get profile")
@@ -131,6 +133,12 @@ public class ProfileController {
         profile.setResumeData(data);
         profile.setResumeContentType(contentType);
         profile.setResumeFilename(sanitizeFilename(file.getOriginalFilename()));
+        // Phase F1: extract curated text for the RAG corpus (PDF only; DOC/DOCX not supported yet).
+        // The D1 aspect re-indexes ProfileController writes, so the new resume text is embedded
+        // automatically. The raw bytes (resumeData) are never placed in the corpus.
+        profile.setResumeText("application/pdf".equals(contentType)
+                ? resumeTextExtractor.extractPdfText(data).orElse(null)
+                : null);
         repository.save(profile);
         return Map.of(
                 "resumeUrl", "/api/profile/resume",

@@ -25,6 +25,25 @@ import java.util.List;
  * Builds a {@link PortfolioContext} from the live JPA data, with a 60s in-memory cache.
  * Ports {@code src/lib/chatbot/context.ts}; JSON columns are already deserialized by the
  * entity converters, so no manual parsing is needed here.
+ *
+ * <p><b>Corpus boundary (Phase B4) — this is the only data the AI may ever see.</b> If private
+ * data never enters {@link PortfolioContext}, it can never leak (defense by construction, not by
+ * hoping the prompt holds). {@link CorpusBoundaryTest} enforces the shape at build time.
+ *
+ * <p>INCLUDE (curated public fields only):
+ * <ul>
+ *   <li>Profile: name, handle, headline, bio, current branch/status, availability, public email,
+ *       location, social links, fun facts, stash.</li>
+ *   <li>Projects: slug, repo name, descriptions, language, tags, stars/forks/commits, status,
+ *       pinned, live/repo URLs, last commit + message.</li>
+ *   <li>Experience: type, title, org, dates, description bullets, tags, branch, url.</li>
+ *   <li>Skill branches + skill diff (name, level, tag, note).</li>
+ *   <li>(Phase F) curated resume <i>text</i> — never the raw bytes.</li>
+ * </ul>
+ *
+ * <p>EXCLUDE (never assembled into the corpus): {@code GEMINI_API_KEY}/{@code JWT_SECRET}/any
+ * secret, {@code ADMIN_PASSWORD_HASH}, MFA secrets, raw {@code avatar_data}/{@code resume_data}
+ * bytes, DB internal UUIDs and created/updated timestamps, and any admin-only field.
  */
 @Service
 public class PortfolioContextService {
@@ -122,7 +141,8 @@ public class PortfolioContextService {
                 .map(d -> new SkillDiffSummary(d.getName(), d.getType(), d.getNote()))
                 .toList();
 
-        return new PortfolioContext(profileSummary, projects, experience, skillBranches, skillDiff);
+        return new PortfolioContext(profileSummary, projects, experience, skillBranches, skillDiff,
+                profile.getResumeText());
     }
 
     private static <T> List<T> orEmpty(List<T> list) {

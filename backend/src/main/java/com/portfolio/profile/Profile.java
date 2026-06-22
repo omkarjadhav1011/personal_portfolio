@@ -86,6 +86,11 @@ public class Profile {
     @Column(name = "resume_filename", length = 255)
     private String resumeFilename;
 
+    // Curated text extracted from the uploaded PDF (Phase F1) — feeds the RAG corpus.
+    // The raw bytes live in resumeData and are never sent to the model.
+    @Column(name = "resume_text", columnDefinition = "text")
+    private String resumeText;
+
     @Convert(converter = TechPickListJsonConverter.class)
     @Column(name = "tech_picks", columnDefinition = "text")
     private List<TechPick> techPicks;
@@ -150,6 +155,9 @@ public class Profile {
 
     public String getResumeFilename() { return resumeFilename; }
     public void setResumeFilename(String resumeFilename) { this.resumeFilename = resumeFilename; }
+
+    public String getResumeText() { return resumeText; }
+    public void setResumeText(String resumeText) { this.resumeText = resumeText; }
 
     public List<TechPick> getTechPicks() { return techPicks; }
     public void setTechPicks(List<TechPick> techPicks) { this.techPicks = techPicks; }
