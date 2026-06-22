@@ -17,11 +17,15 @@ import java.util.Map;
 import java.util.Objects;
 
 
-/* Client for the Gemini REST API (model {@code gemini-2.0-flash}, {@code maxOutputTokens=1024}). */
+/*
+ * Client for the Gemini REST API. The chat model is a config value
+ * ({@code GEMINI_MODEL}, default {@code gemini-2.5-flash}) so it can be switched to
+ * {@code gemini-2.5-flash-lite} (higher daily quota) or {@code gemini-2.5-pro} without a code
+ * change. {@code maxOutputTokens=1024} bounds each answer's token use.
+ */
 @Service
 public class GeminiClient {
 
-    private static final String MODEL = "gemini-2.0-flash";
     private static final int MAX_OUTPUT_TOKENS = 1024;
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(30);
 
@@ -29,12 +33,15 @@ public class GeminiClient {
     private final ObjectMapper objectMapper;
     private final String apiKey;
     private final String baseUrl;
+    private final String model;
 
     public GeminiClient(@Value("${GEMINI_API_KEY:}") String apiKey,
                         @Value("${GEMINI_API_URL:https://generativelanguage.googleapis.com/v1beta}") String baseUrl,
+                        @Value("${GEMINI_MODEL:gemini-2.5-flash}") String model,
                         ObjectMapper objectMapper) {
         this.apiKey = apiKey;
         this.baseUrl = baseUrl;
+        this.model = model;
         this.objectMapper = objectMapper;
         this.webClient = WebClient.builder().build();
     }
@@ -47,7 +54,7 @@ public class GeminiClient {
     public String generateContent(String systemInstruction, List<ChatMessage> messages) {
         requireKey();
         String response = webClient.post()
-                .uri(baseUrl + "/models/" + MODEL + ":generateContent")
+                .uri(baseUrl + "/models/" + model + ":generateContent")
                 .header("x-goog-api-key", apiKey)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(buildRequestBody(systemInstruction, messages))
@@ -73,7 +80,7 @@ public class GeminiClient {
                         "maxOutputTokens", maxOutputTokens,
                         "temperature", temperature));
         String response = webClient.post()
-                .uri(baseUrl + "/models/" + MODEL + ":generateContent")
+                .uri(baseUrl + "/models/" + model + ":generateContent")
                 .header("x-goog-api-key", apiKey)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(body)
@@ -88,7 +95,7 @@ public class GeminiClient {
     public Flux<String> streamGenerateContent(String systemInstruction, List<ChatMessage> messages) {
         requireKey();
         return webClient.post()
-                .uri(baseUrl + "/models/" + MODEL + ":streamGenerateContent?alt=sse")
+                .uri(baseUrl + "/models/" + model + ":streamGenerateContent?alt=sse")
                 .header("x-goog-api-key", apiKey)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(buildRequestBody(systemInstruction, messages))
@@ -108,7 +115,7 @@ public class GeminiClient {
                 "contents", List.of(Map.of("role", "user", "parts", List.of(Map.of("text", prompt)))),
                 "generationConfig", Map.of("maxOutputTokens", maxOutputTokens, "temperature", temperature));
         return webClient.post()
-                .uri(baseUrl + "/models/" + MODEL + ":streamGenerateContent?alt=sse")
+                .uri(baseUrl + "/models/" + model + ":streamGenerateContent?alt=sse")
                 .header("x-goog-api-key", apiKey)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(body)
