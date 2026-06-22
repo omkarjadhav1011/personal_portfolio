@@ -64,7 +64,7 @@ export function ExperienceSection({ timeline }: ExperienceSectionProps) {
           <h2 className="font-mono font-bold text-3xl sm:text-4xl md:text-5xl mb-2 text-text-primary">
             Experience
           </h2>
-          <p className="text-text-muted text-sm font-sans mb-8">
+          <p className="text-text-muted text-sm font-mono mb-8">
             walk the commit history
           </p>
         </ScrollReveal>
@@ -163,7 +163,7 @@ export function ExperienceSection({ timeline }: ExperienceSectionProps) {
                           </div>
 
                           <div className="min-w-0 flex-1">
-                            <h3 className="font-semibold text-base sm:text-lg leading-snug text-text-primary font-sans">
+                            <h3 className="font-semibold text-base sm:text-lg leading-snug text-text-primary font-mono">
                               {c.title}
                             </h3>
                             <div className="flex items-center gap-2 flex-wrap mt-1 font-mono text-xs">
@@ -206,7 +206,7 @@ export function ExperienceSection({ timeline }: ExperienceSectionProps) {
                             {c.description.map((line, j) => (
                               <li
                                 key={j}
-                                className="flex gap-2 text-[13px] leading-relaxed text-text-secondary font-sans"
+                                className="flex gap-2 text-[13px] leading-relaxed text-text-secondary font-mono"
                               >
                                 <span className="shrink-0 select-none font-mono text-git-green">
                                   +

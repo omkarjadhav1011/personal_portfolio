@@ -111,7 +111,7 @@ export function CoverLetterStream({
         <span>{done ? "ready" : error ? "error" : "streaming…"}</span>
       </div>
 
-      <div className="p-5 sm:p-6 text-sm sm:text-base leading-relaxed text-text-secondary font-sans whitespace-pre-wrap">
+      <div className="p-5 sm:p-6 text-sm sm:text-base leading-relaxed text-text-secondary font-mono whitespace-pre-wrap">
         {error ? (
           <span className="text-git-red font-mono text-xs">{error}</span>
         ) : content.length === 0 ? (

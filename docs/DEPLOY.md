@@ -128,3 +128,84 @@ prod the Vercel URL) and `APP_COOKIE_SECURE=true` in prod.
 - Allowlisted Google sign-in → lands on `/admin` authenticated; GitHub the same.
 - A **non-allowlisted** account → bounced to `/admin/login?error=oauth_denied`, no token.
 - The JWT never appears in the address bar — only a single-use 60s `code`.
+
+## Secure Document Vault ("Drive") — production
+
+The vault is **off until `STORAGE_ENDPOINT` is set**, so the app deploys fine without it.
+To enable it in production set the env vars below on Render (all `sync: false` in
+`render.yaml`). Recommended managed services: **Cloudflare R2** (object storage) and
+**Resend** (email over SMTP) — both have free tiers and need **no code changes**.
+
+> Render free web services are a **single instance** that sleeps when idle. The download
+> tokens and email OTPs are in-memory (5–10 min, single-use), so a restart only forgets
+> short-lived codes — acceptable. For a multi-instance plan, back them with Redis.
+
+### 1. Object storage — Cloudflare R2 (recommended)
+R2 is S3-compatible with **no egress fees** (ideal in front of Render).
+1. Cloudflare dashboard → **R2** → create a bucket, e.g. `portfolio-drive`.
+2. **R2 → Manage API Tokens** → create a token with Object Read & Write → note the
+   **Access Key ID**, **Secret Access Key**, and your account's **S3 API endpoint**
+   (`https://<accountid>.r2.cloudflarestorage.com`).
+3. Set on Render:
+
+   | Var | Value |
+   |---|---|
+   | `STORAGE_ENDPOINT` | `https://<accountid>.r2.cloudflarestorage.com` |
+   | `STORAGE_BUCKET`   | `portfolio-drive` |
+   | `STORAGE_ACCESS_KEY` | R2 Access Key ID |
+   | `STORAGE_SECRET_KEY` | R2 Secret Access Key |
+   | `STORAGE_REGION`   | `auto` (R2) — for AWS S3 use the real region |
+
+The bucket is auto-created on boot if missing; a down store logs an error but never
+fails startup. (AWS S3 / Backblaze B2 also work — just change these five values.)
+
+### 2. Encryption master key
+Generate **once** and set; **never change or lose it** — it wraps every file's data key,
+so rotating it makes all stored files undecryptable, and losing it loses the files.
+```
+openssl rand -base64 32
+```
+| Var | Value |
+|---|---|
+| `DRIVE_MASTER_KEY` | the base64 32-byte output above |
+
+> Do **not** use Render's `generateValue` for this — its random value is not a base64
+> 32-byte key and the app will fail startup with a clear message.
+
+### 3. Email — Resend over SMTP (recommended)
+Reuses the same vendor as the contact form. Free tier ≈ 3k emails/month.
+1. Resend dashboard → **API Keys** → create one (this is the SMTP password).
+2. Verify a sender: a custom domain (best), or use `onboarding@resend.dev` (only delivers
+   to your Resend account's own email — fine for a single owner).
+3. Set on Render:
+
+   | Var | Value |
+   |---|---|
+   | `MAIL_HOST` | `smtp.resend.com` |
+   | `MAIL_PORT` | `587` |
+   | `MAIL_USERNAME` | `resend` |
+   | `MAIL_PASSWORD` | your Resend API key |
+   | `MAIL_FROM` | a verified sender (e.g. `vault@yourdomain.com` or `onboarding@resend.dev`) |
+   | `DRIVE_NOTIFY_EMAIL` | where files/OTPs are sent (the owner's inbox) |
+   | `DRIVE_PUBLIC_BASE_URL` | this backend's public URL, e.g. `https://portfolio-backend.onrender.com` |
+
+`MAIL_SMTP_AUTH` and `MAIL_SMTP_STARTTLS` default to `true` (correct for Resend), so they
+need not be set. **Alternative — Gmail SMTP:** `MAIL_HOST=smtp.gmail.com`, `MAIL_PORT=587`,
+`MAIL_USERNAME=<your gmail>`, `MAIL_PASSWORD=<16-char App Password>` (requires 2FA enabled).
+Simplest delivery to a Gmail inbox, but tied to that account's security + lower limits.
+
+Email is optional: without `MAIL_HOST` the vault still works, but "send to my email" and
+downloading a file marked **sensitive** return `503`/are blocked (the OTP gate fails closed).
+
+### Local dev quickstart (vault)
+`docker compose -f backend/docker-compose.yml up -d minio` for storage; for email use a
+local catcher — `docker run -d -p 127.0.0.1:1025:1025 -p 127.0.0.1:8025:8025 axllent/mailpit`
+and set `MAIL_HOST=localhost MAIL_PORT=1025 MAIL_SMTP_AUTH=false MAIL_SMTP_STARTTLS=false`
+in `.env`. Read captured mail (and OTP codes) at http://localhost:8025.
+
+### Verify (production)
+- App boots and `/actuator/health` is `200` even before the vault vars are set.
+- After setting the vars + redeploy: log into `/admin/drive`, upload a file → it appears;
+  download → original bytes; the object in R2 is ciphertext (size = plaintext + 16-byte tag).
+- Mark a file **sensitive** → download emails a 6-digit code to `DRIVE_NOTIFY_EMAIL`; entering
+  it completes the download. A full R2 + Postgres dump yields only ciphertext.

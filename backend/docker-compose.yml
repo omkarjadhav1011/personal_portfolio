@@ -18,5 +18,30 @@ services:
       timeout: 5s
       retries: 5
 
+  minio:
+    # S3-compatible object storage for the Secure Document Vault ("Drive").
+    # Bytes (file ciphertext) live here, never in Postgres. Switching to
+    # Cloudflare R2 / AWS S3 in prod is an env-var change only (no code).
+    image: minio/minio
+    container_name: portfolio-minio
+    command: server /data --console-address ":9001"
+    environment:
+      # Root creds double as the S3 access/secret keys the app uses. Override
+      # via env in any shared environment; these fallbacks are local-dev only.
+      MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY:-minioadmin}
+    ports:
+      # Loopback-only, matching the Postgres convention: reachable by local
+      # dev tools, never from external interfaces. 9000 = S3 API, 9001 = console.
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - portfolio_miniodata:/data
+    # No container healthcheck: the minio image lacks curl and has no
+    # preconfigured `mc` alias, so a probe would falsely report "unhealthy".
+    # Nothing here depends on MinIO's health; liveness is checked host-side
+    # (GET 127.0.0.1:9000/minio/health/live) and the app bootstraps the bucket.
+
 volumes:
   portfolio_pgdata:
+  portfolio_miniodata:

@@ -95,11 +95,11 @@ export function PRCard({
             <span className="font-semibold text-git-blue">{project.repoName}</span>
           </div>
 
-          <h3 className="text-lg font-semibold leading-snug mb-2 text-text-primary font-sans">
+          <h3 className="text-lg font-semibold leading-snug mb-2 text-text-primary font-mono">
             {project.lastCommitMsg}
           </h3>
 
-          <p className="text-sm mb-4 leading-relaxed text-text-secondary font-sans">
+          <p className="text-sm mb-4 leading-relaxed text-text-secondary font-mono">
             {project.description}
           </p>
 

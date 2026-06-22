@@ -24,6 +24,7 @@ const ProjectsAdmin = lazy(() => import("@/pages/admin/ProjectsAdmin"));
 const ExperienceAdmin = lazy(() => import("@/pages/admin/ExperienceAdmin"));
 const SkillsAdmin = lazy(() => import("@/pages/admin/SkillsAdmin"));
 const ProfileAdmin = lazy(() => import("@/pages/admin/ProfileAdmin"));
+const DriveAdmin = lazy(() => import("@/pages/admin/DriveAdmin"));
 
 export const router = createBrowserRouter([
   {
@@ -62,6 +63,7 @@ export const router = createBrowserRouter([
               { path: "experience", element: <ExperienceAdmin /> },
               { path: "skills", element: <SkillsAdmin /> },
               { path: "profile", element: <ProfileAdmin /> },
+              { path: "drive", element: <DriveAdmin /> },
               { path: "mfa/setup", element: <MfaSetup /> },
             ],
           },
