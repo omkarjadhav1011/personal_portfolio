@@ -1,6 +1,8 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    # pgvector/pgvector:pg16 = stock Postgres 16 + the `vector` extension (Phase C1 RAG).
+    # Drop-in for postgres:16-alpine; the V9 migration runs CREATE EXTENSION vector against it.
+    image: pgvector/pgvector:pg16
     container_name: portfolio-postgres
     environment:
       POSTGRES_USER: portfolio
@@ -41,6 +43,30 @@ services:
     # preconfigured `mc` alias, so a probe would falsely report "unhealthy".
     # Nothing here depends on MinIO's health; liveness is checked host-side
     # (GET 127.0.0.1:9000/minio/health/live) and the app bootstraps the bucket.
+
+  frontend:
+    # Vite dev server (hot-reload) on 5173. Source is bind-mounted; the anonymous
+    # node_modules volume preserves the image's Linux-built deps over the host's.
+    # The backend runs on the HOST (via `mvn spring-boot:run`), so the dev proxy
+    # targets host.docker.internal:8081 rather than a backend container.
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile.dev
+    container_name: portfolio-frontend
+    command: npm run dev -- --host
+    environment:
+      VITE_PROXY_TARGET: http://host.docker.internal:8081
+      VITE_USE_POLLING: "1"
+    ports:
+      # Loopback-only, matching the Postgres/MinIO convention.
+      - "127.0.0.1:5173:5173"
+    volumes:
+      - ../frontend:/app
+      # Anonymous volume: keep the container's node_modules, not the host's.
+      - /app/node_modules
+    extra_hosts:
+      # Lets the container resolve the host (needed on Linux; harmless on Desktop).
+      - "host.docker.internal:host-gateway"
 
 volumes:
   portfolio_pgdata:

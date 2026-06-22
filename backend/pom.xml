@@ -35,6 +35,11 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
         <dependency>
+            <!-- AOP: the CorpusReindexAspect hooks admin write endpoints to trigger RAG re-indexing. -->
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
@@ -113,6 +118,14 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <!-- Resume Q&A : extract text from uploaded PDF resumes so the curated text
+             (never the raw bytes) can be chunked + embedded into the RAG corpus. Not Boot-managed,
+             so the version is pinned explicitly. -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>3.0.3</version>
         </dependency>
         <!-- Secure Document Vault: SMTP delivery ("send a file to my email" + email OTP for
              sensitive files). Separate from the contact form's Resend mailer. -->

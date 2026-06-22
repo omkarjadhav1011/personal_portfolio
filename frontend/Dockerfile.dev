@@ -1,0 +1,20 @@
+# Dev image: runs the Vite dev server (hot-reload) inside a container.
+# Source is bind-mounted by docker-compose; node_modules stays in an anonymous
+# volume so the image's Linux-built deps aren't shadowed by the host's.
+# (Prod build lives in Dockerfile — nginx-served static. This file is dev-only.)
+FROM node:20-alpine
+WORKDIR /app
+
+# Cache the deps layer; populate node_modules in the image so the anonymous
+# volume in compose can preserve it over the host bind-mount.
+COPY package*.json ./
+# npm install (not ci): the Windows-generated lock file omits Linux-specific
+# optional esbuild packages, so ci would fail on the Linux builder.
+RUN npm install --ignore-scripts
+
+# Fallback copy for `docker run` without the bind-mount; compose overlays ./frontend.
+COPY . .
+
+EXPOSE 5173
+# --host binds 0.0.0.0 so the port is reachable from the host.
+CMD ["npm", "run", "dev", "--", "--host"]
