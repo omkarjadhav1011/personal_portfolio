@@ -116,6 +116,14 @@ CORS_ALLOWED_ORIGIN: http://localhost:5173
 #   MAIL_FROM            # From address (defaults to MAIL_USERNAME, then DRIVE_NOTIFY_EMAIL)
 #   DRIVE_PUBLIC_BASE_URL # backend base for emailed download links (default http://localhost:8081)
 
+# AI assistant (chatbot + recruiter mode) — Google Gemini, free tier. OPTIONAL: the
+# chatbot/recruiter endpoints return 503 until GEMINI_API_KEY is set (GeminiClient.isConfigured()).
+# The key lives ONLY on the backend — never in any frontend/VITE_* var. Set in .env to enable:
+#   GEMINI_API_KEY  # from Google AI Studio (aistudio.google.com), no credit card
+#   GEMINI_MODEL    # default gemini-2.5-flash; swap to gemini-2.5-flash-lite (higher daily quota)
+#                   # or gemini-2.5-pro without a code change
+#   GEMINI_API_URL  # default https://generativelanguage.googleapis.com/v1beta
+
 # OAuth2 login (Google + GitHub) — ALL OPTIONAL. Registrations are built in code
 # (OAuth2ClientConfig) only when a provider's client-id is present, so the app boots
 # password-only with none of these set (local/test). Set per environment to enable:
