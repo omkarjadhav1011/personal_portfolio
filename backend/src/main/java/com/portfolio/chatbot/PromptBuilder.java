@@ -68,6 +68,7 @@ public class PromptBuilder {
         this.objectMapper = objectMapper;
     }
 
+    /** Full-context prompt: the entire public snapshot as reference data (fallback when RAG is off/empty). */
     public String buildSystemPrompt(PortfolioContext ctx) {
         String portfolioJson;
         try {
@@ -75,9 +76,16 @@ public class PromptBuilder {
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Failed to serialize portfolio context", e);
         }
-        // Strip any delimiter tags a data value might contain so it can't fake-close the
-        // <reference_data> block and smuggle instructions into the trusted channel (LLM01).
-        String safeData = PromptSanitizer.neutralizeDelimiters(portfolioJson);
-        return TEMPLATE.formatted(ctx.profile().name(), safeData);
+        return buildSystemPrompt(ctx.profile().name(), portfolioJson);
+    }
+
+    /**
+     * RAG prompt: an arbitrary reference-data block (e.g. the top-k retrieved chunks from Phase C4).
+     * The data is always delimiter-neutralized so it can't fake-close {@code <reference_data>} and
+     * smuggle instructions into the trusted channel (LLM01).
+     */
+    public String buildSystemPrompt(String name, String referenceData) {
+        String safeData = PromptSanitizer.neutralizeDelimiters(referenceData);
+        return TEMPLATE.formatted(name, safeData);
     }
 }

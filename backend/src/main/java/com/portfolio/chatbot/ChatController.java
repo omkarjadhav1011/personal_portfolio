@@ -1,5 +1,6 @@
 package com.portfolio.chatbot;
 
+import com.portfolio.rag.RetrievalService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,19 +36,22 @@ public class ChatController {
     private final PortfolioContextService contextService;
     private final PromptBuilder promptBuilder;
     private final GeminiClient geminiClient;
+    private final RetrievalService retrievalService;
 
     public ChatController(RateLimiter rateLimiter,
                           DailyBudgetGuard budgetGuard,
                           AbuseLog abuseLog,
                           PortfolioContextService contextService,
                           PromptBuilder promptBuilder,
-                          GeminiClient geminiClient) {
+                          GeminiClient geminiClient,
+                          RetrievalService retrievalService) {
         this.rateLimiter = rateLimiter;
         this.budgetGuard = budgetGuard;
         this.abuseLog = abuseLog;
         this.contextService = contextService;
         this.promptBuilder = promptBuilder;
         this.geminiClient = geminiClient;
+        this.retrievalService = retrievalService;
     }
 
     public record ChatRequest(List<ChatMessage> messages) {
@@ -87,7 +91,12 @@ public class ChatController {
 
         String systemPrompt;
         try {
-            systemPrompt = promptBuilder.buildSystemPrompt(contextService.getContext());
+            PortfolioContext ctx = contextService.getContext();
+            // RAG: ground in the top-k retrieved chunks; fall back to the full snapshot when the
+            // index is empty or embeddings are unavailable (chat must never break on retrieval).
+            systemPrompt = retrievalService.retrieve(lastUserMessage, RetrievalService.DEFAULT_K)
+                    .map(refData -> promptBuilder.buildSystemPrompt(ctx.profile().name(), refData))
+                    .orElseGet(() -> promptBuilder.buildSystemPrompt(ctx));
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Chat is temporarily unavailable.");
         }
