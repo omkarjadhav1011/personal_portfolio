@@ -1,7 +1,10 @@
 package com.portfolio.mcp;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.portfolio.chatbot.RateLimiter;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.tool.method.MethodToolCallbackProvider;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -18,5 +21,19 @@ public class McpServerConfig {
         return MethodToolCallbackProvider.builder()
                 .toolObjects(portfolioMcpTools)
                 .build();
+    }
+
+    /**
+     * Per-IP rate limiting + logging for tool calls (Phase B3/B4), scoped to the MCP message
+     * endpoint only — {@code /mcp/sse} (the long-lived stream) is left alone.
+     */
+    @Bean
+    FilterRegistrationBean<McpRateLimitFilter> mcpRateLimitFilter(RateLimiter rateLimiter,
+                                                                  ObjectMapper objectMapper) {
+        FilterRegistrationBean<McpRateLimitFilter> registration =
+                new FilterRegistrationBean<>(new McpRateLimitFilter(rateLimiter, objectMapper));
+        registration.addUrlPatterns("/mcp/message");
+        registration.setName("mcpRateLimitFilter");
+        return registration;
     }
 }

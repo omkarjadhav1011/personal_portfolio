@@ -40,11 +40,9 @@ import org.springframework.stereotype.Component;
 public class PortfolioMcpTools {
 
     private final PortfolioQueryService portfolioQueryService;
-    private final McpToolGuard guard;
 
-    public PortfolioMcpTools(PortfolioQueryService portfolioQueryService, McpToolGuard guard) {
+    public PortfolioMcpTools(PortfolioQueryService portfolioQueryService) {
         this.portfolioQueryService = portfolioQueryService;
-        this.guard = guard;
     }
 
     @Tool(name = "get_profile",
@@ -52,7 +50,6 @@ public class PortfolioMcpTools {
                     + "location, availability, and public links. Call this to learn who the "
                     + "candidate is.")
     public ProfileView getProfile() {
-        guard.enter("get_profile");
         return portfolioQueryService.getProfile();
     }
 }
