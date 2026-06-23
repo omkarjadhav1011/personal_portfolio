@@ -2,6 +2,7 @@
 import { motion } from "framer-motion";
 import { TerminalWindow } from "@/components/ui/TerminalWindow";
 import { TypewriterText } from "@/components/ui/TypewriterText";
+import { McpBadge } from "@/components/ui/McpBadge";
 import { assetUrl } from "@/lib/api";
 import type { Profile } from "@/types";
 
@@ -118,6 +119,11 @@ export function HeroSection({ profile }: HeroSectionProps) {
                 {profile.currentStatus}
               </div>
             )}
+
+            {/* MCP discoverability — recruiters can evaluate me with their own AI */}
+            <div className="flex justify-center md:justify-start">
+              <McpBadge />
+            </div>
 
             {/* CTA Buttons */}
             <motion.div
