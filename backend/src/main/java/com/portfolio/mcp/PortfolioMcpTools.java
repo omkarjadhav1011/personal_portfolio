@@ -1,8 +1,10 @@
 package com.portfolio.mcp;
 
+import com.portfolio.query.ExperienceView;
 import com.portfolio.query.PortfolioQueryService;
 import com.portfolio.query.ProfileView;
 import com.portfolio.query.ProjectView;
+import com.portfolio.query.ResumeSummaryView;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
@@ -67,5 +69,25 @@ public class PortfolioMcpTools {
                             + "against name, language, tags, and description). Omit to list all.")
             String filter) {
         return portfolioQueryService.listProjects(filter);
+    }
+
+    @Tool(name = "get_experience",
+            description = "The candidate's depth in an area: matching skills (with proficiency "
+                    + "level), relevant roles, and related projects. Use the optional 'skill' to "
+                    + "focus on a technology (e.g. \"Postgres\"); omit it to get all skills and roles.")
+    public ExperienceView getExperience(
+            @ToolParam(required = false,
+                    description = "Optional skill/technology to focus on (e.g. \"Postgres\", "
+                            + "\"Java\"). Omit to return the full skill set and role history.")
+            String skill) {
+        return portfolioQueryService.getExperience(skill);
+    }
+
+    @Tool(name = "get_resume_summary",
+            description = "Structured highlights from the candidate's résumé: headline, top skills, "
+                    + "key roles, and the extracted résumé text (when a résumé has been uploaded). "
+                    + "Use this for a quick overview or to answer résumé-specific questions.")
+    public ResumeSummaryView getResumeSummary() {
+        return portfolioQueryService.getResumeSummary();
     }
 }

@@ -90,4 +90,81 @@ public class PortfolioQueryService {
     private static boolean contains(String value, String lowerNeedle) {
         return value != null && value.toLowerCase(Locale.ROOT).contains(lowerNeedle);
     }
+
+    /**
+     * Depth/evidence in an area: matching skills (with level), relevant roles, and related projects,
+     * optionally narrowed by {@code skill} (matched server-side, case-insensitive). A blank/null
+     * skill returns all skills + all roles (and no project list — use {@code list_projects} for
+     * that). Backs the MCP {@code get_experience} tool.
+     */
+    public ExperienceView getExperience(String skill) {
+        PortfolioContext ctx = contextService.getContext();
+        String needle = skill == null ? "" : skill.trim().toLowerCase(Locale.ROOT);
+
+        List<ExperienceView.SkillRef> skills = ctx.skillBranches().stream()
+                .flatMap(b -> b.skills().stream()
+                        .map(s -> new ExperienceView.SkillRef(s.name(), s.level(), b.branchName())))
+                .filter(s -> needle.isEmpty() || contains(s.name(), needle))
+                .toList();
+
+        List<ExperienceView.RoleView> roles = ctx.experience().stream()
+                .map(e -> new ExperienceView.RoleView(
+                        e.type(), e.title(), e.org(), e.date(), e.dateEnd(),
+                        e.description() == null ? List.of() : e.description(),
+                        e.tags() == null ? List.of() : e.tags()))
+                .filter(r -> needle.isEmpty() || roleMatches(r, needle))
+                .toList();
+
+        List<ExperienceView.ProjectRef> related = needle.isEmpty() ? List.of()
+                : ctx.projects().stream()
+                        .filter(p -> projectMatchesNeedle(p, needle))
+                        .map(p -> new ExperienceView.ProjectRef(
+                                p.slug(), p.repoName(), p.tags() == null ? List.of() : p.tags()))
+                        .toList();
+
+        return new ExperienceView(skill, skills, roles, related);
+    }
+
+    /**
+     * Structured résumé digest from curated public data: headline, top skills (by level), key roles,
+     * and the extracted public résumé text (never raw bytes). When no résumé is uploaded,
+     * {@code resumeAvailable} is false and {@code resumeText} is null. Backs {@code get_resume_summary}.
+     */
+    public ResumeSummaryView getResumeSummary() {
+        PortfolioContext ctx = contextService.getContext();
+
+        List<String> topSkills = ctx.skillBranches().stream()
+                .flatMap(b -> b.skills().stream())
+                .sorted(java.util.Comparator.comparingInt(PortfolioContext.SkillSummary::level).reversed())
+                .map(PortfolioContext.SkillSummary::name)
+                .limit(8)
+                .toList();
+
+        List<ResumeSummaryView.RoleRef> keyRoles = ctx.experience().stream()
+                .map(e -> new ResumeSummaryView.RoleRef(e.title(), e.org(), e.date(), e.dateEnd()))
+                .toList();
+
+        String resumeText = ctx.resumeText();
+        boolean available = resumeText != null && !resumeText.isBlank();
+
+        return new ResumeSummaryView(
+                ctx.profile().headline(), topSkills, keyRoles, available,
+                available ? resumeText : null);
+    }
+
+    private static boolean roleMatches(ExperienceView.RoleView r, String needle) {
+        if (contains(r.title(), needle) || contains(r.org(), needle)) {
+            return true;
+        }
+        return r.tags().stream().anyMatch(t -> contains(t, needle))
+                || r.highlights().stream().anyMatch(h -> contains(h, needle));
+    }
+
+    private static boolean projectMatchesNeedle(ProjectSummary p, String needle) {
+        if (contains(p.repoName(), needle) || contains(p.language(), needle)
+                || contains(p.slug(), needle) || contains(p.description(), needle)) {
+            return true;
+        }
+        return p.tags() != null && p.tags().stream().anyMatch(t -> contains(t, needle));
+    }
 }
