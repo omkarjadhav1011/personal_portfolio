@@ -89,6 +89,21 @@ class SecurityConfigTest {
     }
 
     @Test
+    void mcpServerSurfaceIsPublic() throws Exception {
+        // The public, read-only MCP server : /mcp/** is permitAll, since the exposed
+        // @Tool methods return only curated public data. Proven by "passed the security layer" —
+        // an anonymous call is NOT 401/403. The exact non-auth status depends on the MCP transport
+        // internals (a bare message POST with no session is a 4xx), so assert only that security
+        // did not block it, mirroring the download-route test above.
+        mvc.perform(post("/mcp/message").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(result -> {
+                    int status = result.getResponse().getStatus();
+                    assertTrue(status != 401 && status != 403,
+                            "MCP endpoint should pass the security layer (not 401/403) but was " + status);
+                });
+    }
+
+    @Test
     void securityHeadersArePresent() throws Exception {
         // Always-on hardening headers (HSTS is emitted only over HTTPS, so not asserted here).
         mvc.perform(get("/api/projects"))
