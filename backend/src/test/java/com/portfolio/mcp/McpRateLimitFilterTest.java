@@ -1,6 +1,7 @@
 package com.portfolio.mcp;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.portfolio.chatbot.AbuseLog;
 import com.portfolio.chatbot.RateLimiter;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockFilterChain;
@@ -21,8 +22,12 @@ class McpRateLimitFilterTest {
                     + "\"params\":{\"name\":\"get_profile\",\"arguments\":{}}}";
     private static final String TOOLS_LIST =
             "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}";
+    private static final String MATCH_CALL =
+            "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\","
+                    + "\"params\":{\"name\":\"match_against_jd\",\"arguments\":{\"jdText\":\"Java role\"}}}";
 
-    private final McpRateLimitFilter filter = new McpRateLimitFilter(new RateLimiter(), new ObjectMapper());
+    private final McpRateLimitFilter filter =
+            new McpRateLimitFilter(new RateLimiter(), new ObjectMapper(), new AbuseLog());
 
     private int invoke(String ip, String body) throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/mcp/message");
@@ -51,5 +56,27 @@ class McpRateLimitFilterTest {
             }
         }
         assertEquals(3, limited, "capacity is 10, so 3 of 13 tool calls from one IP should be 429");
+    }
+
+    @Test
+    void matchUsesASeparateBucketFromDataTools() throws Exception {
+        // Drain the data-tool bucket (mcp:<ip>) completely...
+        for (int i = 0; i < 10; i++) {
+            assertEquals(200, invoke("5.5.5.5", TOOL_CALL));
+        }
+        // ...the match tool (mcp-match:<ip>) is still fully available for the same IP.
+        assertEquals(200, invoke("5.5.5.5", MATCH_CALL),
+                "match_against_jd must not share the data-tool bucket");
+    }
+
+    @Test
+    void matchCallsAreRateLimitedInTheirOwnBucket() throws Exception {
+        int limited = 0;
+        for (int i = 0; i < 13; i++) {
+            if (invoke("6.6.6.6", MATCH_CALL) == 429) {
+                limited++;
+            }
+        }
+        assertEquals(3, limited, "the match bucket also caps at capacity 10");
     }
 }

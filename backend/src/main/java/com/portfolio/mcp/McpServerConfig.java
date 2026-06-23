@@ -1,6 +1,7 @@
 package com.portfolio.mcp;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.portfolio.chatbot.AbuseLog;
 import com.portfolio.chatbot.RateLimiter;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.tool.method.MethodToolCallbackProvider;
@@ -29,9 +30,10 @@ public class McpServerConfig {
      */
     @Bean
     FilterRegistrationBean<McpRateLimitFilter> mcpRateLimitFilter(RateLimiter rateLimiter,
-                                                                  ObjectMapper objectMapper) {
+                                                                  ObjectMapper objectMapper,
+                                                                  AbuseLog abuseLog) {
         FilterRegistrationBean<McpRateLimitFilter> registration =
-                new FilterRegistrationBean<>(new McpRateLimitFilter(rateLimiter, objectMapper));
+                new FilterRegistrationBean<>(new McpRateLimitFilter(rateLimiter, objectMapper, abuseLog));
         registration.addUrlPatterns("/mcp/message");
         registration.setName("mcpRateLimitFilter");
         return registration;

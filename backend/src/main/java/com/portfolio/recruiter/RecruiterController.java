@@ -1,6 +1,5 @@
 package com.portfolio.recruiter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.portfolio.chatbot.AbuseLog;
 import com.portfolio.chatbot.DailyBudgetGuard;
 import com.portfolio.chatbot.GeminiClient;
@@ -35,8 +34,6 @@ public class RecruiterController {
 
     private static final int JD_MIN = 80;
     private static final int JD_MAX = 8000;
-    private static final int MAX_OUTPUT_TOKENS = 2048;
-    private static final double TEMPERATURE = 0.4;
     private static final String RATE_LIMIT_PREFIX = "recruiter-match";
 
     private static final int LETTER_MAX_TOKENS = 512;
@@ -49,7 +46,7 @@ public class RecruiterController {
     private final PortfolioContextService contextService;
     private final RecruiterPromptBuilder promptBuilder;
     private final GeminiClient geminiClient;
-    private final ObjectMapper objectMapper;
+    private final RecruiterMatchService matchService;
 
     public RecruiterController(RateLimiter rateLimiter,
                                DailyBudgetGuard budgetGuard,
@@ -57,14 +54,14 @@ public class RecruiterController {
                                PortfolioContextService contextService,
                                RecruiterPromptBuilder promptBuilder,
                                GeminiClient geminiClient,
-                               ObjectMapper objectMapper) {
+                               RecruiterMatchService matchService) {
         this.rateLimiter = rateLimiter;
         this.budgetGuard = budgetGuard;
         this.abuseLog = abuseLog;
         this.contextService = contextService;
         this.promptBuilder = promptBuilder;
         this.geminiClient = geminiClient;
-        this.objectMapper = objectMapper;
+        this.matchService = matchService;
     }
 
     public record MatchRequest(String jobDescription) {
@@ -96,35 +93,14 @@ public class RecruiterController {
             abuseLog.warnSuspicious("recruiter-match", clientIp, jd);
         }
 
-        if (!geminiClient.isConfigured()) {
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Recruiter mode is temporarily unavailable.");
-        }
-
-        if (!budgetGuard.tryAcquire()) {
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
-                    "The AI assistant is resting for today. Please try again tomorrow.");
-        }
-
-        String prompt;
+        // The match itself (availability, daily cost ceiling, prompt, model call, parse) is the
+        // shared RecruiterMatchService — one implementation, also used by the MCP match_against_jd tool.
         try {
-            PortfolioContext ctx = contextService.getContext();
-            prompt = promptBuilder.buildMatchPrompt(ctx, jd);
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Recruiter mode is temporarily unavailable.");
-        }
-
-        String json;
-        try {
-            json = geminiClient.generateStructured(
-                    prompt, RecruiterPromptBuilder.MATCH_RESPONSE_SCHEMA, MAX_OUTPUT_TOKENS, TEMPERATURE);
-        } catch (Exception e) {
+            return matchService.match(jd);
+        } catch (RecruiterMatchUnavailableException e) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage());
+        } catch (RecruiterMatchException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Recruiter mode ran into a problem.");
-        }
-
-        try {
-            return objectMapper.readValue(json, MatchResult.class);
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "The model returned an unexpected response.");
         }
     }
 
