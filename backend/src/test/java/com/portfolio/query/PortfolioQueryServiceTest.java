@@ -2,6 +2,7 @@ package com.portfolio.query;
 
 import com.portfolio.chatbot.PortfolioContext;
 import com.portfolio.chatbot.PortfolioContext.ProfileSummary;
+import com.portfolio.chatbot.PortfolioContext.ProjectSummary;
 import com.portfolio.chatbot.PortfolioContextService;
 import com.portfolio.profile.SocialLink;
 import org.junit.jupiter.api.Test;
@@ -82,6 +83,53 @@ class PortfolioQueryServiceTest {
         assertEquals(1, view.links().size());
         assertEquals("GitHub", view.links().get(0).label());
         assertEquals("https://github.com/omkar", view.links().get(0).url());
+    }
+
+    @Test
+    void listProjectsMapsPublicFieldsAndDefaultsToAll() {
+        PortfolioContextService contextService = mock(PortfolioContextService.class);
+        when(contextService.getContext()).thenReturn(contextWith(
+                project("portfolio", "Portfolio", "Spring Boot API", "Java", List.of("Spring Boot", "Postgres")),
+                project("game", "Game", "A WebGL game", "TypeScript", List.of("WebGL"))));
+
+        List<ProjectView> all = new PortfolioQueryService(contextService).listProjects(null);
+
+        assertEquals(2, all.size(), "a null filter returns every project");
+        ProjectView first = all.get(0);
+        assertEquals("portfolio", first.slug());
+        assertEquals("Portfolio", first.name());
+        assertEquals("Spring Boot API", first.description());
+        assertEquals("Java", first.language());
+        assertEquals(List.of("Spring Boot", "Postgres"), first.tags());
+        assertEquals("https://repo/portfolio", first.repoUrl());
+    }
+
+    @Test
+    void listProjectsFiltersByKeywordAcrossFields() {
+        PortfolioContextService contextService = mock(PortfolioContextService.class);
+        when(contextService.getContext()).thenReturn(contextWith(
+                project("portfolio", "Portfolio", "Spring Boot API", "Java", List.of("Spring Boot", "Postgres")),
+                project("game", "Game", "A WebGL game", "TypeScript", List.of("WebGL"))));
+        PortfolioQueryService svc = new PortfolioQueryService(contextService);
+
+        assertEquals(1, svc.listProjects("postgres").size(), "tag match, case-insensitive");
+        assertEquals("portfolio", svc.listProjects("java").get(0).slug(), "language match");
+        assertEquals(1, svc.listProjects("webgl").size(), "matches the second project");
+        assertEquals(0, svc.listProjects("rust").size(), "no match → empty");
+        assertEquals(2, svc.listProjects("   ").size(), "blank filter returns all");
+    }
+
+    private static PortfolioContext contextWith(ProjectSummary... projects) {
+        ProfileSummary profile = new ProfileSummary(
+                "Name", "handle", "Headline", "bio", "main", "status", true,
+                "e@example.com", "Loc", List.of(), List.of(), List.of());
+        return new PortfolioContext(profile, List.of(projects), List.of(), List.of(), List.of(), null);
+    }
+
+    private static ProjectSummary project(String slug, String repoName, String description,
+                                          String language, List<String> tags) {
+        return new ProjectSummary(slug, repoName, description, "long: " + description, language, tags,
+                0, 0, 0, "active", false, "https://live/" + slug, "https://repo/" + slug, "abc123", "init");
     }
 
     /** Recursively gathers record-component names, descending into nested records and List&lt;Record&gt;. */

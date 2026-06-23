@@ -2,8 +2,12 @@ package com.portfolio.mcp;
 
 import com.portfolio.query.PortfolioQueryService;
 import com.portfolio.query.ProfileView;
+import com.portfolio.query.ProjectView;
 import org.springframework.ai.tool.annotation.Tool;
+import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 /**
  * Public, read-only MCP tools over the shared {@link PortfolioQueryService} facade
@@ -51,5 +55,17 @@ public class PortfolioMcpTools {
                     + "candidate is.")
     public ProfileView getProfile() {
         return portfolioQueryService.getProfile();
+    }
+
+    @Tool(name = "list_projects",
+            description = "List the candidate's projects — each with name, description, language, "
+                    + "tech stack (tags), status, and links. Use the optional 'filter' to narrow to "
+                    + "projects matching a technology or keyword (e.g. \"Spring Boot\", \"Postgres\").")
+    public List<ProjectView> listProjects(
+            @ToolParam(required = false,
+                    description = "Optional technology or keyword to filter projects by (matched "
+                            + "against name, language, tags, and description). Omit to list all.")
+            String filter) {
+        return portfolioQueryService.listProjects(filter);
     }
 }
