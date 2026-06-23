@@ -50,15 +50,53 @@ services:
       - key: CORS_ALLOWED_ORIGIN
         sync: false
 
-      # ── Optional features (app boots fine if these are blank) ──────────────
-      # Chatbot + recruiter-match (Google Gemini). Leave unset to disable.
+      # ── AI assistant: chatbot + RAG + recruiter (Google Gemini) ───────────
+      # The only secret is GEMINI_API_KEY — leave it unset to disable all AI features
+      # (chat/recruiter then return 503). The rest are non-secret tuning knobs with
+      # sensible defaults committed here; change them in git or the dashboard.
       - key: GEMINI_API_KEY
         sync: false
-      # Contact-form email delivery (Resend). Leave unset to disable.
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash      # or gemini-2.5-flash-lite (more daily quota) / gemini-2.5-pro
+      - key: GEMINI_API_URL
+        value: https://generativelanguage.googleapis.com/v1beta
+      - key: GEMINI_EMBED_MODEL
+        value: gemini-embedding-001
+      # Must match the embedding column width (vector(768)); don't change after indexing.
+      - key: GEMINI_EMBED_DIM
+        value: "768"
+      # Hard daily ceiling on AI calls (chat + recruiter); keep below the free-tier RPD.
+      - key: AI_DAILY_REQUEST_CAP
+        value: "200"
+
+      # ── Contact-form email delivery (Resend REST). Leave key unset to disable. ──
       - key: RESEND_API_KEY
         sync: false
       - key: CONTACT_TO_EMAIL
         sync: false
+      - key: RESEND_API_URL
+        value: https://api.resend.com/emails
+
+      # ── OAuth2 admin login (Google + GitHub) — ALL OPTIONAL ────────────────
+      # App boots password-only if these are unset. Registrations activate only when a
+      # provider's client-id is present. OAUTH_ALLOWED_EMAILS is FAIL-CLOSED. Full steps
+      # + redirect-URI table in docs/DEPLOY.md §5.
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      - key: OAUTH_ALLOWED_EMAILS
+        sync: false
+      # SPA origin to redirect back to after sign-in (the Vercel URL in prod).
+      - key: APP_FRONTEND_URL
+        sync: false
+      # Prod is HTTPS, so the OAuth-request cookie must carry the Secure flag.
+      - key: APP_COOKIE_SECURE
+        value: "true"
 
       # ── Secure Document Vault ("Drive") — ALL OPTIONAL. The vault stays OFF until
       #    STORAGE_ENDPOINT is set, so leaving these blank is safe. Recommended prod:
