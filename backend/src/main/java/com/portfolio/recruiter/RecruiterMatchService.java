@@ -5,6 +5,8 @@ import com.portfolio.chatbot.DailyBudgetGuard;
 import com.portfolio.chatbot.GeminiClient;
 import com.portfolio.chatbot.PortfolioContext;
 import com.portfolio.chatbot.PortfolioContextService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
@@ -21,6 +23,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class RecruiterMatchService {
+
+    private static final Logger log = LoggerFactory.getLogger(RecruiterMatchService.class);
 
     private static final int MAX_OUTPUT_TOKENS = 2048;
     private static final double TEMPERATURE = 0.4;
@@ -74,13 +78,24 @@ public class RecruiterMatchService {
             json = geminiClient.generateStructured(
                     prompt, RecruiterPromptBuilder.MATCH_RESPONSE_SCHEMA, MAX_OUTPUT_TOKENS, TEMPERATURE);
         } catch (Exception e) {
+            log.warn("[recruiter-match] model call failed", e);
             throw new RecruiterMatchException("The model call failed", e);
         }
 
         try {
             return objectMapper.readValue(json, MatchResult.class);
         } catch (Exception e) {
+            log.warn("[recruiter-match] could not parse model response (len={}): {}",
+                    json == null ? -1 : json.length(), abbreviate(json), e);
             throw new RecruiterMatchException("The model returned an unexpected response", e);
         }
+    }
+
+    private static String abbreviate(String s) {
+        if (s == null) {
+            return "<null>";
+        }
+        String oneLine = s.replaceAll("\\s+", " ").trim();
+        return oneLine.length() <= 300 ? oneLine : oneLine.substring(0, 300) + "…";
     }
 }
