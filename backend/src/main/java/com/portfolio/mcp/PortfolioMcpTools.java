@@ -1,10 +1,13 @@
 package com.portfolio.mcp;
 
+import com.portfolio.query.AvailabilityView;
 import com.portfolio.query.ExperienceView;
 import com.portfolio.query.PortfolioQueryService;
 import com.portfolio.query.ProfileView;
+import com.portfolio.query.ProjectDetailView;
 import com.portfolio.query.ProjectView;
 import com.portfolio.query.ResumeSummaryView;
+import com.portfolio.query.SkillView;
 import com.portfolio.recruiter.MatchResult;
 import com.portfolio.recruiter.RecruiterMatchService;
 import org.springframework.ai.tool.annotation.Tool;
@@ -116,6 +119,29 @@ public class PortfolioMcpTools {
                     "Job description is too long (max " + MAX_JD_LENGTH + " characters).");
         }
         return recruiterMatchService.match(jdText);
+    }
+
+    @Tool(name = "get_project",
+            description = "Full detail on ONE project by its slug (long description, tech stack, "
+                    + "status, GitHub stats, and links). Get the slug from list_projects first.")
+    public ProjectDetailView getProject(
+            @ToolParam(description = "The project's slug, as returned by list_projects.")
+            String slug) {
+        return portfolioQueryService.getProject(slug);
+    }
+
+    @Tool(name = "list_skills",
+            description = "The candidate's full skill set as a flat list — each with proficiency "
+                    + "level and the branch (category) it belongs to.")
+    public List<SkillView> listSkills() {
+        return portfolioQueryService.listSkills();
+    }
+
+    @Tool(name = "get_availability",
+            description = "Whether the candidate is open to work, their current focus/status, and "
+                    + "location — the quick answer to \"are they available and where?\".")
+    public AvailabilityView getAvailability() {
+        return portfolioQueryService.getAvailability();
     }
 }
 

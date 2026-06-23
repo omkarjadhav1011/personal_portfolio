@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -178,6 +179,54 @@ class PortfolioQueryServiceTest {
         assertNull(rv.resumeText());
         assertEquals("Backend Developer", rv.headline(), "structured highlights still returned");
         assertEquals(3, rv.topSkills().size());
+    }
+
+    @Test
+    void getProjectReturnsFullDetailBySlugCaseInsensitively() {
+        PortfolioContextService contextService = mock(PortfolioContextService.class);
+        when(contextService.getContext()).thenReturn(fullContext("resume"));
+
+        ProjectDetailView detail = new PortfolioQueryService(contextService).getProject("API");
+
+        assertEquals("api", detail.slug());
+        assertEquals("API Service", detail.name());
+        assertEquals("long: Spring Boot REST API", detail.longDescription());
+        assertEquals(List.of("Spring Boot", "Postgres"), detail.tags());
+    }
+
+    @Test
+    void getProjectRejectsUnknownOrBlankSlug() {
+        PortfolioContextService contextService = mock(PortfolioContextService.class);
+        when(contextService.getContext()).thenReturn(fullContext("resume"));
+        PortfolioQueryService svc = new PortfolioQueryService(contextService);
+
+        assertThrows(IllegalArgumentException.class, () -> svc.getProject("nope"));
+        assertThrows(IllegalArgumentException.class, () -> svc.getProject("  "));
+    }
+
+    @Test
+    void listSkillsFlattensBranchesWithLevels() {
+        PortfolioContextService contextService = mock(PortfolioContextService.class);
+        when(contextService.getContext()).thenReturn(fullContext("resume"));
+
+        List<SkillView> skills = new PortfolioQueryService(contextService).listSkills();
+
+        assertEquals(3, skills.size());
+        assertTrue(skills.stream().anyMatch(s ->
+                s.name().equals("Java") && s.level() == 5 && s.branch().equals("Backend")));
+    }
+
+    @Test
+    void getAvailabilityReflectsProfile() {
+        PortfolioContextService contextService = mock(PortfolioContextService.class);
+        when(contextService.getContext()).thenReturn(fullContext("resume"));
+
+        AvailabilityView a = new PortfolioQueryService(contextService).getAvailability();
+
+        assertTrue(a.availableForWork());
+        assertEquals("status", a.currentStatus());
+        assertEquals("main", a.currentBranch());
+        assertEquals("Loc", a.location());
     }
 
     private static PortfolioContext fullContext(String resumeText) {

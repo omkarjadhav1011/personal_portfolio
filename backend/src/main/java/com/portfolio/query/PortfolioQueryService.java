@@ -167,4 +167,42 @@ public class PortfolioQueryService {
         }
         return p.tags() != null && p.tags().stream().anyMatch(t -> contains(t, needle));
     }
+
+    /**
+     * Full public detail for one project by slug (the detailed complement to {@link #listProjects}).
+     * Backs the MCP {@code get_project} tool.
+     *
+     * @throws IllegalArgumentException if the slug is blank or no project matches it
+     */
+    public ProjectDetailView getProject(String slug) {
+        if (slug == null || slug.isBlank()) {
+            throw new IllegalArgumentException("A project slug is required.");
+        }
+        String target = slug.trim();
+        return contextService.getContext().projects().stream()
+                .filter(p -> target.equalsIgnoreCase(p.slug()))
+                .findFirst()
+                .map(p -> new ProjectDetailView(
+                        p.slug(), p.repoName(), p.description(), p.longDescription(),
+                        p.language(), p.tags() == null ? List.of() : p.tags(), p.status(), p.pinned(),
+                        p.stars(), p.forks(), p.commits(),
+                        p.liveUrl(), p.repoUrl(), p.lastCommit(), p.lastCommitMsg()))
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "No project found with slug '" + target + "'."));
+    }
+
+    /** The full flat skill set with levels and branches. Backs the MCP {@code list_skills} tool. */
+    public List<SkillView> listSkills() {
+        return contextService.getContext().skillBranches().stream()
+                .flatMap(b -> b.skills().stream()
+                        .map(s -> new SkillView(s.name(), s.level(), b.branchName(), s.tag())))
+                .toList();
+    }
+
+    /** Open-to-work status, current focus, and location. Backs the MCP {@code get_availability} tool. */
+    public AvailabilityView getAvailability() {
+        ProfileSummary p = contextService.getContext().profile();
+        return new AvailabilityView(
+                p.availableForWork(), p.currentStatus(), p.currentBranch(), p.location());
+    }
 }
