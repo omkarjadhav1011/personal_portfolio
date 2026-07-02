@@ -4,6 +4,7 @@ import { useProfile } from "@/api/profile";
 import { useDomainProjects } from "@/api/projects";
 import { useExperience } from "@/api/experience";
 import { useSkillBranches, useSkillDiff } from "@/api/skills";
+import { useNewMessageCount } from "@/api/messages";
 
 /** Admin dashboard (replaces admin/page.tsx). Stats come from the live queries. */
 export default function Dashboard() {
@@ -13,6 +14,7 @@ export default function Dashboard() {
   const branches = useSkillBranches().data ?? [];
   const diffs = useSkillDiff().data ?? [];
   const profile = useProfile().data;
+  const newMessages = useNewMessageCount().data ?? 0;
   const totalSkills = branches.reduce((acc, b) => acc + b.skills.length, 0);
 
   const cards = [
@@ -20,6 +22,7 @@ export default function Dashboard() {
     { label: "experience entries", value: experience.length, href: "/admin/experience", color: "text-git-green", border: "border-git-green/20", bg: "bg-git-green/5" },
     { label: "skills", value: totalSkills, href: "/admin/skills", color: "text-git-orange", border: "border-git-orange/20", bg: "bg-git-orange/5" },
     { label: "skill diffs", value: diffs.length, href: "/admin/skills", color: "text-git-purple", border: "border-git-purple/20", bg: "bg-git-purple/5" },
+    { label: "📬 new messages", value: newMessages, href: "/admin/messages", color: "text-git-red", border: "border-git-red/20", bg: "bg-git-red/5" },
   ];
 
   const actions = [

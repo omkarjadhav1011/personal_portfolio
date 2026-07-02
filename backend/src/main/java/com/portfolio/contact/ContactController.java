@@ -7,6 +7,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -18,10 +20,16 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
+
 /**
- * Public contact endpoint. Ports the Next.js {@code actions/contact.ts}: validates the
- * payload, drops bot submissions via the honeypot, and (PHASE 4.1) logs the message
- * instead of sending it — real delivery (Resend/SMTP) lands in 4.2. Always returns
+ * Public contact endpoint. Validates the payload, drops bot submissions via the honeypot,
+ * then <b>stores the message first</b> (Phase A1 store-then-send: Postgres is the system of
+ * record) and only afterwards attempts email delivery — a Resend failure is logged, never
+ * surfaced, because the lead is already safe in {@code contact_message}. Always returns
  * {@code {success, message}} with HTTP 200, matching the original server action.
  */
 @Tag(name = "Contact", description = "Public contact form")
@@ -29,16 +37,20 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api/contact")
 public class ContactController {
 
+    private static final Logger log = LoggerFactory.getLogger(ContactController.class);
+
     private static final String SUCCESS_MESSAGE = "Message delivered to origin/inbox";
-    private static final String FAILURE_MESSAGE = "fatal: failed to connect to remote — try again later";
     private static final String RATE_LIMIT_KEY_PREFIX = "contact:";
 
     private final EmailService emailService;
     private final RateLimiter rateLimiter;
+    private final ContactMessageRepository messageRepository;
 
-    public ContactController(EmailService emailService, RateLimiter rateLimiter) {
+    public ContactController(EmailService emailService, RateLimiter rateLimiter,
+                             ContactMessageRepository messageRepository) {
         this.emailService = emailService;
         this.rateLimiter = rateLimiter;
+        this.messageRepository = messageRepository;
     }
 
     @Operation(summary = "Send a contact message", description = "Public; validates, drops bots, sends via Resend")
@@ -53,17 +65,36 @@ public class ContactController {
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many messages. Please slow down.");
         }
 
-        // Honeypot: bots fill this; humans don't. Silently succeed — no send.
+        // Honeypot: bots fill this; humans don't. Silently succeed — no row, no send.
         if (req.honeypot() != null && !req.honeypot().isBlank()) {
             return new ContactResult(true, SUCCESS_MESSAGE);
         }
 
-        boolean sent = emailService.send(
-                req.name().trim(), req.email().trim().toLowerCase(), req.message().trim());
+        String name = req.name().trim();
+        String email = req.email().trim().toLowerCase();
+        String message = req.message().trim();
 
-        return sent
-                ? new ContactResult(true, SUCCESS_MESSAGE)
-                : new ContactResult(false, FAILURE_MESSAGE);
+        // Store first — the row is the deliverable; email is a best-effort notification.
+        ContactMessage saved = messageRepository.save(new ContactMessage(
+                name, email, message, MessageSource.WEB, sha256Hex(RateLimiter.clientIp(request))));
+
+        boolean sent = emailService.send(name, email, message);
+        if (!sent) {
+            log.warn("[contact] message {} stored but email notification failed — visible in admin inbox", saved.getId());
+        }
+
+        return new ContactResult(true, SUCCESS_MESSAGE);
+    }
+
+    /** Privacy stance: the client IP is stored only as a SHA-256 hex hash, never raw. */
+    private static String sha256Hex(String value) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(value.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 unavailable", e);
+        }
     }
 
     /** Mirror the server action: validation failures return 200 with {success:false, firstError}. */
