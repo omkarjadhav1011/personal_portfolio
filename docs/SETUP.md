@@ -82,6 +82,8 @@ DRIVE_MASTER_KEY=__generate__                 # openssl rand -base64 32  (SET ON
 # RESEND_API_KEY=...            # contact-form email (separate from the vault mailer)
 # CONTACT_TO_EMAIL=...          # contact-form inbox
 # CORS_ALLOWED_ORIGIN=http://localhost:5173   # default already 5173
+# TELEGRAM_BOT_TOKEN=...        # owner notifications to your phone — see A8
+# TELEGRAM_CHAT_ID=...          # with the token
 ```
 
 ### A4. Generate the secrets
@@ -153,6 +155,23 @@ Restart the backend; read captured mail + OTP codes at **http://localhost:8025**
    ```
 4. Restart the backend. To send to **any** address, verify a domain in Resend and set
    `MAIL_FROM` to a sender on that domain.
+
+### A8. Owner notifications via Telegram (optional, one-time)
+Lead-capture events (new contact message, recruiter lead, …) can ping your phone through a
+Telegram bot. Without the token the app silently uses a no-op channel — nothing breaks.
+
+1. In Telegram, message **@BotFather** → `/newbot` → pick a name and a unique `..._bot`
+   username → BotFather replies with the **bot token** (`123456:ABC-...`).
+2. Get your **chat id**: open a chat with your new bot, press **Start**, then visit
+   `https://api.telegram.org/bot<TOKEN>/getUpdates` in a browser — your id is
+   `result[0].message.chat.id`. (Or message **@userinfobot** and copy the id it replies with.)
+3. In `.env` (local) and the Render dashboard (prod):
+   ```dotenv
+   TELEGRAM_BOT_TOKEN=123456:ABC-your-token
+   TELEGRAM_CHAT_ID=123456789
+   ```
+4. Restart the backend. Submitting the contact form should now ping your phone within seconds;
+   a failed send is logged and never affects the visitor.
 
 ---
 
