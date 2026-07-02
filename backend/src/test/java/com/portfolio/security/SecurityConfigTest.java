@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -62,6 +63,18 @@ class SecurityConfigTest {
         mvc.perform(patch("/api/profile").contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isUnauthorized());
         mvc.perform(post("/api/admin/reorder").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void unauthenticatedAdminMessagesAccessIsRejected() throws Exception {
+        // Lead-capture A2: the inbox is a GET under /api/admin/**, exactly the shape that would
+        // slip through the public GET /** catch-all if the ADMIN matcher ever moved below it.
+        mvc.perform(get("/api/admin/messages")).andExpect(status().isUnauthorized());
+        mvc.perform(patch("/api/admin/messages/00000000-0000-0000-0000-000000000000")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"READ\"}"))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(delete("/api/admin/messages/00000000-0000-0000-0000-000000000000"))
                 .andExpect(status().isUnauthorized());
     }
 
