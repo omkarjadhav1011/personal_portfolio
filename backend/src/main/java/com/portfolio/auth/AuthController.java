@@ -80,7 +80,7 @@ public class AuthController {
                                HttpServletResponse response) {
         String ip = RateLimiter.clientIp(request);
 
-        // Per-IP throttle (IP derived from the trusted X-Real-IP, not spoofable XFF).
+        // Per-IP throttle (IP from getRemoteAddr(), never a client-settable header).
         RateLimiter.Result limit = rateLimiter.check(RATE_LIMIT_KEY_PREFIX + ip);
         if (!limit.ok()) {
             response.setHeader("Retry-After", String.valueOf(limit.retryAfterSeconds()));
