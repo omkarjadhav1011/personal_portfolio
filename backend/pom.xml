@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.5</version>
+        <version>3.5.15</version>
         <relativePath/>
     </parent>
 
@@ -19,7 +19,21 @@
 
     <properties>
         <java.version>21</java.version>
+        <!-- Spring AI 1.0.9 supports Spring Boot 3.4.x/3.5.x; provides the MCP server starter. -->
+        <spring-ai.version>1.0.9</spring-ai.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -74,6 +88,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+        <!-- Public, read-only MCP server (docs/MCP_RECRUITER_plan.md). WebMvc/SSE + Streamable-HTTP
+             transport auto-configured; @Tool methods are exposed to MCP clients. Version managed by
+             the spring-ai-bom imported above. -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>

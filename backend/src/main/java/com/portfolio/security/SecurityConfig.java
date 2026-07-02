@@ -105,6 +105,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/chat").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/recruiter/**").permitAll()
+                        // Public, read-only MCP server. ALL methods,
+                        // because the SSE transport uses GET /mcp/sse (stream) AND POST /mcp/message
+                        // (client→server) — the GET /** catch-all below would miss the POST. The
+                        // exposed @Tool methods return ONLY curated public data via
+                        // PortfolioQueryService; no auth, because the data is public by design.
+                        // Placed before the ADMIN catch-all, same as /api/chat — public surface,
+                        // opposite intent to the private admin/vault routes locked above.
+                        .requestMatchers("/mcp/**").permitAll()
                         // Public portfolio reads. Admin/auth GETs are already caught above.
                         .requestMatchers(HttpMethod.GET, "/**").permitAll()
                         .anyRequest().hasRole("ADMIN"))

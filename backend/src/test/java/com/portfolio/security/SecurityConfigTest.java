@@ -11,6 +11,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -76,9 +77,30 @@ class SecurityConfigTest {
     @Test
     void driveDownloadTokenRouteIsPublic() throws Exception {
         // The single-use token IS the auth, so this route is permitAll and placed above the ADMIN
-        // matcher. With no controller wired it resolves to 404 — proving it passed the security
-        // layer (a blocked route would be 401), i.e. the matcher ordering is correct.
-        mvc.perform(get("/api/drive/download/some-token")).andExpect(status().isNotFound());
+        // matcher. It passed the security layer iff it is NOT blocked (401/403). The exact code
+        // depends on whether the env-gated vault is wired: with no STORAGE_ENDPOINT there is no
+        // controller → 404; when a developer's local .env enables the vault, an unknown token →
+        // 410 Gone. Either way the matcher ordering is correct.
+        mvc.perform(get("/api/drive/download/some-token")).andExpect(result -> {
+            int status = result.getResponse().getStatus();
+            assertTrue(status == 404 || status == 410,
+                    "public download route should pass security (expected 404 or 410) but was " + status);
+        });
+    }
+
+    @Test
+    void mcpServerSurfaceIsPublic() throws Exception {
+        // The public, read-only MCP server : /mcp/** is permitAll, since the exposed
+        // @Tool methods return only curated public data. Proven by "passed the security layer" —
+        // an anonymous call is NOT 401/403. The exact non-auth status depends on the MCP transport
+        // internals (a bare message POST with no session is a 4xx), so assert only that security
+        // did not block it, mirroring the download-route test above.
+        mvc.perform(post("/mcp/message").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(result -> {
+                    int status = result.getResponse().getStatus();
+                    assertTrue(status != 401 && status != 403,
+                            "MCP endpoint should pass the security layer (not 401/403) but was " + status);
+                });
     }
 
     @Test

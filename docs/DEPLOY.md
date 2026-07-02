@@ -9,6 +9,103 @@ can't do these). Run CLI logins in this session by prefixing with `!`, e.g. `! v
 
 ---
 
+## 0. Environment variables — complete reference (the whole project)
+
+Every env var the project reads, grouped by who sets it. **Legend:** 🟢 auto (Render/DB sets it —
+don't touch) · 🔴 **required** (you must set) · ⚪ optional (has a working default; set only to enable
+a feature or override). "In `render.yaml`?" = whether the Blueprint pre-creates the slot (Render
+prompts you for it). Vars **not** in `render.yaml` must be added manually in the Render dashboard
+(**Environment → Add Environment Variable**) if you want them.
+
+### Backend (Render) — core / auto-wired
+
+| Var | Set? | In render.yaml | Purpose / default |
+|---|---|---|---|
+| `DB_HOST` `DB_PORT` `DB_NAME` `DB_USERNAME` `DB_PASSWORD` | 🟢 auto | yes (`fromDatabase`) | Wired from the managed Postgres. Locally these fall back to `localhost:5433/portfolio`. |
+| `DATABASE_URL` | 🟢 auto | — | Optional full JDBC URL; if set it overrides the `DB_*` parts (docker-compose uses it). |
+| `PORT` | 🟢 auto | — | Render injects the listen port; falls back to `8081` locally. |
+| `JWT_SECRET` | 🔴 required | yes (`generateValue`) | HS256 signing key, **≥32 bytes**. Render auto-generates it; locally put a strong value in `.env` (`openssl rand -base64 48`). App **fails to boot** if missing/short. |
+| `JWT_EXPIRY_HOURS` | ⚪ | yes (`"8"`) | Access-token lifetime. Default `8`. |
+| `JWT_PREAUTH_MINUTES` | ⚪ | no | Interim PRE_AUTH (MFA) token lifetime. Default `5`. |
+| `ADMIN_USERNAME` | 🔴 required | yes (`sync:false`) | Admin login name. |
+| `ADMIN_PASSWORD_HASH` | 🔴 required | yes (`sync:false`) | **BCrypt hash** (cost 10–12) of the admin password — never plaintext (see §1 for how to generate). |
+| `CORS_ALLOWED_ORIGIN` | 🔴 required | yes (`sync:false`) | The Vercel frontend origin, no trailing slash. Default (local) `http://localhost:5173`. |
+
+### Backend (Render) — AI assistant: chatbot + RAG + recruiter
+
+| Var | Set? | In render.yaml | Purpose / default |
+|---|---|---|---|
+| `GEMINI_API_KEY` | ⚪ (enables AI) | yes (`sync:false`) | Google AI Studio key. **Empty = chatbot/recruiter return 503** (feature off). Backend-only — never in any `VITE_*`. |
+| `GEMINI_MODEL` | ⚪ | yes (`value`) | Chat model. Default `gemini-2.5-flash`. Swap to `gemini-2.5-flash-lite` (higher daily quota) or `gemini-2.5-pro`. |
+| `GEMINI_API_URL` | ⚪ | yes (`value`) | Gemini REST base. Default `https://generativelanguage.googleapis.com/v1beta`. |
+| `GEMINI_EMBED_MODEL` | ⚪ | yes (`value`) | Embedding model for RAG. Default `gemini-embedding-001`. |
+| `GEMINI_EMBED_DIM` | ⚪ | yes (`value`) | Embedding dimension. Default `768`. **Must match the `embedding` column width** — don't change after data is indexed. |
+| `AI_DAILY_REQUEST_CAP` | ⚪ | yes (`value`) | Hard daily ceiling on AI calls (chat + recruiter), set **below** the free-tier RPD. Default `200`. |
+
+### Backend (Render) — contact form (email via Resend REST)
+
+| Var | Set? | In render.yaml | Purpose / default |
+|---|---|---|---|
+| `RESEND_API_KEY` | ⚪ (enables contact email) | yes (`sync:false`) | Resend API key. Empty = contact form can't send. |
+| `CONTACT_TO_EMAIL` | ⚪ | yes (`sync:false`) | Inbox for submissions. Falls back to the seeded profile email if unset. |
+| `RESEND_API_URL` | ⚪ | yes (`value`) | Override the Resend endpoint (testing). Default `https://api.resend.com/emails`. |
+
+> Note: the contact form uses **Resend (REST)**; the vault uses **SMTP** (`MAIL_*` below). Two
+> independent mailers.
+
+### Backend (Render) — OAuth2 admin login (Google + GitHub) — all optional
+
+| Var | Set? | In render.yaml | Purpose |
+|---|---|---|---|
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | ⚪ | yes (`sync:false`) | Enable Google sign-in (see §5). Registered only when the client-id is present. |
+| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | ⚪ | yes (`sync:false`) | Enable GitHub sign-in (scope `read:user,user:email`). |
+| `OAUTH_ALLOWED_EMAILS` | ⚪ | yes (`sync:false`) | **Fail-closed** comma-separated allowlist; only these emails may enter via OAuth. Empty/unset → nobody gets in via OAuth. |
+| `APP_FRONTEND_URL` | ⚪ | yes (`sync:false`) | SPA origin to redirect back to after sign-in (the Vercel URL in prod). |
+| `APP_COOKIE_SECURE` | ⚪ | yes (`value:"true"`) | `true` in prod (HTTPS) so the OAuth-request cookie carries the `Secure` flag. |
+
+### Backend (Render) — Secure Document Vault ("Drive") — all optional, OFF until `STORAGE_ENDPOINT` set
+
+| Var | Set? | In render.yaml | Purpose / default (full steps in §"Drive") |
+|---|---|---|---|
+| `STORAGE_ENDPOINT` | ⚪ (enables vault) | yes (`sync:false`) | S3-compatible endpoint (R2: `https://<accountid>.r2.cloudflarestorage.com`). |
+| `STORAGE_BUCKET` | ⚪ | yes | Bucket name. Default `portfolio-drive`. |
+| `STORAGE_ACCESS_KEY` / `STORAGE_SECRET_KEY` | ⚪ | yes | Object-storage credentials. |
+| `STORAGE_REGION` | ⚪ | yes | R2 = `auto`; AWS S3 = real region. |
+| `DRIVE_MASTER_KEY` | 🔴 (if vault on) | yes (`sync:false`) | base64 32-byte AES key (`openssl rand -base64 32`). **Set once, never change/lose.** Not `generateValue`. |
+| `DRIVE_PUBLIC_BASE_URL` | ⚪ | yes | This backend's public URL for emailed download links. |
+| `DRIVE_NOTIFY_EMAIL` | ⚪ | yes | Owner address for "send to email" + sensitive-file OTP. |
+| `MAIL_HOST` | ⚪ (enables vault email) | yes | SMTP host (Resend: `smtp.resend.com`). Vault works without it; email/OTP features need it. |
+| `MAIL_PORT` | ⚪ | yes | Default `587`. |
+| `MAIL_USERNAME` / `MAIL_PASSWORD` | ⚪ | yes | SMTP creds (Resend: `resend` / your API key). |
+| `MAIL_FROM` | ⚪ | yes | From address (verified sender). |
+| `MAIL_SMTP_AUTH` / `MAIL_SMTP_STARTTLS` | ⚪ | no | Both default `true` (correct for Resend); set `false` for a local catcher. |
+
+### Backend (Render) — misc
+
+| Var | Set? | In render.yaml | Purpose / default |
+|---|---|---|---|
+| `SWAGGER_ENABLED` | ⚪ | no | `true` exposes Swagger UI / OpenAPI. Default `false` (keep off in prod). |
+| `UPLOAD_DIR` | ⚪ | no | Legacy filesystem dir for the static `/uploads/**` mapping. Default `uploads`. Avatars/resumes are stored in Postgres, so this rarely matters. |
+
+### Frontend (Vercel)
+
+| Var | Set? | Purpose |
+|---|---|---|
+| `VITE_API_URL` | 🔴 required | The Render backend URL, no trailing slash (e.g. `https://portfolio-backend.onrender.com`). Read at **build time** — changing it needs a redeploy. |
+| `VITE_PROXY_TARGET` / `VITE_USE_POLLING` | ⚪ dev only | Used **only** by the local docker dev frontend container — **do NOT set on Vercel.** |
+
+> **Minimum to go live:** Render → `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`, `CORS_ALLOWED_ORIGIN`
+> (everything else optional/auto). Vercel → `VITE_API_URL`. Add `GEMINI_API_KEY` to turn on the AI.
+
+### ⚠️ pgvector requirement (added with the RAG feature)
+
+Migration **V9** runs `CREATE EXTENSION IF NOT EXISTS vector`, so the Postgres server must have
+**pgvector** available. Render's managed Postgres supports it — the migration succeeds on first
+deploy. If you self-host Postgres, use an image with pgvector (e.g. `pgvector/pgvector:pg16`, as the
+local `docker-compose.yml` does) or the backend **fails to start** at the V9 migration.
+
+---
+
 ## 1. Backend → Render
 
 1. **[you]** Create a Render account at https://render.com and connect this Git repo.
@@ -36,6 +133,14 @@ can't do these). Run CLI logins in this session by prefixing with `!`, e.g. `! v
 
    `JWT_SECRET` is auto-generated by Render; `DB_*` are auto-wired from the database.
    OAuth vars are all optional — leave them unset and the panel runs password-only.
+
+   > **See [§0](#0-environment-variables--complete-reference-the-whole-project) for the full,
+   > authoritative list of every variable** (AI tuning, vault, OAuth, misc) with defaults. The
+   > table above is just the quick-start subset. The Blueprint now pre-creates **every** variable:
+   > non-secret tuning knobs (AI model/dim/cap, `RESEND_API_URL`, `APP_COOKIE_SECURE`) ship with
+   > committed `value:` defaults you can tweak in git or the dashboard; secrets and env-specific
+   > vars (`*_API_KEY`, OAuth client id/secret, `OAUTH_ALLOWED_EMAILS`, `APP_FRONTEND_URL`, vault
+   > `STORAGE_*`/`DRIVE_*`/`MAIL_*`) are `sync:false` — Render prompts for them in the dashboard.
 
    Generate a BCrypt hash (cost 10):
    ```bash
@@ -209,3 +314,62 @@ in `.env`. Read captured mail (and OTP codes) at http://localhost:8025.
   download → original bytes; the object in R2 is ciphertext (size = plaintext + 16-byte tag).
 - Mark a file **sensitive** → download emails a 6-digit code to `DRIVE_NOTIFY_EMAIL`; entering
   it completes the download. A full R2 + Postgres dump yields only ciphertext.
+
+## Public MCP server (recruiter tools) — production
+
+A **public, read-only [MCP](https://modelcontextprotocol.io) server** that lets a recruiter's
+AI client (e.g. Claude Desktop) pull curated portfolio data and evaluate the candidate against a
+job description. It exposes only `@Tool` methods over the shared `PortfolioQueryService` /
+`RecruiterMatchService` — **no auth, no write tools** (the data is public by design). See
+`docs/MCP_RECRUITER_plan.md` for the full design.
+
+### Transport & hosting decision (Phase E1)
+- **Transport = SSE**, served by the **Spring AI MCP WebMVC starter** in-process (Spring AI
+  `1.0.9` — its WebMVC starter provides SSE; Streamable HTTP is a Spring AI 2.0 / Boot 4 upgrade,
+  noted in `docs/future_plan.md`). A recruiter points their client at a URL — they never run my code.
+- **Hosting = inside the existing Spring Boot service** (`com.portfolio.mcp`), not a separate
+  process — same "module inside the monolith" reasoning as the vault: a separate process would force
+  a parallel data path or a duplicated query layer. One deployment, in-process calls.
+
+### Endpoints (both public, under `/mcp/**`)
+| Path | Method | Purpose |
+|---|---|---|
+| `/mcp/sse` | GET | Opens the SSE stream; first event returns the per-session message endpoint. |
+| `/mcp/message` | POST | Client→server JSON-RPC (rate-limited per IP; see below). |
+
+No new env vars. The server is on by default (`spring.ai.mcp.server.enabled=true`); set it to
+`false` to disable. `match_against_jd` needs `GEMINI_API_KEY` (returns "unavailable" without it),
+and shares the same `AI_DAILY_REQUEST_CAP` daily ceiling as chat/recruiter.
+
+### Tools
+`get_profile`, `list_projects(filter?)`, `get_experience(skill?)`, `get_resume_summary`,
+`match_against_jd(jd_text)` — plus any added in Phase E2.
+
+### Connect a client (Claude Desktop)
+Claude Desktop speaks **stdio**, so bridge it to the remote SSE URL with
+[`mcp-remote`](https://www.npmjs.com/package/mcp-remote). Add to its MCP config:
+```json
+{
+  "mcpServers": {
+    "omkar-portfolio": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://portfolio-backend.onrender.com/mcp/sse"]
+    }
+  }
+}
+```
+Native HTTP/SSE-capable clients (e.g. the **MCP Inspector**, `npx @modelcontextprotocol/inspector`)
+can point directly at `https://<backend>.onrender.com/mcp/sse` with no bridge.
+
+### Security posture
+- Public + read-only: every tool returns curated public data only (enforced by
+  `McpToolOutputBoundaryTest`); no write/side-effect tools.
+- Per-IP rate limiting on `tools/call` (`mcp:<ip>`; the LLM-backed `match_against_jd` gets its own
+  `mcp-match:<ip>` bucket), input-length caps, and a daily cost ceiling on the LLM tool.
+- Pasted job descriptions are treated as **untrusted data** (neutralized, delimited, output-scoped);
+  injection attempts are logged and ignored.
+
+### Verify (production)
+- `npx @modelcontextprotocol/inspector` → connect to `https://<backend>.onrender.com/mcp/sse` →
+  it lists the tools; calling `get_profile` returns the public summary.
+- An anonymous admin call still fails: `curl -X POST https://<backend>.onrender.com/api/projects` → `401`.
