@@ -3,6 +3,7 @@ import { useDomainProjects } from "@/api/projects";
 import { useProfile } from "@/api/profile";
 import { profile as staticProfile } from "@/data/profile";
 import { RecruiterClient } from "@/components/recruiter/RecruiterClient";
+import { McpBadge } from "@/components/ui/McpBadge";
 import type { SocialLink } from "@/types";
 
 /** Derives the GitHub handle from the profile's social links. */
@@ -35,6 +36,11 @@ export default function RecruiterPage() {
             relevant projects, overlapping skills, honest gaps, and a short pitch tailored
             to the role.
           </p>
+
+          {/* Prefer your own AI? The same match runs as a public MCP tool. */}
+          <div className="mt-4">
+            <McpBadge />
+          </div>
         </div>
 
         <RecruiterClient projects={projects} handle={handle} />

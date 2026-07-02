@@ -37,6 +37,18 @@ spring:
           auth: ${MAIL_SMTP_AUTH:true}
           starttls:
             enable: ${MAIL_SMTP_STARTTLS:true}
+  ai:
+    mcp:
+      server:
+        # Public, read-only MCP server (docs/MCP_RECRUITER_plan.md). Spring AI 1.0.x WebMVC starter
+        # = SSE transport. Both endpoints are kept under /mcp/** so SecurityConfig opens the surface
+        # with a single matcher (Phase A3). The server exposes only @Tool methods over the shared
+        # PortfolioQueryService layer — read-only, no auth (the data is public by design).
+        enabled: true
+        name: omkar-portfolio-mcp
+        version: 0.1.0
+        sse-endpoint: /mcp/sse
+        sse-message-endpoint: /mcp/message
   lifecycle:
     timeout-per-shutdown-phase: 30s
 

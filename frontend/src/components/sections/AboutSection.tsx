@@ -154,16 +154,16 @@ function ConnectBtn({
       href={href}
       target={href.startsWith("mailto:") ? undefined : "_blank"}
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-mono text-sm transition-transform hover:-translate-y-0.5"
+      className="group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md font-mono text-xs transition-transform hover:-translate-y-0.5"
       style={{
         background: `rgb(${tint} / 0.08)`,
-        border: `1px solid rgb(${tint} / 0.35)`,
+        border: `1px solid rgb(${tint} / 0.3)`,
         color: `rgb(${tint})`,
       }}
     >
-      <Icon size={14} />
+      <Icon size={13} className="shrink-0" />
       <span>{label}</span>
-      <ExternalLink size={11} className="opacity-70" />
+      <ExternalLink size={10} className="shrink-0 opacity-50 transition-opacity group-hover:opacity-90" />
     </a>
   );
 }

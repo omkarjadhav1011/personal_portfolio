@@ -2,6 +2,7 @@
 import { motion } from "framer-motion";
 import { TerminalWindow } from "@/components/ui/TerminalWindow";
 import { TypewriterText } from "@/components/ui/TypewriterText";
+import { McpBadge } from "@/components/ui/McpBadge";
 import { assetUrl } from "@/lib/api";
 import type { Profile } from "@/types";
 
@@ -111,13 +112,10 @@ export function HeroSection({ profile }: HeroSectionProps) {
               {profile.headline}
             </p>
 
-            {/* Status badge */}
-            {profile.availableForWork && (
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-git-green/30 bg-git-green/5 text-git-green text-xs font-mono">
-                <span className="w-1.5 h-1.5 rounded-full bg-git-green animate-pulse" />
-                {profile.currentStatus}
-              </div>
-            )}
+            {/* MCP discoverability — recruiters can evaluate me with their own AI */}
+            <div className="flex justify-center md:justify-start">
+              <McpBadge />
+            </div>
 
             {/* CTA Buttons */}
             <motion.div

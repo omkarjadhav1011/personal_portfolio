@@ -44,6 +44,27 @@ v1 (Phases 1–7) is built and verified. Remaining scope:
   for reference).
 - 💭 **Resume builder** — Phase 1 (upload + serve) shipped; a full structured resume builder is planned.
 
+## AI assistant / RAG (LLM_plan.md)
+
+- ⏸️ **Debounce RAG auto-reindex** — D1 currently runs a *full* `reindexAll()` after every admin
+  write (`CorpusReindexAspect` → `@Async ReindexTrigger`, serialized via `synchronized`). Fine for
+  the tiny corpus, but a burst of writes (e.g. drag-reordering) fires many full re-embeds. Later:
+  debounce/coalesce triggers, or re-index only the changed `source_id` instead of the whole corpus.
+- 💭 **Recruiter RAG grounding** — recruiter match/letter still use the full-context snapshot; could
+  ground in retrieved project/skill chunks like chat does (Phase C4).
+
+## Public MCP server (MCP_RECRUITER_plan.md)
+
+v1 tools (`get_profile`, `list_projects`, `get_experience`, `get_resume_summary`,
+`match_against_jd`) are built + verified. Deferred:
+
+- ⏸️ **Streamable HTTP transport** — the server uses **SSE** (Spring AI 1.0.9 WebMVC starter). SSE is
+  being sunset by major MCP clients mid-2026 in favour of **Streamable HTTP**, available in Spring AI
+  2.0.x (needs Spring Boot 4.x). Upgrade transport when the app moves to Boot 4 / Spring AI 2.0.
+- 💭 **`search_portfolio(query)`** — semantic search over the corpus via the existing pgvector
+  `RetrievalService` (Phase E2 candidate). Embedding-backed, so it consumes Gemini embedding quota
+  and needs its own rate-limit bucket + cost accounting like `match_against_jd`.
+
 ---
 
 ## How to use this file

@@ -77,7 +77,12 @@ public class GeminiClient {
                         "responseMimeType", "application/json",
                         "responseSchema", responseSchema,
                         "maxOutputTokens", maxOutputTokens,
-                        "temperature", temperature));
+                        "temperature", temperature,
+                        // gemini-2.5-flash is a *thinking* model: by default it spends maxOutputTokens
+                        // budget on internal reasoning, which can truncate the structured JSON mid-object
+                        // (→ parse failure). Disable thinking for structured calls so the full budget
+                        // produces the JSON. (Streaming chat is unaffected — it doesn't set this.)
+                        "thinkingConfig", Map.of("thinkingBudget", 0)));
         String response = webClient.post()
                 .uri(baseUrl + "/models/" + model + ":generateContent")
                 .header("x-goog-api-key", apiKey)
