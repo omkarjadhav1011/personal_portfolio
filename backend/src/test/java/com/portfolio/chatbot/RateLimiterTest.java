@@ -1,6 +1,7 @@
 package com.portfolio.chatbot;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -48,6 +49,38 @@ class RateLimiterTest {
         }
         assertFalse(limiter.check("a").ok(), "key a exhausted");
         assertTrue(limiter.check("b").ok(), "key b independent");
+    }
+
+    @Test
+    void clientIpIgnoresSpoofableHeaders() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRemoteAddr("203.0.113.7");
+        request.addHeader("X-Real-IP", "10.0.0.1");
+        request.addHeader("X-Forwarded-For", "10.0.0.2");
+
+        assertEquals("203.0.113.7", RateLimiter.clientIp(request));
+    }
+
+    @Test
+    void spoofedHeaderCannotMintFreshBucket() {
+        AtomicLong now = new AtomicLong(0);
+        RateLimiter limiter = new RateLimiter(now::get);
+
+        // Same socket address, a rotating spoofed X-Real-IP per request — all requests must
+        // land in ONE bucket (pentest finding #29: each spoofed value used to get its own).
+        for (int i = 0; i < 10; i++) {
+            MockHttpServletRequest request = new MockHttpServletRequest();
+            request.setRemoteAddr("203.0.113.7");
+            request.addHeader("X-Real-IP", "10.0.0." + i);
+            assertTrue(limiter.check(RateLimiter.clientIp(request)).ok(),
+                    "request " + (i + 1) + " within capacity should pass");
+        }
+
+        MockHttpServletRequest fresh = new MockHttpServletRequest();
+        fresh.setRemoteAddr("203.0.113.7");
+        fresh.addHeader("X-Real-IP", "10.99.99.99");
+        assertFalse(limiter.check(RateLimiter.clientIp(fresh)).ok(),
+                "a new spoofed header value must NOT escape the exhausted bucket");
     }
 
     @Test

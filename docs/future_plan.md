@@ -36,6 +36,19 @@ v1 (Phases 1–7) is built and verified. Remaining scope:
 
 ---
 
+## Security (SECURITY_PENTEST_REPORT.md)
+
+- ✅ **Rate-limiter IP spoofing (pentest #29, was Exploited)** — `RateLimiter.clientIp` no longer
+  trusts `X-Real-IP`; fixed 2026-07-02 on `fix/rate-limiter-client-ip` (lead-capture P0).
+- 🔜 **Verify XFF residual on Render (pentest RC-a).** With `forward-headers-strategy: framework`,
+  `getRemoteAddr()` derives from the *leftmost* `X-Forwarded-For` entry, which a client can seed
+  before Render's proxy appends the real IP. Probe the deployed backend with rotating spoofed XFF
+  values; if buckets still split, resolve the rightmost-trusted entry instead.
+- 🔜 **Per-form daily contact cap (pentest #30/Fix A remainder)** — contact spam volume is bounded
+  only by the per-IP limiter + honeypot; add a global daily cap like `DailyBudgetGuard`.
+- 🔜 **Remaining pentest fixes B–D + hardening list** — Vercel security headers (CSP etc.), Spring
+  Boot 3.3.x bump, prod secret-hygiene runbook; see `SECURITY_PENTEST_REPORT.md` §5.
+
 ## Other initiatives (detailed plans in this folder)
 
 - `LLM_plan.md` — LLM/chatbot roadmap.

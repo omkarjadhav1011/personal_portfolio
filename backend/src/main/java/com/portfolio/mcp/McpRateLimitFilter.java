@@ -24,7 +24,7 @@ import java.io.IOException;
  * {@code notifications/initialized}, {@code tools/list}, {@code ping} — is never rate-limited), so a
  * client can always connect and discover tools. Limiting reuses the same token-bucket
  * {@link RateLimiter} as {@code /api/chat} and recruiter mode, namespaced {@code mcp:<ip>} (its
- * {@code clientIp} trusts {@code x-real-ip} for the prod proxy). Over the limit → {@code 429} with
+ * {@code clientIp} uses the container-resolved remote address). Over the limit → {@code 429} with
  * {@code Retry-After}. Every tool call is logged with tool name + IP + outcome; no secrets in logs.
  */
 public class McpRateLimitFilter extends OncePerRequestFilter {
