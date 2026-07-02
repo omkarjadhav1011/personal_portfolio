@@ -67,12 +67,13 @@ public class RateLimiter {
         return new Result(true, 0);
     }
 
-    /** Client IP: first x-forwarded-for entry, else x-real-ip, else the socket address. */
+    /**
+     * Client IP from the container-resolved remote address — never from a raw header. Reading
+     * {@code X-Real-IP}/{@code X-Forwarded-For} directly lets any client mint a fresh bucket per
+     * request (rate-limit bypass); {@code server.forward-headers-strategy: framework} already
+     * resolves the proxy chain into {@link HttpServletRequest#getRemoteAddr()}.
+     */
     public static String clientIp(HttpServletRequest request) {
-        String real = request.getHeader("x-real-ip");
-        if (real != null && !real.isBlank()) {
-            return real.trim();
-        }
         String remote = request.getRemoteAddr();
         return remote != null ? remote : "unknown";
     }
