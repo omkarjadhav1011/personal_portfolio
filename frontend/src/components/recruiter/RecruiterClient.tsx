@@ -6,19 +6,21 @@ import { JobInputForm } from "@/components/recruiter/JobInputForm";
 import { MatchedProjects } from "@/components/recruiter/MatchedProjects";
 import { SkillsMatchDiff } from "@/components/recruiter/SkillsMatchDiff";
 import { CoverLetterStream } from "@/components/recruiter/CoverLetterStream";
+import { LeadCard } from "@/components/recruiter/LeadCard";
 import type { Project } from "@/types";
 import type { MatchResult } from "@/lib/recruiter/types";
 
 interface RecruiterClientProps {
   projects: Project[];
   handle: string;
+  ownerName: string;
 }
 
 const RATE_LIMITED = "Too many submissions. Try again in a minute.";
 const NETWORK_ERROR = "Couldn't reach the analyzer. Check your connection.";
 const GENERIC_ERROR = "Something went wrong analyzing this job description.";
 
-export function RecruiterClient({ projects, handle }: RecruiterClientProps) {
+export function RecruiterClient({ projects, handle, ownerName }: RecruiterClientProps) {
   const [jd, setJd] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -120,6 +122,12 @@ export function RecruiterClient({ projects, handle }: RecruiterClientProps) {
             matchResult={match}
           />
         </ReportSection>
+
+        <LeadCard
+          match={match}
+          jobDescription={submittedJd}
+          ownerName={ownerName}
+        />
       </div>
     );
   }
