@@ -49,21 +49,6 @@ public class GeminiClient {
         return apiKey != null && !apiKey.isBlank();
     }
 
-    /** Non-streaming generation: returns the assembled reply text. */
-    public String generateContent(String systemInstruction, List<ChatMessage> messages) {
-        requireKey();
-        String response = webClient.post()
-                .uri(baseUrl + "/models/" + model + ":generateContent")
-                .header("x-goog-api-key", apiKey)
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(buildRequestBody(systemInstruction, messages))
-                .retrieve()
-                .bodyToMono(String.class)
-                .timeout(REQUEST_TIMEOUT)
-                .block();
-        return extractText(response);
-    }
-
     /**
      * Structured generation: forces JSON output matching {@code responseSchema} and returns
      * the raw JSON text (the model's part text). Used by recruiter mode.
