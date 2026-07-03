@@ -7,7 +7,8 @@ import jakarta.validation.constraints.Size;
 /**
  * Contact form payload. Mirrors {@code contactSchema} (Zod). {@code honeypot} carries no
  * constraint — a filled value is handled as a silent bot-drop in the controller (not a
- * validation error).
+ * validation error). {@code source} is an optional funnel label (E1: the chat's inline form
+ * sends "CHATBOT"); the controller maps unknown/absent values to WEB, never trusting it blindly.
  */
 public record ContactRequest(
         @NotBlank(message = "Name must be at least 2 characters")
@@ -23,6 +24,8 @@ public record ContactRequest(
         @Size(min = 10, max = 2000, message = "Message must be at least 10 characters")
         String message,
 
-        String honeypot
+        String honeypot,
+
+        String source
 ) {
 }

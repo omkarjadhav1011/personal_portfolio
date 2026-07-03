@@ -76,7 +76,8 @@ public class ContactController {
 
         // Store first — the row is the deliverable; email is a best-effort notification.
         ContactMessage saved = messageRepository.save(new ContactMessage(
-                name, email, message, MessageSource.WEB, Hashing.sha256Hex(RateLimiter.clientIp(request))));
+                name, email, message, resolveSource(req.source()),
+                Hashing.sha256Hex(RateLimiter.clientIp(request))));
 
         // DB commit → notify (B2): async and fail-open, never part of the request outcome.
         notificationService.notifyOwner("📬 New message from " + name);
@@ -87,6 +88,17 @@ public class ContactController {
         }
 
         return new ContactResult(true, SUCCESS_MESSAGE);
+    }
+
+    /**
+     * The E1 chat handoff tags its submissions CHATBOT; everything else (absent, unknown, or a
+     * value a client shouldn't self-assign like MCP) stays WEB — the label is a funnel hint,
+     * not trusted input.
+     */
+    private static MessageSource resolveSource(String raw) {
+        return "CHATBOT".equalsIgnoreCase(raw == null ? "" : raw.trim())
+                ? MessageSource.CHATBOT
+                : MessageSource.WEB;
     }
 
     /** Mirror the server action: validation failures return 200 with {success:false, firstError}. */
