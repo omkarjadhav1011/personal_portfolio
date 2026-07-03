@@ -69,6 +69,13 @@ services:
       - key: AI_DAILY_REQUEST_CAP
         value: "200"
 
+      # ── Owner notifications (Telegram Bot API). Leave token unset to disable —
+      #    the app falls back to a logging no-op channel. Setup: docs/SETUP.md §A8. ──
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+
       # ── Contact-form email delivery (Resend REST). Leave key unset to disable. ──
       - key: RESEND_API_KEY
         sync: false

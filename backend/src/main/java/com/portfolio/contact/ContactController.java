@@ -2,6 +2,7 @@ package com.portfolio.contact;
 
 import com.portfolio.chatbot.RateLimiter;
 import com.portfolio.common.Hashing;
+import com.portfolio.notify.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -41,12 +42,15 @@ public class ContactController {
     private final EmailService emailService;
     private final RateLimiter rateLimiter;
     private final ContactMessageRepository messageRepository;
+    private final NotificationService notificationService;
 
     public ContactController(EmailService emailService, RateLimiter rateLimiter,
-                             ContactMessageRepository messageRepository) {
+                             ContactMessageRepository messageRepository,
+                             NotificationService notificationService) {
         this.emailService = emailService;
         this.rateLimiter = rateLimiter;
         this.messageRepository = messageRepository;
+        this.notificationService = notificationService;
     }
 
     @Operation(summary = "Send a contact message", description = "Public; validates, drops bots, sends via Resend")
@@ -73,6 +77,9 @@ public class ContactController {
         // Store first — the row is the deliverable; email is a best-effort notification.
         ContactMessage saved = messageRepository.save(new ContactMessage(
                 name, email, message, MessageSource.WEB, Hashing.sha256Hex(RateLimiter.clientIp(request))));
+
+        // DB commit → notify (B2): async and fail-open, never part of the request outcome.
+        notificationService.notifyOwner("📬 New message from " + name);
 
         boolean sent = emailService.send(name, email, message);
         if (!sent) {
