@@ -43,7 +43,11 @@ export default function RecruiterPage() {
           </div>
         </div>
 
-        <RecruiterClient projects={projects} handle={handle} />
+        <RecruiterClient
+          projects={projects}
+          handle={handle}
+          ownerName={profile.name}
+        />
       </div>
     </section>
   );
