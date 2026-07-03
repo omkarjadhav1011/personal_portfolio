@@ -7,6 +7,52 @@ Status legend: 🔜 planned · 💭 idea · ⏸️ deferred · ✅ done (kept br
 
 ---
 
+## Now / Next — the remaining work, in order (updated 2026-07-03)
+
+Lead capture (Groups P0 + A–E + F1) shipped and released to `main` on 2026-07-03. This is the
+complete plan for what's left, ordered by (blockers first, then impact ÷ effort). Details for
+each item live in the sections below.
+
+**0. Manual owner actions (minutes each — some block later items):**
+- [ ] Verify the live release (PROD-gate): backend `/actuator/health` UP; run a JD match + leave
+      a lead + send a chat message on the live site → Telegram pings arrive, dashboard engagement
+      panel counts them; anonymous `GET /api/admin/leads` and `/api/admin/telemetry` → 401.
+- [ ] Confirm `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` are set in the Render dashboard
+      (without them prod notifications + the Monday digest silently no-op).
+- [ ] Add the real Cal.com social (label `book a call`) via the admin profile editor — F1
+      renders nothing until it exists.
+- [ ] **Resend: verify a domain + set `MAIL_FROM`** — the blocker for F2 and X3 below.
+- [ ] Housekeeping: delete the stale `feature/springboot` branch (its one unmerged commit
+      hardcodes dev credentials — superseded, must never merge or push) and drop the six
+      superseded stashes (`git stash list` — everything except recovered work is artifacts).
+
+**1. Hardening sitting (one small branch, ~half a day):**
+- [ ] B2 — Vercel security headers (below).
+- [ ] B3 — persist the `DailyBudgetGuard` counter (below).
+- [ ] Per-form daily contact cap (Security section, pentest #30 remainder) — same shape as B3.
+
+**2. Prod-only security verification (needs the live URL):**
+- [ ] XFF residual probe on Render (Security section, pentest RC-a).
+
+**3. Feature work, ranked:**
+- [ ] A1 — `search_portfolio(query)` MCP tool (S).
+- [ ] B7 — real root `README.md` (S) — the repo landing page is portfolio content.
+- [ ] C2 — render the JD match as a literal git diff (S, frontend-only, most on-brand).
+- [ ] F2 — auto-acknowledgment email (S, **unblocked by the Resend domain action above**;
+      spec in the Lead capture section).
+- [ ] X3 — in-app reply from the admin inbox (M, same Resend prerequisite; spec in
+      `lead_capture_plan.md` §X3).
+- [ ] A3 — Drive quick wins: sensitivity toggle + real upload progress (S).
+- [ ] A4 — RAG-ground the recruiter match/letter (M).
+- [ ] A5 — streaming Drive uploads (M).
+
+**4. Larger / someday:** A6 resume builder Phase 2 (L) · C1 clonable career repo · C3
+`ask_candidate` MCP tool (telemetry prerequisite now DONE — Group D shipped) · C4 curl-able
+ANSI resume · C5 signed resume · Drive Phase 8 WhatsApp · Streamable HTTP MCP transport
+(waits for Spring Boot 4 / Spring AI 2) · multi-instance Redis stores · RAG reindex debounce.
+
+---
+
 ## Secure Document Vault ("Drive")
 
 v1 (Phases 1–7) is built and verified. Remaining scope:
@@ -51,13 +97,31 @@ v1 (Phases 1–7) is built and verified. Remaining scope:
 
 ## Lead capture (lead_capture_plan.md)
 
-- ✅ **Wire notifyOwner into contact + lead saves.** Done 2026-07-03 (B2, merged to dev):
-  `ContactController.send` and `RecruiterController.lead` now call `notifyOwner(...)` after the
-  DB write — Telegram when configured, Noop otherwise. Release reminder: set
-  `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` in the Render dashboard *before* merging dev → main.
+- ✅ **Groups P0 + A–E + F1 shipped 2026-07-03**, all released to `main`: durable contact inbox
+  (V11) · Telegram owner notifications (fail-open, Noop fallback) · recruiter lead capture (V12)
+  + admin Leads tab · engagement telemetry (V13, 4 signals, dashboard panel, Monday 09:00 IST
+  digest) · chat handoff (`source=CHATBOT` inline form) · booking link (a `book a call` social,
+  no migration). Backend suite: 151 tests.
+
+- 🔜 **F2 — auto-acknowledgment email to the visitor (S) — the ONLY unshipped lead-capture
+  phase.** *Blocked on the Resend verified domain + `MAIL_FROM` (owner action in "Now / Next"
+  §0): Resend's default `onboarding@resend.dev` sender can only deliver to the account owner's
+  own address, so an ack to an arbitrary visitor bounces until a custom domain is verified.*
+  **What we build once unblocked:** after the A1 store-then-send in `ContactController` (and
+  the C1 lead save), a **second** Resend send goes to the *visitor*: "thanks — your message
+  reached Omkar, he'll reply soon", from `MAIL_FROM`, `reply_to` = the owner's real address.
+  Strictly **fail-open**: an ack failure is logged and never changes the form/lead response
+  (the visitor already got their success; the row is already stored). No new table, no new
+  endpoint — one method on `EmailService` + two call sites. **Verify:** submit with a personal
+  address → ack lands in that inbox; kill `RESEND_API_KEY` → form still succeeds, log shows the
+  skip; honeypot submissions never trigger an ack (no row → no send).
+
 - 💭 **Leads admin: delete/archive.** C3 shipped the leads inbox triage-only (GET/PATCH, flow
   NEW → READ → REPLIED) — no DELETE endpoint by design. Add delete (or an ARCHIVED step) if the
   table ever needs pruning.
+- 💭 **X-series extensions** (specs in `lead_capture_plan.md`): X2 trackable resume links
+  (per-application tokens writing `RESUME_LINK_HIT` engagement events), X3 in-app reply from
+  the inbox (needs the same Resend domain as F2).
 
 ## Other initiatives (detailed plans in this folder)
 
@@ -106,17 +170,10 @@ already in this file are marked *(expands existing entry above)*.
   the `mcp-match` pattern, and consumes the `DailyBudgetGuard` budget (embedding calls cost quota).
   **Why:** AI agents reach for semantic search first; today they must guess `list_projects` filters.
 
-- 🔜 **A2 — Recruiter/MCP usage telemetry + admin dashboard panel (M)** *(absorbed into
-  `lead_capture_plan.md` Phase Group D, widened to a general `engagement_event` stream)*
-  **What we build:** a new `com.portfolio.telemetry` package (package-by-feature) with a Flyway
-  `V<next>` migration for an `ai_usage_event` table: event type (mcp-tool / recruiter-match /
-  recruiter-letter / chat), tool name, hashed client IP, JD text hash + match score (for matches),
-  timestamp. Written from `McpRateLimitFilter` (which already logs tool + IP) and
-  `RecruiterController`. Plus a read-only `GET /api/admin/telemetry` endpoint and a panel on
-  `admin/Dashboard.tsx`: calls per day, top tools, recent JD matches with scores.
-  **Why:** today the only record that a recruiter's agent ever used the MCP server is Render log
-  lines that evaporate. This closes the feedback loop on the whole AI investment and is the
-  prerequisite for C3 (interview transcripts).
+- ✅ **A2 — Recruiter/MCP usage telemetry + admin dashboard panel.** Shipped 2026-07-03 as
+  lead-capture Group D (widened to the general `engagement_event` stream, V13):
+  `com.portfolio.telemetry` package, four instrumented signals, `GET /api/admin/telemetry`,
+  dashboard engagement panel, weekly Telegram digest. C3's prerequisite is now met.
 
 - 🔜 **A3 — Drive quick wins: sensitivity toggle + real upload progress (S)** *(expands the two 🔜
   entries under "Drive")* **What we build:** (1) `PATCH /api/drive/files/{id}` accepting
@@ -204,8 +261,8 @@ already in this file are marked *(expands existing entry above)*.
   a hash, get "authentic / tampered". Anti-fraud provenance for recruiters in the age of
   AI-generated fakes, reusing the vault's crypto discipline.
 
-**Recommended order:** ~~B1~~ (done) → B2/B3 (same sitting) → A1 → A2 (lands as lead-capture
-Group D) → C2 → then pick by appetite.
+**Recommended order:** ~~B1~~ ~~A2~~ (done) → B2/B3 (same sitting) → A1 → C2 → then pick by
+appetite. The current consolidated order lives in "Now / Next" at the top of this file.
 
 ---
 
