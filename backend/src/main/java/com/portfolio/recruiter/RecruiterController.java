@@ -6,10 +6,15 @@ import com.portfolio.chatbot.GeminiClient;
 import com.portfolio.chatbot.PortfolioContext;
 import com.portfolio.chatbot.PortfolioContextService;
 import com.portfolio.chatbot.RateLimiter;
+import com.portfolio.common.Hashing;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
@@ -18,8 +23,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -40,6 +48,13 @@ public class RecruiterController {
     private static final double LETTER_TEMPERATURE = 0.7;
     private static final String LETTER_RATE_LIMIT_PREFIX = "recruiter-letter";
 
+    private static final String LEAD_RATE_LIMIT_PREFIX = "lead";
+    private static final int LEAD_MAX_SKILLS = 20;
+    private static final int LEAD_MAX_SKILL_LENGTH = 100;
+    private static final int LEAD_JD_EXCERPT_LENGTH = 500;
+
+    private static final Logger log = LoggerFactory.getLogger(RecruiterController.class);
+
     private final RateLimiter rateLimiter;
     private final DailyBudgetGuard budgetGuard;
     private final AbuseLog abuseLog;
@@ -47,6 +62,7 @@ public class RecruiterController {
     private final RecruiterPromptBuilder promptBuilder;
     private final GeminiClient geminiClient;
     private final RecruiterMatchService matchService;
+    private final RecruiterLeadRepository leadRepository;
 
     public RecruiterController(RateLimiter rateLimiter,
                                DailyBudgetGuard budgetGuard,
@@ -54,7 +70,8 @@ public class RecruiterController {
                                PortfolioContextService contextService,
                                RecruiterPromptBuilder promptBuilder,
                                GeminiClient geminiClient,
-                               RecruiterMatchService matchService) {
+                               RecruiterMatchService matchService,
+                               RecruiterLeadRepository leadRepository) {
         this.rateLimiter = rateLimiter;
         this.budgetGuard = budgetGuard;
         this.abuseLog = abuseLog;
@@ -62,6 +79,7 @@ public class RecruiterController {
         this.promptBuilder = promptBuilder;
         this.geminiClient = geminiClient;
         this.matchService = matchService;
+        this.leadRepository = leadRepository;
     }
 
     public record MatchRequest(String jobDescription) {
@@ -150,5 +168,101 @@ public class RecruiterController {
 
     private static ServerSentEvent<Map<String, Object>> event(Map<String, Object> data) {
         return ServerSentEvent.<Map<String, Object>>builder().data(data).build();
+    }
+
+    /**
+     * Lead payload (C1). Only the email is required; fitScore/matchedSkills/jdExcerpt are the
+     * client-side match context — self-reported, untrusted, sanitized server-side and stored
+     * for the owner's follow-up only. {@code honeypot} carries no constraint (silent bot-drop).
+     */
+    public record LeadRequest(
+            @NotBlank(message = "Please enter a valid email address")
+            @Email(message = "Please enter a valid email address")
+            @Size(max = 255, message = "Email is too long")
+            String email,
+
+            @Size(max = 150, message = "Company is too long")
+            String company,
+
+            @Size(max = 1000, message = "Note is too long")
+            String note,
+
+            Integer fitScore,
+            List<String> matchedSkills,
+            String jdExcerpt,
+            String honeypot
+    ) {
+    }
+
+    public record LeadResponse(boolean success) {
+    }
+
+    @Operation(summary = "Leave a recruiter lead after a match (public)")
+    @PostMapping("/lead")
+    public LeadResponse lead(@Valid @RequestBody(required = false) LeadRequest req,
+                             HttpServletRequest request,
+                             HttpServletResponse response) {
+        String clientIp = RateLimiter.clientIp(request);
+        RateLimiter.Result limit = rateLimiter.check(LEAD_RATE_LIMIT_PREFIX + ":" + clientIp);
+        if (!limit.ok()) {
+            response.setHeader("Retry-After", String.valueOf(limit.retryAfterSeconds()));
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many submissions. Try again in a minute.");
+        }
+
+        if (req == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required");
+        }
+
+        // Honeypot: bots fill this; humans don't. Silently succeed — no row.
+        if (req.honeypot() != null && !req.honeypot().isBlank()) {
+            return new LeadResponse(true);
+        }
+
+        RecruiterLead saved = leadRepository.save(new RecruiterLead(
+                req.email().trim().toLowerCase(),
+                trimToNull(req.company()),
+                trimToNull(req.note()),
+                clampScore(req.fitScore()),
+                sanitizeSkills(req.matchedSkills()),
+                truncate(trimToNull(req.jdExcerpt()), LEAD_JD_EXCERPT_LENGTH),
+                Hashing.sha256Hex(clientIp)));
+        log.info("[recruiter] lead {} stored (fit={})", saved.getId(), saved.getFitScore());
+        // notifyOwner("🎯 Recruiter lead ...") lands when Group B (notify) merges to dev.
+
+        return new LeadResponse(true);
+    }
+
+    private static String trimToNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
+    }
+
+    private static String truncate(String value, int max) {
+        if (value == null || value.length() <= max) {
+            return value;
+        }
+        return value.substring(0, max);
+    }
+
+    /** Self-reported score — clamp into 0..100 rather than trust it. */
+    private static Integer clampScore(Integer score) {
+        if (score == null) {
+            return null;
+        }
+        return Math.clamp(score, 0, 100);
+    }
+
+    /** Self-reported skill names — cap the count and each entry's length, drop blanks. */
+    private static List<String> sanitizeSkills(List<String> skills) {
+        if (skills == null || skills.isEmpty()) {
+            return null;
+        }
+        return skills.stream()
+                .filter(s -> s != null && !s.isBlank())
+                .map(s -> truncate(s.trim(), LEAD_MAX_SKILL_LENGTH))
+                .limit(LEAD_MAX_SKILLS)
+                .toList();
     }
 }
