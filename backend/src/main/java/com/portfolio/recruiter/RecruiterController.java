@@ -8,6 +8,8 @@ import com.portfolio.chatbot.PortfolioContextService;
 import com.portfolio.chatbot.RateLimiter;
 import com.portfolio.common.Hashing;
 import com.portfolio.notify.NotificationService;
+import com.portfolio.telemetry.EngagementRecorder;
+import com.portfolio.telemetry.EngagementType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -65,6 +67,7 @@ public class RecruiterController {
     private final RecruiterMatchService matchService;
     private final RecruiterLeadRepository leadRepository;
     private final NotificationService notificationService;
+    private final EngagementRecorder engagementRecorder;
 
     public RecruiterController(RateLimiter rateLimiter,
                                DailyBudgetGuard budgetGuard,
@@ -74,7 +77,8 @@ public class RecruiterController {
                                GeminiClient geminiClient,
                                RecruiterMatchService matchService,
                                RecruiterLeadRepository leadRepository,
-                               NotificationService notificationService) {
+                               NotificationService notificationService,
+                               EngagementRecorder engagementRecorder) {
         this.rateLimiter = rateLimiter;
         this.budgetGuard = budgetGuard;
         this.abuseLog = abuseLog;
@@ -84,6 +88,7 @@ public class RecruiterController {
         this.matchService = matchService;
         this.leadRepository = leadRepository;
         this.notificationService = notificationService;
+        this.engagementRecorder = engagementRecorder;
     }
 
     public record MatchRequest(String jobDescription) {
@@ -118,7 +123,11 @@ public class RecruiterController {
         // The match itself (availability, daily cost ceiling, prompt, model call, parse) is the
         // shared RecruiterMatchService — one implementation, also used by the MCP match_against_jd tool.
         try {
-            return matchService.match(jd);
+            MatchResult result = matchService.match(jd);
+            // Passive engagement signal (D2): a completed match with its server-computed score.
+            engagementRecorder.record(EngagementType.RECRUITER_MATCH, null, clientIp,
+                    (int) Math.round(result.fitScore()));
+            return result;
         } catch (RecruiterMatchUnavailableException e) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage());
         } catch (RecruiterMatchException e) {
@@ -159,6 +168,9 @@ public class RecruiterController {
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Recruiter mode is temporarily unavailable.");
         }
+
+        // Passive engagement signal (D2). No score: the letter's matchResult is client-echoed.
+        engagementRecorder.record(EngagementType.RECRUITER_LETTER, null, clientIp, null);
 
         return geminiClient.streamPrompt(prompt, LETTER_MAX_TOKENS, LETTER_TEMPERATURE)
                 .map(text -> event(Map.of("type", "delta", "text", text)))
