@@ -79,6 +79,16 @@ class SecurityConfigTest {
     }
 
     @Test
+    void unauthenticatedAdminLeadsAccessIsRejected() throws Exception {
+        // Lead-capture C3: same shape as the messages inbox — a GET under /api/admin/** that
+        // would slip through the public GET /** catch-all if the ADMIN matcher ever moved.
+        mvc.perform(get("/api/admin/leads")).andExpect(status().isUnauthorized());
+        mvc.perform(patch("/api/admin/leads/00000000-0000-0000-0000-000000000000")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"READ\"}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void unauthenticatedDriveAccessIsRejected() throws Exception {
         // The keystone: drive reads AND writes are ADMIN-only — a GET must not slip through the
         // public GET /** catch-all. (No controller is wired here, but security runs first → 401.)

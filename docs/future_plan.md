@@ -55,6 +55,9 @@ v1 (Phases 1–7) is built and verified. Remaining scope:
   committed unmerged) holds `NotificationService`; once it merges to dev, add the one-line
   `notifyOwner(...)` calls in `ContactController.send` (B2) and `RecruiterController.lead`
   (C1 deferral — the spot is marked with a code comment).
+- 💭 **Leads admin: delete/archive.** C3 shipped the leads inbox triage-only (GET/PATCH, flow
+  NEW → READ → REPLIED) — no DELETE endpoint by design. Add delete (or an ARCHIVED step) if the
+  table ever needs pruning.
 
 ## Other initiatives (detailed plans in this folder)
 
