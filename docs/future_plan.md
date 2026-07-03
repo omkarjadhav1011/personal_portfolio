@@ -90,6 +90,125 @@ v1 tools (`get_profile`, `list_projects`, `get_experience`, `get_resume_summary`
 
 ---
 
+## Codebase review — 2026-07-02 (features, improvements, ideas)
+
+Output of a full product/code review. Each entry says exactly **what we're building** so it can be
+picked up cold. Effort: S (≤ half a day) · M (1–3 days) · L (1+ week). Items that expand an entry
+already in this file are marked *(expands existing entry above)*.
+
+### A. Features to build next (ranked by impact ÷ effort)
+
+- 🔜 **A1 — `search_portfolio(query)` MCP tool (S)** *(expands the 💭 under "Public MCP server")*
+  **What we build:** a 9th `@Tool` in `PortfolioMcpTools` that takes a free-text query, embeds it via
+  the existing `GeminiEmbeddingClient`, runs pgvector similarity search through `RetrievalService`,
+  and returns the top-N matching portfolio chunks (project/skill/experience snippets with source
+  labels). Gets its own rate-limit bucket (`mcp-search:<ip>`) in `McpRateLimitFilter`, cloned from
+  the `mcp-match` pattern, and consumes the `DailyBudgetGuard` budget (embedding calls cost quota).
+  **Why:** AI agents reach for semantic search first; today they must guess `list_projects` filters.
+
+- 🔜 **A2 — Recruiter/MCP usage telemetry + admin dashboard panel (M)** *(absorbed into
+  `lead_capture_plan.md` Phase Group D, widened to a general `engagement_event` stream)*
+  **What we build:** a new `com.portfolio.telemetry` package (package-by-feature) with a Flyway
+  `V<next>` migration for an `ai_usage_event` table: event type (mcp-tool / recruiter-match /
+  recruiter-letter / chat), tool name, hashed client IP, JD text hash + match score (for matches),
+  timestamp. Written from `McpRateLimitFilter` (which already logs tool + IP) and
+  `RecruiterController`. Plus a read-only `GET /api/admin/telemetry` endpoint and a panel on
+  `admin/Dashboard.tsx`: calls per day, top tools, recent JD matches with scores.
+  **Why:** today the only record that a recruiter's agent ever used the MCP server is Render log
+  lines that evaporate. This closes the feedback loop on the whole AI investment and is the
+  prerequisite for C3 (interview transcripts).
+
+- 🔜 **A3 — Drive quick wins: sensitivity toggle + real upload progress (S)** *(expands the two 🔜
+  entries under "Drive")* **What we build:** (1) `PATCH /api/drive/files/{id}` accepting
+  `{"sensitive": bool}`, mirroring the existing folder `PATCH`, plus a toggle in `DriveAdmin.tsx`;
+  (2) an XHR-based upload variant of `authFetch` in `lib/api.ts` that reports `upload.onprogress`,
+  wired to a real per-file % bar replacing the current spinner.
+
+- 🔜 **A4 — RAG-ground the recruiter match/letter (M)** *(expands the 💭 "Recruiter RAG grounding")*
+  **What we build:** `RecruiterPromptBuilder` stops embedding the full portfolio snapshot in every
+  Gemini call; instead the JD is embedded and the top-K relevant chunks are retrieved via
+  `RetrievalService` (same as chat, Phase C4 of `LLM_plan.md`) and passed as grounded context.
+  Match quality stays (verify on a few known JDs); token cost per call drops, which matters under
+  the 200/day `DailyBudgetGuard` cap.
+
+- 🔜 **A5 — Streaming Drive uploads (M)** *(expands the 🔜 "Streaming upload")*
+  **What we build:** replace `file.getBytes()` in `DriveService` with `CipherInputStream` over the
+  multipart stream → S3 `putObject` with `contentLength = plaintext + 16` (GCM tag), so large files
+  never sit fully in heap. Also closes pentest hardening item #22.
+
+- ⏸️ **A6 — Resume builder Phase 2 (L)** — structured resume builder (sections, entries, PDF
+  render) on top of the shipped Phase 1 upload+serve. Deliberately last: `get_resume_summary`
+  already exposes extracted resume text over MCP, so agents get most of the value today.
+
+### B. Improvements / fixes (verified in code 2026-07-02)
+
+- ✅ **B1 — Stop trusting `X-Real-IP` in `RateLimiter.clientIp` (S).** Done 2026-07-02 as
+  lead-capture P0 (`fix/rate-limiter-client-ip`, merged); regression test in `RateLimiterTest`.
+
+- 🔜 **B2 — Ship security headers on Vercel (S).**
+  **What we build:** a `headers` block in `frontend/vercel.json` (verified: currently rewrites
+  only) with `X-Frame-Options: DENY`, `X-Content-Type-Options`, `Referrer-Policy`, HSTS, and a CSP
+  whose `connect-src` is scoped to the Render backend origin — porting what exists only in
+  `nginx.conf` (which Vercel never runs). Pentest Fix B.
+
+- 🔜 **B3 — Persist the `DailyBudgetGuard` counter (S).**
+  **What we build:** back the in-memory `(day, count)` state (`DailyBudgetGuard.java:24-26`) with a
+  single-row Postgres table (Flyway `V<next>`), read at startup / written on increment. Today every
+  Render restart (free tier sleeps daily) silently resets the "hard" AI-spend ceiling.
+
+- ✅ **B4 — Fix stale javadoc on `RateLimiter.clientIp`.** Done with B1 (same P0 commit).
+
+- ✅ **B5 — Relocate `SECURITY_PENTEST_REPORT.md` to `docs/`.** Done during P0 — lives at
+  `docs/SECURITY_PENTEST_REPORT.md`.
+
+- ✅ **B6 — Update the pentest report's status line.** Done during P0 — the "Where I left off"
+  line now records Fix A (IP part) as done.
+
+- 🔜 **B7 — Write a real root `README.md` (S).**
+  Currently one line (`# personal_portfolio`). **What we build:** overview + architecture sketch
+  (SPA / API / Postgres+pgvector / MinIO-R2), feature list (vault, RAG chat, recruiter AI, MCP
+  server), links to live site + MCP endpoint + `docs/`. The repo landing page *is* portfolio
+  content for technical evaluators.
+
+### C. Out-of-the-box ideas (domain-unique)
+
+- 💭 **C1 — `git clone` my career: the portfolio as an actual git repository.**
+  **What we build:** a JGit-backed endpoint serving a *generated, clonable repo* over git's
+  smart-HTTP protocol (e.g. `/career.git`): commits = career events dated from `experience` rows,
+  branches = skill categories (the data model `SkillBranchController` already has), tags = job
+  changes, README = profile. Regenerated on admin writes via the same trigger pattern as
+  `CorpusReindexAspect`. A recruiter-engineer runs `git clone … && git log --graph` and reads the
+  career in their own terminal — the git theme becomes functional, not just visual.
+
+- 💭 **C2 — Render the JD match as a literal git diff (cheapest, most on-brand).**
+  **What we build:** a new presentation of the existing `MatchResult` on `RecruiterPage`: matched
+  skills as `+` lines in git-green with evidence, gaps as `-` lines in red, headed
+  `diff --git a/job_description b/omkar`, reusing `SkillsDiffSection`'s diff UI. Zero new backend.
+
+- 💭 **C3 — `ask_candidate(question)` MCP tool: recruiters' agents interview you, transcripts
+  captured.** **What we build:** one MCP tool that answers free-form questions as the candidate,
+  grounded via `RetrievalService` + `PromptBuilder` (essentially `/api/chat` re-exposed over MCP,
+  with its own rate bucket + budget draw), logging every Q&A to the A2 telemetry table. The MCP
+  server becomes a 24/7 async screening interview *and* a lead-capture funnel ("what companies
+  asked about me this week"). Depends on A2.
+
+- 💭 **C4 — `curl`-able ANSI resume (content negotiation).**
+  **What we build:** a controller that serves a plain-text/ANSI-escape resume when the request has
+  `Accept: text/plain` or a curl/wget User-Agent — profile, projects, and skills drawn as an ASCII
+  `git log --graph`, rendered from the same queries `PortfolioMcpTools` uses. A terminal-themed
+  portfolio you can actually read from a terminal.
+
+- 💭 **C5 — Cryptographically signed resume + verify endpoint.**
+  **What we build:** the served resume PDF gets a detached signature (HMAC or Ed25519, key handled
+  like `DRIVE_MASTER_KEY` — env-only, fail-fast) and a public `GET /api/verify` page: upload/paste
+  a hash, get "authentic / tampered". Anti-fraud provenance for recruiters in the age of
+  AI-generated fakes, reusing the vault's crypto discipline.
+
+**Recommended order:** ~~B1~~ (done) → B2/B3 (same sitting) → A1 → A2 (lands as lead-capture
+Group D) → C2 → then pick by appetite.
+
+---
+
 ## How to use this file
 - Add an entry the moment a future-scope idea is raised, with a one-line description and a status icon.
 - Link to a detailed plan doc here in `docs/` when one exists.
