@@ -1,6 +1,7 @@
 package com.portfolio.contact;
 
 import com.portfolio.chatbot.RateLimiter;
+import com.portfolio.common.Hashing;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,11 +20,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.HexFormat;
 
 /**
  * Public contact endpoint. Validates the payload, drops bot submissions via the honeypot,
@@ -76,7 +72,7 @@ public class ContactController {
 
         // Store first — the row is the deliverable; email is a best-effort notification.
         ContactMessage saved = messageRepository.save(new ContactMessage(
-                name, email, message, MessageSource.WEB, sha256Hex(RateLimiter.clientIp(request))));
+                name, email, message, MessageSource.WEB, Hashing.sha256Hex(RateLimiter.clientIp(request))));
 
         boolean sent = emailService.send(name, email, message);
         if (!sent) {
@@ -84,17 +80,6 @@ public class ContactController {
         }
 
         return new ContactResult(true, SUCCESS_MESSAGE);
-    }
-
-    /** Privacy stance: the client IP is stored only as a SHA-256 hex hash, never raw. */
-    private static String sha256Hex(String value) {
-        try {
-            byte[] digest = MessageDigest.getInstance("SHA-256")
-                    .digest(value.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(digest);
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 unavailable", e);
-        }
     }
 
     /** Mirror the server action: validation failures return 200 with {success:false, firstError}. */

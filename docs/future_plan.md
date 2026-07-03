@@ -49,6 +49,13 @@ v1 (Phases 1–7) is built and verified. Remaining scope:
 - 🔜 **Remaining pentest fixes B–D + hardening list** — Vercel security headers (CSP etc.), Spring
   Boot 3.3.x bump, prod secret-hygiene runbook; see `SECURITY_PENTEST_REPORT.md` §5.
 
+## Lead capture (lead_capture_plan.md)
+
+- 🔜 **Wire notifyOwner into contact + lead saves.** Group B (`feat/lead-capture-notify`, B1
+  committed unmerged) holds `NotificationService`; once it merges to dev, add the one-line
+  `notifyOwner(...)` calls in `ContactController.send` (B2) and `RecruiterController.lead`
+  (C1 deferral — the spot is marked with a code comment).
+
 ## Other initiatives (detailed plans in this folder)
 
 - `LLM_plan.md` — LLM/chatbot roadmap.
