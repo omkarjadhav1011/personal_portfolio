@@ -26,10 +26,12 @@ each item live in the sections below.
       hardcodes dev credentials — superseded, must never merge or push) and drop the six
       superseded stashes (`git stash list` — everything except recovered work is artifacts).
 
-**1. Hardening sitting (one small branch, ~half a day):**
-- [ ] B2 — Vercel security headers (below).
-- [ ] B3 — persist the `DailyBudgetGuard` counter (below).
-- [ ] Per-form daily contact cap (Security section, pentest #30 remainder) — same shape as B3.
+**1. Hardening sitting — ✅ DONE 2026-07-03 (`fix/security-hardening`, released):**
+- [x] B2 — Vercel security headers. *Post-deploy check pending: click through the live site —
+      API calls and the avatar must not be CSP-blocked; tighten `*.onrender.com` to the exact
+      backend origin once recorded.*
+- [x] B3 — `DailyBudgetGuard` persisted (V14 `daily_counter`, row `ai-budget`).
+- [x] Per-form daily contact cap (`CONTACT_DAILY_CAP`, default 100, row `contact-form`).
 
 **2. Prod-only security verification (needs the live URL):**
 - [ ] XFF residual probe on Render (Security section, pentest RC-a).
