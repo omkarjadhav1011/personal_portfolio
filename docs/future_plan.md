@@ -36,16 +36,31 @@ each item live in the sections below.
 **2. Prod-only security verification (needs the live URL):**
 - [ ] XFF residual probe on Render (Security section, pentest RC-a).
 
-**2b. AI quota reality check (found 2026-07-03 when prod chat died mid-day):**
-- [ ] **Owner action:** set `GEMINI_MODEL=gemini-2.5-flash-lite` in the Render dashboard (and
-      local `.env`). The free tier allows only **20 requests/day** for `gemini-2.5-flash`
-      (`GenerateRequestsPerDayPerProjectPerModel-FreeTier: 20`) — one day of dev + prod use
-      exhausts it and every chat/match then streams the error event. flash-lite has a far
-      higher free RPD and the app supports the swap via env, no code change.
-- [ ] After the swap, revisit `AI_DAILY_REQUEST_CAP` (currently 200) so it sits BELOW the
-      active model's real RPD; if ever back on plain flash, the cap must be ≤ 20.
-- 💭 Separate GEMINI keys for dev vs prod (two Google projects) so local testing can never
-      exhaust the live site's quota again.
+**2b. AI quota reality check (found 2026-07-03) — superseded by `llm_failover_plan.md` (2026-07-04):**
+- 🔜 **Multi-provider LLM failover** — priority chain groq → cerebras → mistral → gemini →
+      openrouter with automatic 429/5xx failover, per-provider quota tracking, circuit breaker.
+      Full design + 10-step implementation plan in **`docs/llm_failover_plan.md`**. Absorbs the
+      model-swap action below (research 2026-07-03: `gemini-3-flash` reportedly ~1,500 RPD;
+      Gemini free limits are now per-project/opaque — verify at aistudio.google.com/rate-limit).
+- [ ] ~~Owner action: swap to flash-lite~~ → now step 0 of the failover plan: set
+      `GEMINI_MODEL=gemini-3-flash` (verify availability per-project first).
+- [ ] After failover ships, revisit `AI_DAILY_REQUEST_CAP` (currently 200) — with ~4K RPD of real
+      chain capacity it becomes a pure cost-policy knob rather than a quota mirror.
+- 💭 Separate dev vs prod API keys — now applies to all five providers, not just Gemini.
+- 💭 OpenRouter one-time $10 credit purchase → 1,000 RPD on `:free` models (would justify
+      promoting it in the chain).
+- ⏸️ Embedding-provider failover explicitly out of scope: pgvector rows are gemini-embedding-001
+      vectors; switching embedding provider requires a full re-index. GitHub Models evaluated and
+      excluded (8K-in/4K-out caps + experimentation-only ToS).
+- 💭 Per-provider health/quota panel on the admin dashboard (data lands in `daily_counter`).
+- 🔜 **Per-IP daily cap on AI endpoints** (anti budget-burn): the per-minute `RateLimiter` doesn't
+      stop a slow bot (5 req/min drains the 200/day budget from one IP in ~40 min). Add a per-IP
+      daily ceiling (~20–30/day, `PersistentDailyCounter`) so draining the budget requires IP
+      rotation. Candidate extra step in `llm_failover_plan.md`.
+- 💭 Cloudflare Turnstile on the chat widget if `AbuseLog` ever shows real distributed abuse —
+      defends against IP-rotating bots that defeat per-IP caps.
+- ⚠️ Tuning rule: keep `AI_DAILY_REQUEST_CAP` well below the chain's total RPD (~4K) — the gap is
+      the margin that stops a bot flood from ever exhausting real provider quotas.
 
 **3. Feature work, ranked:**
 - [ ] A1 — `search_portfolio(query)` MCP tool (S).
@@ -177,6 +192,8 @@ directly."). Recruiter leads keep their own per-IP bucket; this cap is contact-f
 ## Other initiatives (detailed plans in this folder)
 
 - `LLM_plan.md` — LLM/chatbot roadmap.
+- `llm_failover_plan.md` — multi-provider LLM failover: design decisions + step-by-step
+  implementation plan (2026-07-04, ready to execute).
 - `MCP_RECRUITER_plan.md` — recruiter MCP integration plan.
 - `oauth2_mfa_admin_hardening_plan.md` — OAuth2 + TOTP MFA + admin hardening (largely shipped; kept
   for reference).
