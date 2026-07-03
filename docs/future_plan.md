@@ -36,6 +36,17 @@ each item live in the sections below.
 **2. Prod-only security verification (needs the live URL):**
 - [ ] XFF residual probe on Render (Security section, pentest RC-a).
 
+**2b. AI quota reality check (found 2026-07-03 when prod chat died mid-day):**
+- [ ] **Owner action:** set `GEMINI_MODEL=gemini-2.5-flash-lite` in the Render dashboard (and
+      local `.env`). The free tier allows only **20 requests/day** for `gemini-2.5-flash`
+      (`GenerateRequestsPerDayPerProjectPerModel-FreeTier: 20`) — one day of dev + prod use
+      exhausts it and every chat/match then streams the error event. flash-lite has a far
+      higher free RPD and the app supports the swap via env, no code change.
+- [ ] After the swap, revisit `AI_DAILY_REQUEST_CAP` (currently 200) so it sits BELOW the
+      active model's real RPD; if ever back on plain flash, the cap must be ≤ 20.
+- 💭 Separate GEMINI keys for dev vs prod (two Google projects) so local testing can never
+      exhaust the live site's quota again.
+
 **3. Feature work, ranked:**
 - [ ] A1 — `search_portfolio(query)` MCP tool (S).
 - [ ] B7 — real root `README.md` (S) — the repo landing page is portfolio content.
