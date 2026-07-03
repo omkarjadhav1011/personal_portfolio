@@ -16,6 +16,7 @@ import { useAI, type AIMessage } from "@/hooks/useAI";
 import { useCommandPaletteStore } from "@/store/commandPalette";
 import { cn } from "@/lib/utils";
 import { InlineMarkdown } from "@/components/ui/InlineMarkdown";
+import { ChatContactCard, chatContactAlreadySent } from "@/components/layout/ChatContactCard";
 
 // ─── Suggested content ────────────────────────────────────────────────────────
 
@@ -368,6 +369,13 @@ export function CommandPalette() {
                                 <AIBubble key={msg.id} message={msg} />
                               ))}
                               {isTyping && <TypingIndicator />}
+                              {/* E1 handoff: after real engagement (3+ visitor turns), offer to
+                                  capture details inline — value first, ask second. */}
+                              {!isTyping &&
+                                !chatContactAlreadySent() &&
+                                messages.filter((m) => m.role === "user").length >= 3 && (
+                                  <ChatContactCard />
+                                )}
                               <div ref={aiBottomRef} />
                             </div>
                           )}
