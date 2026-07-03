@@ -95,6 +95,44 @@ v1 (Phases 1–7) is built and verified. Remaining scope:
 - 🔜 **Remaining pentest fixes B–D + hardening list** — Vercel security headers (CSP etc.), Spring
   Boot 3.3.x bump, prod secret-hygiene runbook; see `SECURITY_PENTEST_REPORT.md` §5.
 
+### Hardening sitting — branch `fix/security-hardening` (implementation spec, 2026-07-03)
+
+One reviewable branch, three items (Now/Next §1). Verified facts this spec rests on:
+`frontend/vercel.json` currently has rewrites only; `frontend/nginx.conf` holds 6 headers that
+Vercel never serves; `frontend/index.html` has **no inline scripts** (strict `script-src 'self'`
+is safe); `DailyBudgetGuard` keeps `(day, count)` in memory only; next migration is `V14`.
+
+**H1 (= B2) — security headers in `vercel.json`.**
+Add a `headers` block (`source: "/(.*)"`) porting nginx.conf: `X-Frame-Options: DENY`,
+`X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `Permissions-Policy`
+(camera/mic/geo/payment off), HSTS `max-age=31536000; includeSubDomains`, and a CSP. CSP
+deltas vs nginx (which assumed a same-origin proxy): `connect-src 'self' https://*.onrender.com`
+and `img-src 'self' data: https://*.onrender.com` — the SPA calls the Render backend
+cross-origin and loads the avatar from it. Wildcard now; tighten to the exact backend origin
+once it's recorded. Keep `style-src 'unsafe-inline'` (Tailwind/framer inline styles).
+*Verify:* build-time none (config only); after the next Vercel deploy `curl -I` the live site →
+headers present, then click through the site (API calls + avatar must not be CSP-blocked).
+
+**H2 (= B3) — persist the `DailyBudgetGuard` counter.**
+`V14__add_daily_counter.sql`: `daily_counter(name varchar(40) PK, day date NOT NULL,
+count int NOT NULL)` — one generic row per counter, shared with H3. New `common.counter`
+mini-package: `DailyCounter` entity + repository + `DailyCounterStore` (load/saveseam).
+`DailyBudgetGuard` keeps its exact public API (`tryAcquire`/`remaining`) but loads its row
+(`name='ai-budget'`) lazily on first use and saves on every increment (≤ cap writes/day —
+negligible; load/save seam). The existing direct-construction unit tests keep working via a
+no-op store.
+*Verify:* unit — a new guard instance constructed over the same store resumes the count
+("restart survives"); suite green (V14 + entity validate).
+
+**H3 — per-form daily contact cap (pentest #30 remainder).**
+`CONTACT_DAILY_CAP` env (default 100, 0 disables) read by a small `contact.ContactDailyCap`
+component using the same `DailyCounterStore` (`name='contact-form'`). Checked in
+`ContactController.send` AFTER honeypot (bots must not consume the cap) and BEFORE the save;
+over cap → 429 with the standard envelope ("Daily message limit reached — please email
+directly."). Recruiter leads keep their own per-IP bucket; this cap is contact-form only.
+*Verify:* `@SpringBootTest` with `CONTACT_DAILY_CAP=1` — first POST stores + succeeds, second
+→ 429 and no row; honeypot POSTs never consume the cap.
+
 ## Lead capture (lead_capture_plan.md)
 
 - ✅ **Groups P0 + A–E + F1 shipped 2026-07-03**, all released to `main`: durable contact inbox
