@@ -1,6 +1,8 @@
 package com.portfolio.chatbot;
 
 import com.portfolio.rag.RetrievalService;
+import com.portfolio.telemetry.EngagementRecorder;
+import com.portfolio.telemetry.EngagementType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,6 +39,7 @@ public class ChatController {
     private final PromptBuilder promptBuilder;
     private final GeminiClient geminiClient;
     private final RetrievalService retrievalService;
+    private final EngagementRecorder engagementRecorder;
 
     public ChatController(RateLimiter rateLimiter,
                           DailyBudgetGuard budgetGuard,
@@ -44,7 +47,8 @@ public class ChatController {
                           PortfolioContextService contextService,
                           PromptBuilder promptBuilder,
                           GeminiClient geminiClient,
-                          RetrievalService retrievalService) {
+                          RetrievalService retrievalService,
+                          EngagementRecorder engagementRecorder) {
         this.rateLimiter = rateLimiter;
         this.budgetGuard = budgetGuard;
         this.abuseLog = abuseLog;
@@ -52,6 +56,7 @@ public class ChatController {
         this.promptBuilder = promptBuilder;
         this.geminiClient = geminiClient;
         this.retrievalService = retrievalService;
+        this.engagementRecorder = engagementRecorder;
     }
 
     public record ChatRequest(List<ChatMessage> messages) {
@@ -73,6 +78,11 @@ public class ChatController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid request payload");
         }
         validate(req.messages());
+
+        // Passive engagement signal (D2): a one-message history means a session just started.
+        if (req.messages().size() == 1) {
+            engagementRecorder.record(EngagementType.CHAT_SESSION, null, clientIp, null);
+        }
 
         String lastUserMessage = req.messages().get(req.messages().size() - 1).content();
         if (abuseLog.isSuspicious(lastUserMessage)) {
