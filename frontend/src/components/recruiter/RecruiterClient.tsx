@@ -14,13 +14,15 @@ interface RecruiterClientProps {
   projects: Project[];
   handle: string;
   ownerName: string;
+  /** F1 booking link (from the profile's socials) — absent → no slot line rendered. */
+  bookingUrl?: string;
 }
 
 const RATE_LIMITED = "Too many submissions. Try again in a minute.";
 const NETWORK_ERROR = "Couldn't reach the analyzer. Check your connection.";
 const GENERIC_ERROR = "Something went wrong analyzing this job description.";
 
-export function RecruiterClient({ projects, handle, ownerName }: RecruiterClientProps) {
+export function RecruiterClient({ projects, handle, ownerName, bookingUrl }: RecruiterClientProps) {
   const [jd, setJd] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -128,6 +130,21 @@ export function RecruiterClient({ projects, handle, ownerName }: RecruiterClient
           jobDescription={submittedJd}
           ownerName={ownerName}
         />
+
+        {/* F1 friction remover: outlives the lead card (which hides after a send). */}
+        {bookingUrl && (
+          <p className="font-mono text-xs text-text-muted">
+            # or just grab a slot —{" "}
+            <a
+              href={bookingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-git-blue hover:underline"
+            >
+              book a call
+            </a>
+          </p>
+        )}
       </div>
     );
   }
