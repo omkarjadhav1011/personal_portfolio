@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.portfolio.chatbot.AbuseLog;
 import com.portfolio.chatbot.RateLimiter;
+import com.portfolio.telemetry.EngagementRecorder;
+import com.portfolio.telemetry.EngagementType;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,11 +40,14 @@ public class McpRateLimitFilter extends OncePerRequestFilter {
     private final RateLimiter rateLimiter;
     private final ObjectMapper objectMapper;
     private final AbuseLog abuseLog;
+    private final EngagementRecorder engagementRecorder;
 
-    public McpRateLimitFilter(RateLimiter rateLimiter, ObjectMapper objectMapper, AbuseLog abuseLog) {
+    public McpRateLimitFilter(RateLimiter rateLimiter, ObjectMapper objectMapper, AbuseLog abuseLog,
+                              EngagementRecorder engagementRecorder) {
         this.rateLimiter = rateLimiter;
         this.objectMapper = objectMapper;
         this.abuseLog = abuseLog;
+        this.engagementRecorder = engagementRecorder;
     }
 
     @Override
@@ -92,6 +97,9 @@ public class McpRateLimitFilter extends OncePerRequestFilter {
                 return;
             }
             log.info("[mcp] tool={} ip={}", toolName, clientIp);
+            // Passive engagement signal (D2) — this filter is the one place on the request
+            // thread that sees both the tool name and the real client IP.
+            engagementRecorder.record(EngagementType.MCP_TOOL, toolName, clientIp, null);
         }
 
         filterChain.doFilter(cached, response);
