@@ -43,14 +43,17 @@ public class ContactController {
     private final RateLimiter rateLimiter;
     private final ContactMessageRepository messageRepository;
     private final NotificationService notificationService;
+    private final ContactDailyCap dailyCap;
 
     public ContactController(EmailService emailService, RateLimiter rateLimiter,
                              ContactMessageRepository messageRepository,
-                             NotificationService notificationService) {
+                             NotificationService notificationService,
+                             ContactDailyCap dailyCap) {
         this.emailService = emailService;
         this.rateLimiter = rateLimiter;
         this.messageRepository = messageRepository;
         this.notificationService = notificationService;
+        this.dailyCap = dailyCap;
     }
 
     @Operation(summary = "Send a contact message", description = "Public; validates, drops bots, sends via Resend")
@@ -68,6 +71,13 @@ public class ContactController {
         // Honeypot: bots fill this; humans don't. Silently succeed — no row, no send.
         if (req.honeypot() != null && !req.honeypot().isBlank()) {
             return new ContactResult(true, SUCCESS_MESSAGE);
+        }
+
+        // Global daily volume cap (H3, pentest #30) — after the honeypot so bot drops never
+        // consume it, before the save so an over-cap submission stores nothing.
+        if (!dailyCap.tryAcquire()) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Daily message limit reached — please email me directly.");
         }
 
         String name = req.name().trim();
