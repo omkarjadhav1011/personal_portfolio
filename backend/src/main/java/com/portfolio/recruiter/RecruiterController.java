@@ -7,6 +7,7 @@ import com.portfolio.chatbot.PortfolioContext;
 import com.portfolio.chatbot.PortfolioContextService;
 import com.portfolio.chatbot.RateLimiter;
 import com.portfolio.common.Hashing;
+import com.portfolio.notify.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -63,6 +64,7 @@ public class RecruiterController {
     private final GeminiClient geminiClient;
     private final RecruiterMatchService matchService;
     private final RecruiterLeadRepository leadRepository;
+    private final NotificationService notificationService;
 
     public RecruiterController(RateLimiter rateLimiter,
                                DailyBudgetGuard budgetGuard,
@@ -71,7 +73,8 @@ public class RecruiterController {
                                RecruiterPromptBuilder promptBuilder,
                                GeminiClient geminiClient,
                                RecruiterMatchService matchService,
-                               RecruiterLeadRepository leadRepository) {
+                               RecruiterLeadRepository leadRepository,
+                               NotificationService notificationService) {
         this.rateLimiter = rateLimiter;
         this.budgetGuard = budgetGuard;
         this.abuseLog = abuseLog;
@@ -80,6 +83,7 @@ public class RecruiterController {
         this.geminiClient = geminiClient;
         this.matchService = matchService;
         this.leadRepository = leadRepository;
+        this.notificationService = notificationService;
     }
 
     public record MatchRequest(String jobDescription) {
@@ -227,7 +231,10 @@ public class RecruiterController {
                 truncate(trimToNull(req.jdExcerpt()), LEAD_JD_EXCERPT_LENGTH),
                 Hashing.sha256Hex(clientIp)));
         log.info("[recruiter] lead {} stored (fit={})", saved.getId(), saved.getFitScore());
-        // notifyOwner("🎯 Recruiter lead ...") lands when Group B (notify) merges to dev.
+
+        // DB commit → notify (B2): async and fail-open, never part of the request outcome.
+        notificationService.notifyOwner("🎯 Recruiter lead: " + saved.getEmail()
+                + (saved.getFitScore() == null ? "" : " (fit " + saved.getFitScore() + "%)"));
 
         return new LeadResponse(true);
     }
