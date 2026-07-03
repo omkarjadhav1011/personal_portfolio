@@ -51,10 +51,10 @@ v1 (Phases 1–7) is built and verified. Remaining scope:
 
 ## Lead capture (lead_capture_plan.md)
 
-- 🔜 **Wire notifyOwner into contact + lead saves.** Group B (`feat/lead-capture-notify`, B1
-  committed unmerged) holds `NotificationService`; once it merges to dev, add the one-line
-  `notifyOwner(...)` calls in `ContactController.send` (B2) and `RecruiterController.lead`
-  (C1 deferral — the spot is marked with a code comment).
+- ✅ **Wire notifyOwner into contact + lead saves.** Done 2026-07-03 (B2, merged to dev):
+  `ContactController.send` and `RecruiterController.lead` now call `notifyOwner(...)` after the
+  DB write — Telegram when configured, Noop otherwise. Release reminder: set
+  `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` in the Render dashboard *before* merging dev → main.
 - 💭 **Leads admin: delete/archive.** C3 shipped the leads inbox triage-only (GET/PATCH, flow
   NEW → READ → REPLIED) — no DELETE endpoint by design. Add delete (or an ARCHIVED step) if the
   table ever needs pruning.
