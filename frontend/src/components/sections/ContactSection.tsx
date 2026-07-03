@@ -1,18 +1,23 @@
 
 import { useState, useRef, type FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ExternalLink, Copy, Check } from "lucide-react";
+import { ExternalLink, Copy, Check, CalendarClock } from "lucide-react";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { TerminalWindow } from "@/components/ui/TerminalWindow";
 import { sendContactEmail } from "@/lib/actions/contact";
 import { copyToClipboard } from "@/lib/clipboard";
-import { profile } from "@/data/profile";
+import { findBookingLink } from "@/lib/booking";
+import { useProfile } from "@/api/profile";
+import { profile as staticProfile } from "@/data/profile";
 import type { ContactFormState } from "@/types";
 
 export function ContactSection() {
   const [state, setState] = useState<ContactFormState>({ status: "idle" });
   const [copiedEmail, setCopiedEmail] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  // Live profile so an admin-added social (e.g. the F1 booking link) shows without a redeploy.
+  const profile = useProfile().data ?? staticProfile;
+  const bookingLink = findBookingLink(profile.socials);
 
   async function handleCopyEmail() {
     const ok = await copyToClipboard(profile.email);
@@ -56,6 +61,20 @@ export function ContactSection() {
 
         <ScrollReveal delay={0.1}>
           <TerminalWindow title={`${profile.handle}@portfolio: ~/contact`}>
+            {/* F1 friction remover: book a slot directly — skip the email round-trip. */}
+            {bookingLink && (
+              <a
+                href={bookingLink.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mb-6 flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-lg border border-git-blue/40 bg-git-blue/10 text-git-blue font-mono text-xs sm:text-sm hover:bg-git-blue/20 hover:border-git-blue/70 transition-all duration-200"
+              >
+                <CalendarClock size={14} />
+                <span className="truncate">$ {bookingLink.label} — skip the email round-trip</span>
+                <ExternalLink size={11} className="opacity-50 shrink-0" />
+              </a>
+            )}
+
             <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
               {/* Honeypot — hidden from real users, filled by bots */}
               <input
@@ -171,7 +190,7 @@ export function ContactSection() {
                   )}
                 </button>
               </div>
-              {profile.socials.map((s) => (
+              {profile.socials.filter((s) => s !== bookingLink).map((s) => (
                 <a
                   key={s.label}
                   href={s.url}

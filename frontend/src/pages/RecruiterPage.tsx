@@ -1,6 +1,7 @@
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useDomainProjects } from "@/api/projects";
 import { useProfile } from "@/api/profile";
+import { findBookingLink } from "@/lib/booking";
 import { profile as staticProfile } from "@/data/profile";
 import { RecruiterClient } from "@/components/recruiter/RecruiterClient";
 import { McpBadge } from "@/components/ui/McpBadge";
@@ -47,6 +48,7 @@ export default function RecruiterPage() {
           projects={projects}
           handle={handle}
           ownerName={profile.name}
+          bookingUrl={findBookingLink(profile.socials)?.url}
         />
       </div>
     </section>
