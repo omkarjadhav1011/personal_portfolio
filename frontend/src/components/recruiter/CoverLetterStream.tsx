@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Mail } from "lucide-react";
 import { InlineMarkdown } from "@/components/ui/InlineMarkdown";
 import { parseSseChunk } from "@/hooks/useAI";
+import { BASE_URL } from "@/lib/api";
 import type { MatchResult } from "@/lib/recruiter/types";
 
 interface CoverLetterStreamProps {
@@ -36,7 +37,8 @@ export function CoverLetterStream({
 
     (async () => {
       try {
-        const res = await fetch("/api/recruiter/letter", {
+        // BASE_URL prefix: relative paths hit the Vercel SPA rewrite in prod, not the backend.
+        const res = await fetch(`${BASE_URL}/api/recruiter/letter`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ jobDescription, matchResult }),

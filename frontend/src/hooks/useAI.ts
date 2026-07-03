@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { BASE_URL } from "@/lib/api";
 
 export interface AIMessage {
   id: string;
@@ -102,7 +103,9 @@ export function useAI() {
       setMessages((prev) => [...prev, userMsg, assistantMsg]);
 
       try {
-        const res = await fetch("/api/chat", {
+        // BASE_URL prefix: in prod the backend is a different origin — a relative path would
+        // hit the Vercel SPA rewrite and stream back index.html instead of SSE.
+        const res = await fetch(`${BASE_URL}/api/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ messages: history }),

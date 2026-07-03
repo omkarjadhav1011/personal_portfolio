@@ -7,6 +7,7 @@ import { MatchedProjects } from "@/components/recruiter/MatchedProjects";
 import { SkillsMatchDiff } from "@/components/recruiter/SkillsMatchDiff";
 import { CoverLetterStream } from "@/components/recruiter/CoverLetterStream";
 import { LeadCard } from "@/components/recruiter/LeadCard";
+import { BASE_URL } from "@/lib/api";
 import type { Project } from "@/types";
 import type { MatchResult } from "@/lib/recruiter/types";
 
@@ -39,7 +40,8 @@ export function RecruiterClient({ projects, handle, ownerName, bookingUrl }: Rec
     setError(null);
     setMatch(null);
     try {
-      const res = await fetch("/api/recruiter/match", {
+      // BASE_URL prefix: relative paths hit the Vercel SPA rewrite in prod, not the backend.
+      const res = await fetch(`${BASE_URL}/api/recruiter/match`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jobDescription: jd }),
