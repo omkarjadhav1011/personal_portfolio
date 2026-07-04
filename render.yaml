@@ -50,24 +50,53 @@ services:
       - key: CORS_ALLOWED_ORIGIN
         sync: false
 
-      # ── AI assistant: chatbot + RAG + recruiter (Google Gemini) ───────────
-      # The only secret is GEMINI_API_KEY — leave it unset to disable all AI features
-      # (chat/recruiter then return 503). The rest are non-secret tuning knobs with
+      # ── AI assistant: chatbot + RAG + recruiter — multi-provider failover chain ──
+      # (docs/llm_failover_plan.md). Secrets are the *_API_KEY entries — leave them all
+      # unset to disable AI features (chat/recruiter then return 503); any subset works,
+      # unkeyed providers are skipped. The rest are non-secret tuning knobs with
       # sensible defaults committed here; change them in git or the dashboard.
+      - key: LLM_PROVIDER_CHAIN
+        value: groq,cerebras,mistral,gemini,openrouter
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+      - key: LLM_GROQ_DAILY_CAP
+        value: "950"                 # keep under Groq's documented 1K free RPD
+      - key: CEREBRAS_API_KEY
+        sync: false
+      - key: CEREBRAS_MODEL
+        value: gpt-oss-120b
+      - key: MISTRAL_API_KEY
+        sync: false
+      - key: MISTRAL_MODEL
+        value: mistral-small-latest
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL
+        value: qwen/qwen3-next-80b-a3b-instruct:free
+      - key: LLM_OPENROUTER_DAILY_CAP
+        value: "45"                  # free tier is 50/day ($10 one-time credit -> 1000/day)
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_MODEL
-        value: gemini-2.5-flash      # or gemini-2.5-flash-lite (more daily quota) / gemini-2.5-pro
+        value: gemini-3-flash        # free RPD is per-project — verify in AI Studio
       - key: GEMINI_API_URL
         value: https://generativelanguage.googleapis.com/v1beta
+      - key: LLM_GEMINI_DAILY_CAP
+        value: "900"
       - key: GEMINI_EMBED_MODEL
         value: gemini-embedding-001
       # Must match the embedding column width (vector(768)); don't change after indexing.
       - key: GEMINI_EMBED_DIM
         value: "768"
-      # Hard daily ceiling on AI calls (chat + recruiter); keep below the free-tier RPD.
+      # Global daily ceiling on AI calls across ALL providers; keep FAR below the chain's
+      # total RPD — that gap is what stops a bot flood from exhausting real provider quotas.
       - key: AI_DAILY_REQUEST_CAP
         value: "200"
+      # Per-IP daily AI allowance (0 disables) — anti budget-burn.
+      - key: AI_IP_DAILY_CAP
+        value: "30"
 
       # ── Owner notifications (Telegram Bot API). Leave token unset to disable —
       #    the app falls back to a logging no-op channel. Setup: docs/SETUP.md §A8. ──

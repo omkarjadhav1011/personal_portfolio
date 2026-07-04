@@ -2,8 +2,6 @@ package com.portfolio.llm;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.util.retry.Retry;
 
@@ -23,8 +21,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * over BEFORE the first delta reaches the client — after that, switching providers would
  * visibly restart the reply, so the error propagates to the controllers' existing SSE error
  * handling instead.
+ *
+ * <p>Not a {@code @Service}: {@link LlmProviderConfig} constructs it, because the chain's
+ * ORDER comes from {@code LLM_PROVIDER_CHAIN} — bean-collection injection would lose it.
  */
-@Service
 public class LlmRouter {
 
     private static final Logger log = LoggerFactory.getLogger(LlmRouter.class);
@@ -34,7 +34,6 @@ public class LlmRouter {
     private final ProviderQuota quota;
     private final long retryBackoffMillis;
 
-    @Autowired
     public LlmRouter(List<LlmProvider> chain, ProviderHealth health, ProviderQuota quota) {
         this(chain, health, quota, 500);
     }
