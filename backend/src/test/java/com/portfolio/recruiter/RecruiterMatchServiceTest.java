@@ -55,6 +55,18 @@ class RecruiterMatchServiceTest {
     }
 
     @Test
+    void allProvidersExhaustedMapsToUnavailableNotServerError() {
+        when(llmRouter.isConfigured()).thenReturn(true);
+        when(budgetGuard.tryAcquire()).thenReturn(true);
+        when(contextService.getContext()).thenReturn(mock(PortfolioContext.class));
+        when(promptBuilder.buildMatchPrompt(any(), any())).thenReturn("prompt");
+        when(llmRouter.generateStructured(any(LlmRequest.class)))
+                .thenThrow(new com.portfolio.llm.LlmUnavailableException("all providers down"));
+
+        assertThrows(RecruiterMatchUnavailableException.class, () -> service.match("a backend role"));
+    }
+
+    @Test
     void throwsUnavailableAndSkipsModelWhenOverDailyBudget() {
         when(llmRouter.isConfigured()).thenReturn(true);
         when(budgetGuard.tryAcquire()).thenReturn(false);

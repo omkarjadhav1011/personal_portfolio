@@ -6,6 +6,7 @@ import com.portfolio.chatbot.PortfolioContext;
 import com.portfolio.chatbot.PortfolioContextService;
 import com.portfolio.llm.LlmRequest;
 import com.portfolio.llm.LlmRouter;
+import com.portfolio.llm.LlmUnavailableException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -78,6 +79,10 @@ public class RecruiterMatchService {
         try {
             json = llmRouter.generateStructured(LlmRequest.structured(
                     prompt, RecruiterPromptBuilder.MATCH_RESPONSE_SCHEMA, MAX_OUTPUT_TOKENS, TEMPERATURE));
+        } catch (LlmUnavailableException e) {
+            // Every provider in the chain is exhausted/down — a capacity state, not a bug (503, not 500).
+            log.warn("[recruiter-match] all LLM providers unavailable");
+            throw new RecruiterMatchUnavailableException("Recruiter matching is temporarily unavailable.");
         } catch (Exception e) {
             log.warn("[recruiter-match] model call failed", e);
             throw new RecruiterMatchException("The model call failed", e);
