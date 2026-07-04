@@ -297,7 +297,7 @@ export function CommandPalette() {
                                 >
                                   Ask AI
                                 </button>{" "}
-                                for natural language queries about this developer.
+                                for natural language queries about Omkar.
                               </p>
                             </div>
                           )}

@@ -18,7 +18,7 @@ building full-stack apps, or debugging something I broke at 2am.`,
   socials: [
     {
       label: "GitHub",
-      url: "https://github.com/omkarjadhav",
+      url: "https://github.com/omkarjadhav1011",
       icon: "github",
     },
     {

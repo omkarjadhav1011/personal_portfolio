@@ -16,7 +16,7 @@ export const projects: Project[] = [
     lastCommitMsg: "feat: add command palette with Ctrl+K shortcut",
     tags: ["Next.js", "Tailwind", "Framer Motion"],
     liveUrl: "https://omkarjadhav.vercel.app",
-    repoUrl: "https://github.com/omkarjadhav/git-portfolio",
+    repoUrl: "https://github.com/omkarjadhav1011/git-portfolio",
     status: "active",
     pinned: true,
     longDescription:
@@ -36,7 +36,7 @@ export const projects: Project[] = [
     lastCommit: "2 months ago",
     lastCommitMsg: "feat: add purchase flow with payment integration",
     tags: ["PHP", "HTML", "CSS", "JavaScript", "MySQL"],
-    repoUrl: "https://github.com/omkarjadhav/dev-mobiles",
+    repoUrl: "https://github.com/omkarjadhav1011/dev-mobiles",
     status: "active",
     pinned: true,
     longDescription:
@@ -56,7 +56,7 @@ export const projects: Project[] = [
     lastCommit: "3 months ago",
     lastCommitMsg: "feat: integrate real-time weather API for dynamic predictions",
     tags: ["Python", "Scikit-learn", "Pandas", "NumPy"],
-    repoUrl: "https://github.com/omkarjadhav/crop-recommendation",
+    repoUrl: "https://github.com/omkarjadhav1011/crop-recommendation",
     status: "active",
     pinned: true,
     longDescription:
@@ -76,7 +76,7 @@ export const projects: Project[] = [
     lastCommit: "4 months ago",
     lastCommitMsg: "chore: update model endpoint to stable-diffusion-xl",
     tags: ["Python", "Streamlit", "Hugging Face", "AI"],
-    repoUrl: "https://github.com/omkarjadhav/snapsktch",
+    repoUrl: "https://github.com/omkarjadhav1011/snapsktch",
     status: "active",
     pinned: true,
     longDescription:

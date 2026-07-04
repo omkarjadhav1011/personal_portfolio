@@ -13,7 +13,7 @@ import { fuzzyFilter } from "@/lib/fuzzy";
 
 const KNOWN_COMMANDS = [
   "help", "clear", "whoami", "ls", "skills", "projects",
-  "theme dark", "theme light", "cat readme.md",
+  "cat readme.md",
   "git checkout", "git log", "git status", "git branch",
   "git --version", "git remote", "git stash pop", "git show",
 ];
@@ -82,7 +82,6 @@ export function useTerminal() {
           "    projects                — list all projects",
           "",
           "  Other:",
-          "    theme dark|light        — switch theme",
           "    git --version           — portfolio version",
           "    cat README.md           — about section",
           "    git stash pop           — unstash my interests",
@@ -155,23 +154,6 @@ export function useTerminal() {
         lines.push("");
       }
       return { output: lines, type: "success" };
-    }
-
-    // ── theme dark|light ───────────────────────────────────────────────────
-    if (cmd.base === "theme") {
-      const mode = cmd.sub;
-      if (mode === "dark") {
-        document.documentElement.classList.add("dark");
-        return { output: ["Switched to dark mode."], type: "success" };
-      }
-      if (mode === "light") {
-        document.documentElement.classList.remove("dark");
-        return { output: ["Switched to light mode."], type: "success" };
-      }
-      return {
-        output: ["Usage: theme dark | theme light"],
-        type: "error",
-      };
     }
 
     // ── cat README.md ──────────────────────────────────────────────────────

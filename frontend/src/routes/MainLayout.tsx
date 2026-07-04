@@ -18,7 +18,7 @@ export function MainLayout() {
     <>
       <Navbar />
       <CommandPalette />
-      <main className="pb-7">
+      <main className="pb-[calc(1.75rem+env(safe-area-inset-bottom))]">
         <Suspense fallback={<RouteFallback />}>
           <Outlet />
         </Suspense>

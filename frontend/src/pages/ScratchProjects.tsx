@@ -1,8 +1,6 @@
-import { useEffect } from "react";
 import { useProjects } from "@/api/projects";
 import { cn } from "@/lib/utils";
 import { formatRelativeTime } from "@/lib/date";
-import { useThemeStore, initTheme } from "@/store/theme";
 import { useTableSort } from "@/hooks/useTableSort";
 import type { Project } from "@/types/project";
 
@@ -13,8 +11,6 @@ import type { Project } from "@/types/project";
  */
 export default function ScratchProjects() {
   const { data: projects, isPending, isError, error } = useProjects();
-  const resolved = useThemeStore((s) => s.resolved);
-  const setTheme = useThemeStore((s) => s.setTheme);
 
   // Exercises the copied useTableSort hook (src/hooks/useTableSort.ts).
   const { sorted, sortKey, sortDir, toggleSort } = useTableSort<Project>(
@@ -22,11 +18,6 @@ export default function ScratchProjects() {
     "stars",
     "desc",
   );
-
-  // Sync the theme store with localStorage / system preference on mount.
-  useEffect(() => {
-    initTheme();
-  }, []);
 
   const sortButton = (key: keyof Project, label: string) => (
     <button
@@ -52,17 +43,6 @@ export default function ScratchProjects() {
           <span className="ml-3 font-mono text-2xs uppercase tracking-widest text-text-muted">
             GET /api/projects
           </span>
-          <button
-            type="button"
-            onClick={() => setTheme(resolved === "dark" ? "light" : "dark")}
-            className={cn(
-              "ml-auto rounded-md border border-terminal-border px-2 py-1 font-mono text-2xs",
-              "transition-colors hover:bg-terminal-bg",
-              resolved === "dark" ? "text-git-yellow" : "text-git-blue",
-            )}
-          >
-            {resolved === "dark" ? "☀ light" : "☾ dark"}
-          </button>
         </div>
 
         <div className="p-6 font-mono text-sm">

@@ -175,7 +175,7 @@ export function ContactSection() {
                 <p className="text-text-muted text-xs"># or reach me directly:</p>
                 <button
                   onClick={handleCopyEmail}
-                  className="flex items-center gap-1.5 px-2 py-1 rounded text-xs text-text-faint hover:text-text-muted hover:bg-terminal-border/30 transition-colors"
+                  className="flex items-center gap-1.5 px-2 py-2 sm:py-1 rounded text-xs text-text-faint hover:text-text-muted hover:bg-terminal-border/30 transition-colors"
                 >
                   {copiedEmail ? (
                     <>

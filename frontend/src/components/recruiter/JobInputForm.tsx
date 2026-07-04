@@ -110,6 +110,7 @@ export function JobInputForm({
           loading={loading}
           loadingText="Analyzing…"
           disabled={!canSubmit}
+          className="shrink-0 whitespace-nowrap"
         >
           <Sparkles size={12} />
           Analyze fit

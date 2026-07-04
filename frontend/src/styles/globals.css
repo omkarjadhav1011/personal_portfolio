@@ -4,7 +4,8 @@
 
 /* ─── Theme Variables ──────────────────────────────────────── */
 /*  Store as space-separated RGB triplets so Tailwind's
-    opacity-modifier syntax (bg-terminal-bg/80) keeps working.  */
+    opacity-modifier syntax (bg-terminal-bg/80) keeps working.
+    Dark-only: the light theme was removed on purpose.          */
 
 :root {
   /* Font stacks — replace Next.js next/font CSS variables.
@@ -13,59 +14,19 @@
   /* GitHub's native UI font stack — matches github.com chrome/body text. */
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
 
-  /* Surfaces — Light theme (GitHub Light) */
-  --color-terminal-bg: 255 255 255;
-  --color-terminal-surface: 246 248 250;
-  --color-terminal-window: 255 255 255;
-  --color-terminal-border: 208 215 222;
-
-  /* Text — Light theme */
-  --color-text-primary: 31 35 40;
-  --color-text-secondary: 55 65 81;
-  --color-text-muted: 101 109 118;
-  --color-text-faint: 175 184 193;
-
-  /* Accents — Light theme (darkened for readability on white) */
-  --color-git-green: 26 127 55;
-  --color-git-green-dim: 26 127 55;
-  --color-git-green-muted: 218 251 225;
-  --color-git-blue: 9 105 218;
-  --color-git-blue-dim: 9 105 218;
-  --color-git-orange: 191 87 0;
-  --color-git-red: 207 34 46;
-  --color-git-purple: 130 80 223;
-  --color-git-yellow: 154 103 0;
-
-  /* macOS window chrome dots — semantic, not themeable */
-  --color-dot-red:    255 95 87;
-  --color-dot-yellow: 254 188 46;
-  --color-dot-green:  40 200 64;
-
-  /* Misc */
-  --color-selection-bg: 46 164 79 / 0.2;
-  --color-selection-text: 31 35 40;
-  --color-shadow-alpha: 0 0 0 / 0.1;
-  --color-scanline: 0 0 0 / 0.02;
-  --color-statusbar-bg: 0 122 204;
-  --color-text-glow: 26 127 55 / 0.3;
-
-  color-scheme: light;
-}
-
-.dark {
-  /* Surfaces — Dark theme (GitHub Dark) */
+  /* Surfaces — GitHub Dark */
   --color-terminal-bg: 13 17 23;
   --color-terminal-surface: 22 27 34;
   --color-terminal-window: 26 26 46;
   --color-terminal-border: 48 54 61;
 
-  /* Text — Dark theme */
+  /* Text */
   --color-text-primary: 230 237 243;
   --color-text-secondary: 201 209 217;
   --color-text-muted: 139 148 158;
   --color-text-faint: 72 79 88;
 
-  /* Accents — Dark theme (bright for dark backgrounds) */
+  /* Accents (bright for dark backgrounds) */
   --color-git-green: 0 255 136;
   --color-git-green-dim: 35 134 54;
   --color-git-green-muted: 26 71 49;
@@ -75,6 +36,11 @@
   --color-git-red: 255 123 114;
   --color-git-purple: 210 168 255;
   --color-git-yellow: 227 179 65;
+
+  /* macOS window chrome dots — semantic, not themeable */
+  --color-dot-red:    255 95 87;
+  --color-dot-yellow: 254 188 46;
+  --color-dot-green:  40 200 64;
 
   /* Misc */
   --color-selection-bg: 0 255 136 / 0.25;
@@ -97,6 +63,14 @@
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Keep our type scale in landscape on iOS instead of Safari's auto-inflation */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /* Focus is shown via focus-visible rings; the gray touch flash doubles it up */
+  a, button, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
@@ -138,14 +112,6 @@
     background: rgb(var(--color-selection-bg));
     color: rgb(var(--color-selection-text));
   }
-}
-
-/* ─── Theme Transition ─────────────────────────────────────── */
-html.theme-transition,
-html.theme-transition *,
-html.theme-transition *::before,
-html.theme-transition *::after {
-  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease !important;
 }
 
 /* ─── Utilities ─────────────────────────────────────────────── */

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FileSearch, Sparkles, Terminal } from "lucide-react";
@@ -8,8 +8,6 @@ import { useCommandPaletteStore } from "@/store/commandPalette";
 import { profile as staticProfile } from "@/data/profile";
 import { useProfile } from "@/api/profile";
 import { cn } from "@/lib/utils";
-// Theme toggle (dark mode) removed — replaced by the terminal trigger button
-// import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 const NAV_SECTIONS = [
   { id: "about", label: "about" },
@@ -36,6 +34,16 @@ export function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const showRecruiterBadge = new Date() < RECRUITER_BADGE_UNTIL;
+
+  // While the mobile menu is open, the page behind it shouldn't scroll.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileOpen]);
 
   // Section anchors only exist on the home page. When we're on another route
   // (e.g. a project detail page), route home first and let Home scroll to the
@@ -163,18 +171,29 @@ export function Navbar() {
       {/* Mobile menu */}
       <AnimatePresence>
         {mobileOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0, transition: { duration: 0.25, ease: "easeOut" } }}
-            exit={{ opacity: 0, y: -16, transition: { duration: 0.2, ease: "easeIn" } }}
-            className="fixed top-14 left-0 right-0 z-40 bg-terminal-bg/95 backdrop-blur-md border-b border-terminal-border p-4 font-mono space-y-1 md:hidden"
-          >
+          <>
+            {/* Backdrop — tap outside the panel to close */}
+            <motion.button
+              type="button"
+              aria-label="Close mobile menu"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1, transition: { duration: 0.2 } }}
+              exit={{ opacity: 0, transition: { duration: 0.15 } }}
+              onClick={() => setMobileOpen(false)}
+              className="fixed inset-0 top-14 z-30 bg-black/40 md:hidden"
+            />
+            <motion.div
+              initial={{ opacity: 0, y: -16 }}
+              animate={{ opacity: 1, y: 0, transition: { duration: 0.25, ease: "easeOut" } }}
+              exit={{ opacity: 0, y: -16, transition: { duration: 0.2, ease: "easeIn" } }}
+              className="fixed top-14 left-0 right-0 z-40 max-h-[calc(100dvh-3.5rem)] overflow-y-auto overscroll-contain bg-terminal-bg/95 backdrop-blur-md border-b border-terminal-border p-4 font-mono space-y-1 md:hidden"
+            >
             <button
               onClick={() => { openInMode("ai"); setMobileOpen(false); }}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-git-green bg-git-green/5 border border-git-green/20 hover:bg-git-green/10 transition-colors cursor-pointer"
             >
               <Sparkles size={14} className="text-git-green/70" />
-              <span>Ask AI about this developer</span>
+              <span>Ask AI about {profile.name.split(" ")[0]}</span>
             </button>
 
             {/* Terminal trigger — opens the command palette */}
@@ -216,7 +235,8 @@ export function Navbar() {
               </button>
             ))}
 
-          </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </>

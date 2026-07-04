@@ -25,7 +25,7 @@ export function StatusBar() {
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-50 h-7 flex items-center justify-between px-3 text-white text-xs font-mono select-none"
+      className="fixed bottom-0 left-0 right-0 z-50 h-[calc(1.75rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] flex items-center justify-between px-3 text-white text-xs font-mono select-none"
       style={{ backgroundColor: "rgb(var(--color-statusbar-bg))" }}
     >
       {/* Left: branch info */}

@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { TerminalWindow } from "@/components/ui/TerminalWindow";
 import { TypewriterText } from "@/components/ui/TypewriterText";
@@ -6,9 +7,12 @@ import { McpBadge } from "@/components/ui/McpBadge";
 import { assetUrl } from "@/lib/api";
 import type { Profile } from "@/types";
 
-function makeBootLines(handle: string, headline: string) {
+function makeBootLines(handle: string, headline: string, compact: boolean) {
+  // On narrow screens the full https URL can't fit on one terminal line, so
+  // clone via the short remote path instead of hard-wrapping mid-URL.
+  const cloneTarget = compact ? `${handle}/portfolio` : `https://github.com/${handle}/portfolio.git`;
   return [
-    { text: `$ git clone https://github.com/${handle}/portfolio.git`, delay: 200, speed: 28 },
+    { text: `$ git clone ${cloneTarget}`, delay: 200, speed: 28 },
     { text: "Cloning into 'portfolio'...", delay: 600, speed: 20 },
     { text: "remote: Enumerating objects: 247, done.", delay: 100, speed: 18 },
     { text: "remote: Counting objects: 100% (247/247), done.", delay: 0, speed: 18 },
@@ -25,12 +29,17 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ profile }: HeroSectionProps) {
-  const bootLines = makeBootLines(profile.handle, profile.headline);
+  // Evaluated once at mount — the boot animation plays a single time, so a
+  // live resize listener would only restart/garble it.
+  const [compact] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches
+  );
+  const bootLines = makeBootLines(profile.handle, profile.headline, compact);
 
   return (
     <section
       id="hero"
-      className="relative min-h-screen flex flex-col items-center justify-center px-4 py-14 sm:py-20 overflow-hidden"
+      className="relative min-h-screen flex flex-col items-center justify-center px-4 pt-24 pb-14 sm:py-20 overflow-hidden"
     >
       {/* Subtle grid background */}
       <div className="absolute inset-0 bg-grid-pattern bg-grid opacity-40 pointer-events-none" />
@@ -40,53 +49,23 @@ export function HeroSection({ profile }: HeroSectionProps) {
       <div className="relative w-full max-w-5xl mx-auto">
         {/* Two-column layout: terminal left, name right */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-center">
-          {/* Left column: terminal — compact static on mobile, full animated on desktop */}
+          {/* Left column: full animated boot sequence (all viewports) */}
           <div>
-            {/* Mobile: compact static 3-line terminal */}
-            <div className="block md:hidden">
-              <TerminalWindow
-                title={`${profile.handle}@portfolio: ~`}
-                className="w-full"
-              >
-                <div className="space-y-1.5 font-mono text-sm">
-                  <div className="flex gap-2">
-                    <span className="text-git-green shrink-0">$</span>
-                    <span className="text-text-muted break-all">
-                      git clone github.com/{profile.handle}/portfolio
-                    </span>
-                  </div>
-                  <div className="pl-5 text-text-faint text-xs">
-                    Cloning into &apos;portfolio&apos;... done.
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="text-git-green shrink-0">$</span>
-                    <span className="text-text-muted">cat README.md</span>
-                  </div>
-                  <div className="pl-5">
-                    <span className="inline-block w-2 h-4 bg-git-green animate-cursor-blink align-text-bottom" />
-                  </div>
-                </div>
-              </TerminalWindow>
-            </div>
-
-            {/* Desktop: full animated boot sequence */}
-            <div className="hidden md:block">
-              <TerminalWindow
-                title={`${profile.handle}@portfolio: ~`}
-                className="w-full"
-              >
-                <TypewriterText
-                  lines={bootLines}
-                  startDelay={800}
-                  lineColors={{
-                    0: "text-git-green",
-                    5: "text-git-green",
-                    6: "text-git-green",
-                    8: "text-git-green",
-                  }}
-                />
-              </TerminalWindow>
-            </div>
+            <TerminalWindow
+              title={`${profile.handle}@portfolio: ~`}
+              className="w-full"
+            >
+              <TypewriterText
+                lines={bootLines}
+                startDelay={800}
+                lineColors={{
+                  0: "text-git-green",
+                  5: "text-git-green",
+                  6: "text-git-green",
+                  8: "text-git-green",
+                }}
+              />
+            </TerminalWindow>
           </div>
 
           {/* Right column: name and CTAs */}
