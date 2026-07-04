@@ -271,7 +271,8 @@ section is the execution order, file map, and phase-specific gate checks only.
 ### Phase C2 — lead card in `RecruiterClient.tsx`
 - **Modify:** `frontend/src/components/recruiter/RecruiterClient.tsx` (card renders only after
   a `MatchResult`), plus a small `api/leads.ts` hook.
-- **POST specifics:** run a real match on `:5173` (needs `GEMINI_API_KEY` locally) → card
+- **POST specifics:** run a real match on `:5173` (needs any configured LLM provider key —
+  see the `LLM_PROVIDERS` chain) → card
   appears → submit → success state, row lands, phone buzzes; card absent before any match.
 
 ### Phase C3 — leads in the admin inbox

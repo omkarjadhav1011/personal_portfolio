@@ -191,6 +191,11 @@ directly."). Recruiter leads keep their own per-IP bucket; this cap is contact-f
 - 💭 **X-series extensions** (specs in `lead_capture_plan.md`): X2 trackable resume links
   (per-application tokens writing `RESUME_LINK_HIT` engagement events), X3 in-app reply from
   the inbox (needs the same Resend domain as F2).
+- 💤 **Dormant `/api/recruiter/letter` endpoint (2026-07-04).** The recruiter page dropped the
+  AI cover-letter section (recruiters read it as AI boilerplate; the slot now promotes the lead
+  card as "Connect with Omkar"). `RecruiterController.letter` + `buildLetterPrompt` are still
+  deployed but have no callers — remove them, or expose the letter as an MCP tool if it earns
+  its keep there.
 
 ## Custom domain + 24/7 uptime (current initiative, 2026-07-04)
 

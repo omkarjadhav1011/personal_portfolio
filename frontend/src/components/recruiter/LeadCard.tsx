@@ -30,9 +30,17 @@ export function LeadCard({ match, jobDescription, ownerName }: LeadCardProps) {
   const shouldReduce = useReducedMotion();
   const lead = useSubmitLead();
 
-  if (sentThisSession) return null;
-
   const firstName = ownerName.split(" ")[0] || ownerName;
+
+  // Once-per-session send — but say so instead of vanishing silently.
+  if (sentThisSession) {
+    return (
+      <p className="font-mono text-xs text-text-muted">
+        <span className="text-git-green mr-1">✓</span># message sent —{" "}
+        {firstName} will get back to you
+      </p>
+    );
+  }
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();

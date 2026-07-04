@@ -1,13 +1,16 @@
 
-import { useMemo, useState } from "react";
-import { motion } from "framer-motion";
-import { ArrowLeft, FileSearch, GitBranch, Sparkles } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { ArrowLeft, Check, Copy, FileSearch, GitBranch, Send } from "lucide-react";
 import { JobInputForm } from "@/components/recruiter/JobInputForm";
+import { AnalysisProgress } from "@/components/recruiter/AnalysisProgress";
+import { FitScoreHero } from "@/components/recruiter/FitScoreHero";
 import { MatchedProjects } from "@/components/recruiter/MatchedProjects";
 import { SkillsMatchDiff } from "@/components/recruiter/SkillsMatchDiff";
-import { CoverLetterStream } from "@/components/recruiter/CoverLetterStream";
 import { LeadCard } from "@/components/recruiter/LeadCard";
 import { BASE_URL } from "@/lib/api";
+import { copyToClipboard } from "@/lib/clipboard";
+import { buildReportMarkdown } from "@/lib/recruiter/report";
 import type { Project } from "@/types";
 import type { MatchResult } from "@/lib/recruiter/types";
 
@@ -29,11 +32,23 @@ export function RecruiterClient({ projects, handle, ownerName, bookingUrl }: Rec
   const [error, setError] = useState<string | null>(null);
   const [match, setMatch] = useState<MatchResult | null>(null);
   const [submittedJd, setSubmittedJd] = useState<string>("");
+  const [copied, setCopied] = useState(false);
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const reduce = useReducedMotion();
 
   const projectsBySlug = useMemo(
     () => new Map(projects.map((p) => [p.slug, p])),
     [projects]
   );
+
+  // Bring the fit score into view (and park focus there) when results land.
+  useEffect(() => {
+    if (!match) return;
+    const node = resultsRef.current;
+    if (!node) return;
+    node.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    node.focus({ preventScroll: true });
+  }, [match, reduce]);
 
   async function analyze() {
     setLoading(true);
@@ -74,11 +89,35 @@ export function RecruiterClient({ projects, handle, ownerName, bookingUrl }: Rec
   function reset() {
     setMatch(null);
     setError(null);
+    setCopied(false);
+  }
+
+  async function copyReport() {
+    if (!match) return;
+    const ok = await copyToClipboard(
+      buildReportMarkdown(match, projectsBySlug, ownerName)
+    );
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }
+
+  if (loading) {
+    return (
+      <AnalysisProgress ownerName={ownerName} projectCount={projects.length} />
+    );
   }
 
   if (match) {
+    const score = Math.round(match.fitScore);
+    const firstName = ownerName.split(" ")[0] || ownerName;
     return (
-      <div className="space-y-8">
+      <div ref={resultsRef} tabIndex={-1} className="space-y-8 outline-none scroll-mt-24">
+        <p className="sr-only" role="status">
+          Analysis complete — fit score {score} of 100
+        </p>
+
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <button
             type="button"
@@ -88,8 +127,26 @@ export function RecruiterClient({ projects, handle, ownerName, bookingUrl }: Rec
             <ArrowLeft size={12} />
             Try a different role
           </button>
-          <FitScoreBadge score={match.fitScore} />
+          <button
+            type="button"
+            onClick={copyReport}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-mono text-xs bg-terminal-surface border border-terminal-border text-text-muted hover:text-text-primary hover:border-git-green/40 transition-colors cursor-pointer"
+          >
+            {copied ? (
+              <>
+                <Check size={12} className="text-git-green" />
+                copied ✓
+              </>
+            ) : (
+              <>
+                <Copy size={12} />
+                Copy report
+              </>
+            )}
+          </button>
         </div>
+
+        <FitScoreHero score={match.fitScore} />
 
         <ReportSection
           icon={<GitBranch size={14} className="text-git-green" />}
@@ -97,6 +154,7 @@ export function RecruiterClient({ projects, handle, ownerName, bookingUrl }: Rec
           subtitle={`${match.matchedProjects.length} pull request${
             match.matchedProjects.length === 1 ? "" : "s"
           } worth reviewing`}
+          delay={0.05}
         >
           <MatchedProjects
             matches={match.matchedProjects}
@@ -109,6 +167,7 @@ export function RecruiterClient({ projects, handle, ownerName, bookingUrl }: Rec
           icon={<FileSearch size={14} className="text-git-blue" />}
           title="Skills diff"
           subtitle="what overlaps, what's missing"
+          delay={0.15}
         >
           <SkillsMatchDiff
             matched={match.matchedSkills}
@@ -117,21 +176,17 @@ export function RecruiterClient({ projects, handle, ownerName, bookingUrl }: Rec
         </ReportSection>
 
         <ReportSection
-          icon={<Sparkles size={14} className="text-git-green" />}
-          title="A short note for the role"
-          subtitle="written in first person, tailored to this JD"
+          icon={<Send size={14} className="text-git-green" />}
+          title={`Connect with ${firstName}`}
+          subtitle="this match lands on his phone in seconds"
+          delay={0.25}
         >
-          <CoverLetterStream
+          <LeadCard
+            match={match}
             jobDescription={submittedJd}
-            matchResult={match}
+            ownerName={ownerName}
           />
         </ReportSection>
-
-        <LeadCard
-          match={match}
-          jobDescription={submittedJd}
-          ownerName={ownerName}
-        />
 
         {/* F1 friction remover: outlives the lead card (which hides after a send). */}
         {bookingUrl && (
@@ -166,18 +221,21 @@ function ReportSection({
   icon,
   title,
   subtitle,
+  delay = 0,
   children,
 }: {
   icon: React.ReactNode;
   title: string;
   subtitle: string;
+  delay?: number;
   children: React.ReactNode;
 }) {
+  const reduce = useReducedMotion();
   return (
     <motion.section
-      initial={{ opacity: 0, y: 12 }}
+      initial={reduce ? false : { opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
+      transition={{ duration: 0.25, delay: reduce ? 0 : delay }}
       className="space-y-3"
     >
       <div className="flex items-baseline gap-2 font-mono">
@@ -189,37 +247,5 @@ function ReportSection({
       </div>
       {children}
     </motion.section>
-  );
-}
-
-function FitScoreBadge({ score }: { score: number }) {
-  const tone =
-    score >= 75
-      ? { color: "git-green", label: "strong fit" }
-      : score >= 50
-        ? { color: "git-blue", label: "partial fit" }
-        : score >= 25
-          ? { color: "git-yellow", label: "stretch fit" }
-          : { color: "git-red", label: "low fit" };
-
-  const cls =
-    tone.color === "git-green"
-      ? "bg-git-green/10 border-git-green/40 text-git-green"
-      : tone.color === "git-blue"
-        ? "bg-git-blue/10 border-git-blue/40 text-git-blue"
-        : tone.color === "git-yellow"
-          ? "bg-git-yellow/10 border-git-yellow/40 text-git-yellow"
-          : "bg-git-red/10 border-git-red/40 text-git-red";
-
-  return (
-    <span
-      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border font-mono text-xs ${cls}`}
-      title={`Fit score: ${score}/100`}
-    >
-      <span className="font-bold tabular-nums">{Math.round(score)}</span>
-      <span className="text-[10px] uppercase tracking-wider opacity-80">
-        {tone.label}
-      </span>
-    </span>
   );
 }

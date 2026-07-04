@@ -34,8 +34,8 @@ export default function RecruiterPage() {
           </h1>
           <p className="text-text-muted text-sm sm:text-base font-mono max-w-2xl">
             Paste the job description below. {profile.name} will be matched against it —
-            relevant projects, overlapping skills, honest gaps, and a short pitch tailored
-            to the role.
+            relevant projects, overlapping skills, honest gaps, and a direct line to reach
+            him about the role.
           </p>
 
           {/* Prefer your own AI? The same match runs as a public MCP tool. */}
