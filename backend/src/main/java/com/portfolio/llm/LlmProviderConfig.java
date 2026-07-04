@@ -80,7 +80,7 @@ public class LlmProviderConfig {
         List<LlmProvider> chain = chainIds.stream().map(providers::get).toList();
 
         logChainSummary(chain);
-        return new LlmRouter(chain, health, quota);
+        return new LlmRouter(chain, health, quota, objectMapper);
     }
 
     /** Parses the chain spec into a deduped, validated, order-preserving id list. Fails on typos. */

@@ -210,7 +210,8 @@ class OpenAiCompatProviderTest {
             try {
                 LlmRouter router = new LlmRouter(List.of(limited, fallback),
                         new ProviderHealth(3, Duration.ofMinutes(5), Clock.systemUTC()),
-                        new ProviderQuota(Map.of(), DailyCounterStore.NOOP, Clock.systemUTC()), 0);
+                        new ProviderQuota(Map.of(), DailyCounterStore.NOOP, Clock.systemUTC()),
+                        objectMapper, 0);
 
                 String result = router.generateStructured(
                         LlmRequest.structured("score", SCHEMA, 128, 0.4));

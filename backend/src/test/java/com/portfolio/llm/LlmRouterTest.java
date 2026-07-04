@@ -1,5 +1,6 @@
 package com.portfolio.llm;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.portfolio.common.counter.DailyCounterStore;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,7 @@ import java.util.function.Supplier;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Failover semantics with fake providers: 429 hops immediately (no retry, no breaker hit);
@@ -26,12 +28,13 @@ class LlmRouterTest {
 
     private static final LlmRequest REQUEST = LlmRequest.prompt("hello", 128, 0.5);
 
-    /** Scripted provider: each call consumes the next behavior; the count is assertable. */
+    /** Scripted provider: each call consumes the next behavior; calls and requests are assertable. */
     private static final class FakeProvider implements LlmProvider {
         private final String id;
         private final boolean configured;
         private final List<Supplier<Object>> script; // String / Flux<String> to return, or RuntimeException to throw
         final AtomicInteger calls = new AtomicInteger();
+        final List<LlmRequest> requests = new java.util.ArrayList<>();
 
         FakeProvider(String id, boolean configured, List<Supplier<Object>> script) {
             this.id = id;
@@ -61,6 +64,7 @@ class LlmRouterTest {
         @Override
         @SuppressWarnings("unchecked")
         public Flux<String> streamChat(LlmRequest request) {
+            requests.add(request);
             try {
                 Object result = next();
                 return result instanceof Flux ? (Flux<String>) result : Flux.just((String) result);
@@ -71,6 +75,7 @@ class LlmRouterTest {
 
         @Override
         public String generateStructured(LlmRequest request) {
+            requests.add(request);
             return (String) next();
         }
     }
@@ -92,7 +97,7 @@ class LlmRouterTest {
             new ProviderQuota(Map.of(), DailyCounterStore.NOOP, Clock.systemUTC());
 
     private LlmRouter router(LlmProvider... providers) {
-        return new LlmRouter(List.of(providers), health, quota, 0);
+        return new LlmRouter(List.of(providers), health, quota, new ObjectMapper(), 0);
     }
 
     // ── structured ──────────────────────────────────────────────────────────
@@ -109,18 +114,18 @@ class LlmRouterTest {
     @Test
     void skipsUnconfiguredProviders() {
         FakeProvider unconfigured = new FakeProvider("first", false, List.of(() -> "never"));
-        FakeProvider second = returning("second", "ok");
+        FakeProvider second = returning("second", "{}");
 
-        assertEquals("ok", router(unconfigured, second).generateStructured(REQUEST));
+        assertEquals("{}", router(unconfigured, second).generateStructured(REQUEST));
         assertEquals(0, unconfigured.calls.get());
     }
 
     @Test
     void rateLimitHopsWithoutRetryOrBreakerHit() {
         FakeProvider limited = throwing("limited", http(HttpStatus.TOO_MANY_REQUESTS));
-        FakeProvider fallback = returning("fallback", "ok");
+        FakeProvider fallback = returning("fallback", "{}");
 
-        assertEquals("ok", router(limited, fallback).generateStructured(REQUEST));
+        assertEquals("{}", router(limited, fallback).generateStructured(REQUEST));
         assertEquals(1, limited.calls.get()); // no same-provider retry on 429
 
         // 429s never open the breaker
@@ -133,30 +138,30 @@ class LlmRouterTest {
     @Test
     void serverErrorRetriesOnceThenHops() {
         FakeProvider flaky = throwing("flaky", http(HttpStatus.INTERNAL_SERVER_ERROR));
-        FakeProvider fallback = returning("fallback", "ok");
+        FakeProvider fallback = returning("fallback", "{}");
 
-        assertEquals("ok", router(flaky, fallback).generateStructured(REQUEST));
+        assertEquals("{}", router(flaky, fallback).generateStructured(REQUEST));
         assertEquals(2, flaky.calls.get()); // first attempt + one retry
     }
 
     @Test
     void retrySucceedingOnSameProviderAvoidsFailover() {
         FakeProvider flaky = new FakeProvider("flaky", true, List.of(
-                () -> http(HttpStatus.INTERNAL_SERVER_ERROR), () -> "recovered"));
+                () -> http(HttpStatus.INTERNAL_SERVER_ERROR), () -> "{\"r\":1}"));
         FakeProvider fallback = returning("fallback", "never");
 
-        assertEquals("recovered", router(flaky, fallback).generateStructured(REQUEST));
+        assertEquals("{\"r\":1}", router(flaky, fallback).generateStructured(REQUEST));
         assertEquals(0, fallback.calls.get());
     }
 
     @Test
     void fatalClientErrorHopsWithoutRetryAndOpensBreakerAtThreshold() {
         FakeProvider broken = throwing("broken", http(HttpStatus.UNAUTHORIZED));
-        FakeProvider fallback = returning("fallback", "ok");
+        FakeProvider fallback = returning("fallback", "{}");
         LlmRouter router = router(broken, fallback);
 
         for (int i = 0; i < 3; i++) {
-            assertEquals("ok", router.generateStructured(REQUEST));
+            assertEquals("{}", router.generateStructured(REQUEST));
         }
         assertEquals(3, broken.calls.get()); // one per request, no retries
         assertEquals(false, health.isAvailable("broken"));
@@ -169,7 +174,7 @@ class LlmRouterTest {
     @Test
     void rateLimitedProviderIsSkippedOnTheNextRequestWithoutACall() {
         FakeProvider limited = throwing("limited", http(HttpStatus.TOO_MANY_REQUESTS));
-        FakeProvider fallback = returning("fallback", "ok");
+        FakeProvider fallback = returning("fallback", "{}");
         LlmRouter router = router(limited, fallback);
 
         router.generateStructured(REQUEST); // observes the 429 → 60s quota window
@@ -187,6 +192,62 @@ class LlmRouterTest {
 
         assertThrows(LlmUnavailableException.class,
                 () -> router(limited, unconfigured).generateStructured(REQUEST));
+    }
+
+    // ── structured JSON ladder (step 6) ─────────────────────────────────────
+
+    @Test
+    void normalizeStripsFencesAndSurroundingProse() {
+        assertEquals("{\"a\":1}", LlmRouter.normalizeJsonOutput("{\"a\":1}"));
+        assertEquals("{\"a\":1}", LlmRouter.normalizeJsonOutput("```json\n{\"a\":1}\n```"));
+        assertEquals("{\"a\":1}", LlmRouter.normalizeJsonOutput("```\n{\"a\":1}\n```"));
+        assertEquals("{\"a\":1}", LlmRouter.normalizeJsonOutput("Here is the JSON:\n{\"a\":1}\nHope that helps!"));
+        assertEquals("", LlmRouter.normalizeJsonOutput(null));
+    }
+
+    @Test
+    void fencedJsonIsStrippedWithoutARetry() {
+        FakeProvider provider = returning("p", "```json\n{\"fit\":80}\n```");
+
+        assertEquals("{\"fit\":80}", router(provider).generateStructured(REQUEST));
+        assertEquals(1, provider.calls.get());
+    }
+
+    @Test
+    void invalidJsonGetsOneCorrectiveRetryWithTheBadOutputEchoed() {
+        FakeProvider provider = new FakeProvider("p", true, List.of(
+                () -> "I cannot produce JSON, sorry.", () -> "{\"fit\":42}"));
+
+        assertEquals("{\"fit\":42}", router(provider).generateStructured(REQUEST));
+        assertEquals(2, provider.calls.get());
+
+        LlmRequest retry = provider.requests.get(1);
+        assertEquals(REQUEST.messages().size() + 2, retry.messages().size());
+        assertEquals("assistant", retry.messages().get(retry.messages().size() - 2).role());
+        assertEquals("I cannot produce JSON, sorry.",
+                retry.messages().get(retry.messages().size() - 2).content());
+        assertEquals("user", retry.messages().get(retry.messages().size() - 1).role());
+        assertTrue(retry.messages().get(retry.messages().size() - 1).content().contains("not valid JSON"));
+    }
+
+    @Test
+    void invalidJsonTwiceFailsOverToTheNextProvider() {
+        FakeProvider broken = new FakeProvider("broken", true, List.of(
+                () -> "nope", () -> "still nope"));
+        FakeProvider fallback = returning("fallback", "{\"fit\":66}");
+
+        assertEquals("{\"fit\":66}", router(broken, fallback).generateStructured(REQUEST));
+        assertEquals(2, broken.calls.get());
+        assertEquals(1, fallback.calls.get());
+    }
+
+    @Test
+    void nonObjectJsonCountsAsInvalid() {
+        FakeProvider provider = new FakeProvider("p", true, List.of(
+                () -> "42", () -> "{\"fit\":1}"));
+
+        assertEquals("{\"fit\":1}", router(provider).generateStructured(REQUEST));
+        assertEquals(2, provider.calls.get());
     }
 
     // ── streaming ───────────────────────────────────────────────────────────
