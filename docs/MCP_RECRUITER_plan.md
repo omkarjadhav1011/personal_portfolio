@@ -292,6 +292,24 @@ fast and free — but still rate-limited (B3) and logged (B4).
 - **Verify:** set the cap low locally → the N+1th match call is refused cleanly without calling Claude.
 - **What you just learned:** rate ≠ cost; the only LLM-backed tool gets the hard ceiling.
 
+### Phase D4 — Deterministic scoring core (score stability contract) ✅
+- **Why:** the original design let the LLM output `fitScore` directly (temp 0.4, holistic 0–100,
+  answered by whichever of the 5 failover providers was healthy) — the same JD could score 60 then
+  30. A score that wobbles like that reads as random numbers, not matching.
+- **Design:** *the number comes from math, not the model's mood.* The LLM (temperature 0) only
+  **extracts** the JD's requirements (`{skill, importance, reason}` + `isJobDescription` spam guard)
+  and narrates `matchedProjects`; `MatchScoreCalculator` computes the score in code —
+  alias-normalized skill matching (`SkillNormalizer`) against the portfolio, full credit for listed
+  skills, half credit for tag-only evidence, `100 × (0.7·mustCoverage + 0.3·niceCoverage)`.
+  Results are cached in `MatchResultCache`, keyed on `sha256(normalized JD + portfolio fingerprint)`;
+  cache hits skip the LLM *and* the `DailyBudgetGuard` charge.
+- **Score stability contract:** identical JD (modulo trim/case/whitespace) ⇒ **identical score**;
+  near-identical JD ⇒ **within ±3**; extraction failure ⇒ error (503/500), never a guessed score.
+  Every computed score is audit-logged (`jdHash`, requirement counts/credits, per-bucket coverage,
+  final fit) so any past score can be reconstructed from one log line.
+- **MCP alignment:** `match_against_jd` streams the analysis stages (extracting → scoring → scored,
+  with the sub-score breakdown) to the client as MCP `notifications/message` logging notifications.
+
 ---
 
 # PHASE GROUP E — Transport/deploy decision & optional extra tools

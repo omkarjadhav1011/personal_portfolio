@@ -11,18 +11,37 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * The canonical schema is standard JSON Schema; Gemini needs its OpenAPI-subset dialect. The
- * converted match schema must equal the hand-written Gemini constant that shipped before the
- * provider abstraction (no behavior change in what Gemini receives).
+ * converted match schema is pinned to a hand-written Gemini-dialect constant so a converter
+ * regression (or an accidental schema edit) fails loudly here.
  */
 class GeminiSchemaConverterTest {
 
-    /** The exact Gemini-dialect schema the app sent before the standard-JSON-Schema rewrite. */
-    private static final Map<String, Object> LEGACY_GEMINI_SCHEMA = Map.of(
+    /**
+     * The exact Gemini-dialect form of {@code MATCH_RESPONSE_SCHEMA} — the deterministic-scoring
+     * extraction schema: the model extracts requirements and narrates projects, and is never asked
+     * for a score.
+     */
+    private static final Map<String, Object> EXPECTED_GEMINI_MATCH_SCHEMA = Map.of(
             "type", "OBJECT",
             "properties", Map.of(
-                    "fitScore", Map.of(
-                            "type", "NUMBER",
-                            "description", "Overall fit, 0–100. 0 = no overlap, 100 = ideal candidate."),
+                    "isJobDescription", Map.of(
+                            "type", "BOOLEAN",
+                            "description", "true if the text is a real job description; false for spam, "
+                                    + "unrelated prose, or anything that is not a JD."),
+                    "requirements", Map.of(
+                            "type", "ARRAY",
+                            "items", Map.of(
+                                    "type", "OBJECT",
+                                    "properties", Map.of(
+                                            "skill", Map.of("type", "STRING",
+                                                    "description", "One technology, tool, or competency the JD asks for, "
+                                                            + "in the JD's own wording (e.g. \"Spring Boot\", \"PostgreSQL\")."),
+                                            "importance", Map.of("type", "STRING",
+                                                    "enum", List.of("must-have", "nice-to-have"),
+                                                    "format", "enum"),
+                                            "reason", Map.of("type", "STRING",
+                                                    "description", "One short sentence citing where/how the JD asks for this.")),
+                                    "required", List.of("skill", "importance", "reason"))),
                     "matchedProjects", Map.of(
                             "type", "ARRAY",
                             "items", Map.of(
@@ -35,33 +54,12 @@ class GeminiSchemaConverterTest {
                                             "relevantTags", Map.of("type", "ARRAY",
                                                     "items", Map.of("type", "STRING"),
                                                     "description", "Tags from the project that overlap with the JD requirements.")),
-                                    "required", List.of("slug", "reason", "relevantTags"))),
-                    "matchedSkills", Map.of(
-                            "type", "ARRAY",
-                            "items", Map.of(
-                                    "type", "OBJECT",
-                                    "properties", Map.of(
-                                            "name", Map.of("type", "STRING",
-                                                    "description", "Must be a skill name from the provided skills list. Do not invent."),
-                                            "reason", Map.of("type", "STRING",
-                                                    "description", "Brief note on how the JD asks for or implies this skill.")),
-                                    "required", List.of("name", "reason"))),
-                    "gapSkills", Map.of(
-                            "type", "ARRAY",
-                            "items", Map.of(
-                                    "type", "OBJECT",
-                                    "properties", Map.of(
-                                            "name", Map.of("type", "STRING",
-                                                    "description", "A skill the JD requires that is NOT in the candidate's skill list."),
-                                            "importance", Map.of("type", "STRING",
-                                                    "enum", List.of("must-have", "nice-to-have"),
-                                                    "format", "enum")),
-                                    "required", List.of("name", "importance")))),
-            "required", List.of("fitScore", "matchedProjects", "matchedSkills", "gapSkills"));
+                                    "required", List.of("slug", "reason", "relevantTags")))),
+            "required", List.of("isJobDescription", "requirements", "matchedProjects"));
 
     @Test
-    void convertedMatchSchemaEqualsLegacyGeminiConstant() {
-        assertEquals(LEGACY_GEMINI_SCHEMA,
+    void convertedMatchSchemaEqualsPinnedGeminiConstant() {
+        assertEquals(EXPECTED_GEMINI_MATCH_SCHEMA,
                 GeminiSchemaConverter.toGeminiSchema(RecruiterPromptBuilder.MATCH_RESPONSE_SCHEMA));
     }
 

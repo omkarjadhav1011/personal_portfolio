@@ -256,6 +256,18 @@ v1 tools (`get_profile`, `list_projects`, `get_experience`, `get_resume_summary`
 - 💭 **`search_portfolio(query)`** — semantic search over the corpus via the existing pgvector
   `RetrievalService` (Phase E2 candidate). Embedding-backed, so it consumes Gemini embedding quota
   and needs its own rate-limit bucket + cost accounting like `match_against_jd`.
+- ⏸️ **MCP `notifications/progress` for `match_against_jd`** (2026-07-04) — the tool now emits
+  logging notifications (`notifications/message`) per analysis stage, but real progress
+  notifications need the client's `progressToken` from the request `_meta`, which the Spring AI
+  1.0.9 tool bridge doesn't surface (`McpToolUtils` only exposes the exchange). Revisit with the
+  Spring AI 2.0 upgrade.
+- 💭 **Recruiter match cache → Redis** (2026-07-04) — `MatchResultCache` (JD-hash-keyed match
+  results, 6h TTL, 200 entries) is in-memory like the other TTL stores; move to Redis if the app
+  ever scales past one instance.
+- 💭 **Show the fit-score sub-score breakdown in the recruiter UI** (2026-07-04) — the backend now
+  computes per-bucket must-have/nice-to-have coverage behind every score (audit-logged); a
+  `FitScoreHero` breakdown panel could surface it to recruiters for extra trust. Backend-only for
+  now by decision.
 
 ---
 
