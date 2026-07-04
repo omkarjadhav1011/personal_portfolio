@@ -36,15 +36,18 @@ each item live in the sections below.
 **2. Prod-only security verification (needs the live URL):**
 - [ ] XFF residual probe on Render (Security section, pentest RC-a).
 
-**2b. AI quota reality check (found 2026-07-03) — superseded by `llm_failover_plan.md` (2026-07-04):**
-- 🔜 **Multi-provider LLM failover** — priority chain groq → cerebras → mistral → gemini →
-      openrouter with automatic 429/5xx failover, per-provider quota tracking, circuit breaker.
-      Full design + 10-step implementation plan in **`docs/llm_failover_plan.md`**. Absorbs the
-      model-swap action below (research 2026-07-03: `gemini-3-flash` reportedly ~1,500 RPD;
-      Gemini free limits are now per-project/opaque — verify at aistudio.google.com/rate-limit).
-- [ ] ~~Owner action: swap to flash-lite~~ → now step 0 of the failover plan: set
-      `GEMINI_MODEL=gemini-3-flash` (verify availability per-project first).
-- [ ] After failover ships, revisit `AI_DAILY_REQUEST_CAP` (currently 200) — with ~4K RPD of real
+**2b. AI quota reality check — resolved by multi-provider failover (built 2026-07-04):**
+- ✅ **Multi-provider LLM failover BUILT** (steps 0–8 of `docs/llm_failover_plan.md`, branch
+      `feat/llm-failover`): chain groq → cerebras → mistral → gemini → openrouter, 429/5xx
+      failover, per-provider persisted quota (zone-aware resets), circuit breaker, JSON ladder,
+      per-IP daily cap. Drill + real-key smoke verified all providers.
+- [ ] **Step 9 remaining:** merge `feat/llm-failover` → dev (Render auto-deploys), add the four
+      provider keys in the Render dashboard, prod smoke (chat + match on the live site, check
+      `[llm]` log lines).
+- [ ] **Owner:** verify the project's Gemini RPD at aistudio.google.com/rate-limit (render.yaml
+      now ships `GEMINI_MODEL=gemini-3-flash`); opt out of Mistral training-data use in its
+      console; **rotate all four provider keys** (they transited chat once during setup).
+- [ ] After deploy, revisit `AI_DAILY_REQUEST_CAP` (currently 200) — with ~4K RPD of real
       chain capacity it becomes a pure cost-policy knob rather than a quota mirror.
 - 💭 Separate dev vs prod API keys — now applies to all five providers, not just Gemini.
 - 💭 OpenRouter one-time $10 credit purchase → 1,000 RPD on `:free` models (would justify

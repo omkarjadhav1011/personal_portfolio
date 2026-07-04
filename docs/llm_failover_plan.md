@@ -1,5 +1,16 @@
 # Multi-provider LLM failover — implementation plan
 
+> **Status (2026-07-04): steps 0–8 DONE** on `feat/llm-failover` (one commit per step, suite at
+> 211 tests). Live drill verified: transparent stream failover, proactive skip in the Retry-After
+> window, structured match via the chain, graceful all-exhausted degradation (drill found and
+> fixed a 500-vs-503 bug in the match path). Real-key smoke: groq/cerebras/mistral/openrouter all
+> serve chat + strict-schema match + letter. Notes: OpenRouter model swapped to
+> `openai/gpt-oss-20b:free` (qwen3-next was 429 upstream); Groq's 8K TPM means chat+match in the
+> same minute can 429 (the chain absorbs it). **Remaining: step 9** — merge to dev, Render
+> dashboard keys, prod verify — plus owner actions: AI Studio limit check before the
+> `GEMINI_MODEL=gemini-3-flash` swap takes effect, Mistral training-data opt-out, key rotation
+> (keys were pasted in chat once).
+
 Goal: replace the single-provider Gemini dependency (free tier: ~20 RPD on `gemini-2.5-flash`,
 observed 2026-07-03) with a **priority chain of free-tier providers** and automatic failover.
 Business logic (`ChatController`, `RecruiterController`, `RecruiterMatchService`) never knows which

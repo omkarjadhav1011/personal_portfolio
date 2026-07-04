@@ -31,16 +31,29 @@ prompts you for it). Vars **not** in `render.yaml` must be added manually in the
 | `ADMIN_PASSWORD_HASH` | 🔴 required | yes (`sync:false`) | **BCrypt hash** (cost 10–12) of the admin password — never plaintext (see §1 for how to generate). |
 | `CORS_ALLOWED_ORIGIN` | 🔴 required | yes (`sync:false`) | The Vercel frontend origin, no trailing slash. Default (local) `http://localhost:5173`. |
 
-### Backend (Render) — AI assistant: chatbot + RAG + recruiter
+### Backend (Render) — AI assistant: chatbot + RAG + recruiter (multi-provider failover)
+
+Chat/match/letter are served by a **failover chain of free-tier providers**
+(`docs/llm_failover_plan.md`): a rate-limited or failing provider is skipped automatically.
+Any subset of keys works — unkeyed providers are skipped (boot log prints the chain summary);
+**all keys empty = chatbot/recruiter return 503** (feature off). Keys are backend-only — never
+in any `VITE_*`. Embeddings (RAG) stay Gemini-only and are outside the chain.
 
 | Var | Set? | In render.yaml | Purpose / default |
 |---|---|---|---|
-| `GEMINI_API_KEY` | ⚪ (enables AI) | yes (`sync:false`) | Google AI Studio key. **Empty = chatbot/recruiter return 503** (feature off). Backend-only — never in any `VITE_*`. |
-| `GEMINI_MODEL` | ⚪ | yes (`value`) | Chat model. Default `gemini-2.5-flash`. Swap to `gemini-2.5-flash-lite` (higher daily quota) or `gemini-2.5-pro`. |
+| `LLM_PROVIDER_CHAIN` | ⚪ | yes (`value`) | Priority order. Default `groq,cerebras,mistral,gemini,openrouter`. |
+| `GROQ_API_KEY` | ⚪ (enables provider) | yes (`sync:false`) | console.groq.com. `GROQ_MODEL` default `openai/gpt-oss-120b`; `LLM_GROQ_DAILY_CAP` default `950` (under the 1K free RPD). |
+| `CEREBRAS_API_KEY` | ⚪ (enables provider) | yes (`sync:false`) | cloud.cerebras.ai. `CEREBRAS_MODEL` default `gpt-oss-120b`. No daily cap (token-bucket limits). |
+| `MISTRAL_API_KEY` | ⚪ (enables provider) | yes (`sync:false`) | console.mistral.ai (opt out of training-data use in the console). `MISTRAL_MODEL` default `mistral-small-latest`. |
+| `OPENROUTER_API_KEY` | ⚪ (enables provider) | yes (`sync:false`) | openrouter.ai. `OPENROUTER_MODEL` default `openai/gpt-oss-20b:free`; `LLM_OPENROUTER_DAILY_CAP` default `45` (free tier is 50/day; a one-time $10 credit raises it to 1,000/day). |
+| `GEMINI_API_KEY` | ⚪ (enables provider + RAG) | yes (`sync:false`) | Google AI Studio key. Also powers embeddings. |
+| `GEMINI_MODEL` | ⚪ | yes (`value`) | Chat model. Default `gemini-3-flash`. Free RPD is **per-project** — verify at aistudio.google.com/rate-limit and size `LLM_GEMINI_DAILY_CAP` (default `900`) under it. |
 | `GEMINI_API_URL` | ⚪ | yes (`value`) | Gemini REST base. Default `https://generativelanguage.googleapis.com/v1beta`. |
 | `GEMINI_EMBED_MODEL` | ⚪ | yes (`value`) | Embedding model for RAG. Default `gemini-embedding-001`. |
 | `GEMINI_EMBED_DIM` | ⚪ | yes (`value`) | Embedding dimension. Default `768`. **Must match the `embedding` column width** — don't change after data is indexed. |
-| `AI_DAILY_REQUEST_CAP` | ⚪ | yes (`value`) | Hard daily ceiling on AI calls (chat + recruiter), set **below** the free-tier RPD. Default `200`. |
+| `LLM_BREAKER_THRESHOLD` / `LLM_BREAKER_COOLDOWN_SECONDS` | ⚪ | no | Circuit breaker: consecutive failures to open / cooldown. Defaults `3` / `300`. |
+| `AI_DAILY_REQUEST_CAP` | ⚪ | yes (`value`) | **Global** daily ceiling on AI calls across all providers. Default `200`. Keep FAR below the chain's total RPD — that gap stops a bot flood from exhausting real provider quotas. |
+| `AI_IP_DAILY_CAP` | ⚪ | yes (`value`) | Per-IP daily AI allowance (anti budget-burn). Default `30`, `0` disables. |
 
 ### Backend (Render) — contact form (email via Resend REST)
 
