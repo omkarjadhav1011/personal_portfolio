@@ -1,8 +1,8 @@
 package com.portfolio.chatbot;
 
 import com.portfolio.llm.ChatMessage;
-import com.portfolio.llm.LlmProvider;
 import com.portfolio.llm.LlmRequest;
+import com.portfolio.llm.LlmRouter;
 import com.portfolio.rag.RetrievalService;
 import com.portfolio.telemetry.EngagementRecorder;
 import com.portfolio.telemetry.EngagementType;
@@ -36,13 +36,15 @@ public class ChatController {
     private static final int MAX_CONTENT = 2000;
     /** Bounds each answer's token use (was a GeminiClient constant before the provider abstraction). */
     private static final int MAX_OUTPUT_TOKENS = 1024;
+    /** Pinned so chat tone doesn't vary with each provider's own default (consistency, phase 3). */
+    private static final double TEMPERATURE = 0.7;
 
     private final RateLimiter rateLimiter;
     private final DailyBudgetGuard budgetGuard;
     private final AbuseLog abuseLog;
     private final PortfolioContextService contextService;
     private final PromptBuilder promptBuilder;
-    private final LlmProvider llmProvider;
+    private final LlmRouter llmRouter;
     private final RetrievalService retrievalService;
     private final EngagementRecorder engagementRecorder;
 
@@ -51,7 +53,7 @@ public class ChatController {
                           AbuseLog abuseLog,
                           PortfolioContextService contextService,
                           PromptBuilder promptBuilder,
-                          LlmProvider llmProvider,
+                          LlmRouter llmRouter,
                           RetrievalService retrievalService,
                           EngagementRecorder engagementRecorder) {
         this.rateLimiter = rateLimiter;
@@ -59,7 +61,7 @@ public class ChatController {
         this.abuseLog = abuseLog;
         this.contextService = contextService;
         this.promptBuilder = promptBuilder;
-        this.llmProvider = llmProvider;
+        this.llmRouter = llmRouter;
         this.retrievalService = retrievalService;
         this.engagementRecorder = engagementRecorder;
     }
@@ -94,7 +96,7 @@ public class ChatController {
             abuseLog.warnSuspicious("chat", clientIp, lastUserMessage);
         }
 
-        if (!llmProvider.isConfigured()) {
+        if (!llmRouter.isConfigured()) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Chat is temporarily unavailable.");
         }
 
@@ -116,7 +118,7 @@ public class ChatController {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Chat is temporarily unavailable.");
         }
 
-        return llmProvider.streamChat(LlmRequest.chat(systemPrompt, req.messages(), MAX_OUTPUT_TOKENS))
+        return llmRouter.streamChat(LlmRequest.chat(systemPrompt, req.messages(), MAX_OUTPUT_TOKENS, TEMPERATURE))
                 .map(text -> event(Map.of("type", "delta", "text", text)))
                 .concatWithValues(event(Map.of("type", "done")))
                 .onErrorResume(e -> {

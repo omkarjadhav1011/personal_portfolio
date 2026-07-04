@@ -24,7 +24,7 @@ class GeminiProviderTest {
     @SuppressWarnings("unchecked")
     void chatBodyMapsRolesAndOmitsTemperature() {
         LlmRequest request = LlmRequest.chat("be helpful",
-                List.of(new ChatMessage("user", "hi"), new ChatMessage("assistant", "hello")), 1024);
+                List.of(new ChatMessage("user", "hi"), new ChatMessage("assistant", "hello")), 1024, null);
 
         Map<String, Object> body = provider.buildBody(request, false);
 

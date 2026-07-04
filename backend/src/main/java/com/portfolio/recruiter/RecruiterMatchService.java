@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.portfolio.chatbot.DailyBudgetGuard;
 import com.portfolio.chatbot.PortfolioContext;
 import com.portfolio.chatbot.PortfolioContextService;
-import com.portfolio.llm.LlmProvider;
 import com.portfolio.llm.LlmRequest;
+import com.portfolio.llm.LlmRouter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -32,18 +32,18 @@ public class RecruiterMatchService {
 
     private final PortfolioContextService contextService;
     private final RecruiterPromptBuilder promptBuilder;
-    private final LlmProvider llmProvider;
+    private final LlmRouter llmRouter;
     private final DailyBudgetGuard budgetGuard;
     private final ObjectMapper objectMapper;
 
     public RecruiterMatchService(PortfolioContextService contextService,
                                  RecruiterPromptBuilder promptBuilder,
-                                 LlmProvider llmProvider,
+                                 LlmRouter llmRouter,
                                  DailyBudgetGuard budgetGuard,
                                  ObjectMapper objectMapper) {
         this.contextService = contextService;
         this.promptBuilder = promptBuilder;
-        this.llmProvider = llmProvider;
+        this.llmRouter = llmRouter;
         this.budgetGuard = budgetGuard;
         this.objectMapper = objectMapper;
     }
@@ -58,7 +58,7 @@ public class RecruiterMatchService {
      * @throws RecruiterMatchException           the model call or response parsing failed
      */
     public MatchResult match(String jobDescription) {
-        if (!llmProvider.isConfigured()) {
+        if (!llmRouter.isConfigured()) {
             throw new RecruiterMatchUnavailableException("Recruiter matching is temporarily unavailable.");
         }
         if (!budgetGuard.tryAcquire()) {
@@ -76,7 +76,7 @@ public class RecruiterMatchService {
 
         String json;
         try {
-            json = llmProvider.generateStructured(LlmRequest.structured(
+            json = llmRouter.generateStructured(LlmRequest.structured(
                     prompt, RecruiterPromptBuilder.MATCH_RESPONSE_SCHEMA, MAX_OUTPUT_TOKENS, TEMPERATURE));
         } catch (Exception e) {
             log.warn("[recruiter-match] model call failed", e);

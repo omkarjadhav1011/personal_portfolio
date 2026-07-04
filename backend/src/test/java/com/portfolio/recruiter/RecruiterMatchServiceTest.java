@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.portfolio.chatbot.DailyBudgetGuard;
 import com.portfolio.chatbot.PortfolioContext;
 import com.portfolio.chatbot.PortfolioContextService;
-import com.portfolio.llm.LlmProvider;
 import com.portfolio.llm.LlmRequest;
+import com.portfolio.llm.LlmRouter;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -26,19 +26,19 @@ class RecruiterMatchServiceTest {
 
     private final PortfolioContextService contextService = mock(PortfolioContextService.class);
     private final RecruiterPromptBuilder promptBuilder = mock(RecruiterPromptBuilder.class);
-    private final LlmProvider llmProvider = mock(LlmProvider.class);
+    private final LlmRouter llmRouter = mock(LlmRouter.class);
     private final DailyBudgetGuard budgetGuard = mock(DailyBudgetGuard.class);
 
     private final RecruiterMatchService service = new RecruiterMatchService(
-            contextService, promptBuilder, llmProvider, budgetGuard, new ObjectMapper());
+            contextService, promptBuilder, llmRouter, budgetGuard, new ObjectMapper());
 
     @Test
     void parsesStructuredMatchOnHappyPath() {
-        when(llmProvider.isConfigured()).thenReturn(true);
+        when(llmRouter.isConfigured()).thenReturn(true);
         when(budgetGuard.tryAcquire()).thenReturn(true);
         when(contextService.getContext()).thenReturn(mock(PortfolioContext.class));
         when(promptBuilder.buildMatchPrompt(any(), eq("a backend role"))).thenReturn("prompt");
-        when(llmProvider.generateStructured(any(LlmRequest.class)))
+        when(llmRouter.generateStructured(any(LlmRequest.class)))
                 .thenReturn("{\"fitScore\":82,\"matchedProjects\":[],\"matchedSkills\":[],\"gapSkills\":[]}");
 
         MatchResult result = service.match("a backend role");
@@ -48,18 +48,18 @@ class RecruiterMatchServiceTest {
 
     @Test
     void throwsUnavailableAndSkipsModelWhenNotConfigured() {
-        when(llmProvider.isConfigured()).thenReturn(false);
+        when(llmRouter.isConfigured()).thenReturn(false);
 
         assertThrows(RecruiterMatchUnavailableException.class, () -> service.match("jd"));
-        verify(llmProvider, never()).generateStructured(any(LlmRequest.class));
+        verify(llmRouter, never()).generateStructured(any(LlmRequest.class));
     }
 
     @Test
     void throwsUnavailableAndSkipsModelWhenOverDailyBudget() {
-        when(llmProvider.isConfigured()).thenReturn(true);
+        when(llmRouter.isConfigured()).thenReturn(true);
         when(budgetGuard.tryAcquire()).thenReturn(false);
 
         assertThrows(RecruiterMatchUnavailableException.class, () -> service.match("jd"));
-        verify(llmProvider, never()).generateStructured(any(LlmRequest.class));
+        verify(llmRouter, never()).generateStructured(any(LlmRequest.class));
     }
 }

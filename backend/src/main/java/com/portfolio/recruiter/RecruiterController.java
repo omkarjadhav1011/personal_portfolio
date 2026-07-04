@@ -6,8 +6,8 @@ import com.portfolio.chatbot.PortfolioContext;
 import com.portfolio.chatbot.PortfolioContextService;
 import com.portfolio.chatbot.RateLimiter;
 import com.portfolio.common.Hashing;
-import com.portfolio.llm.LlmProvider;
 import com.portfolio.llm.LlmRequest;
+import com.portfolio.llm.LlmRouter;
 import com.portfolio.notify.NotificationService;
 import com.portfolio.telemetry.EngagementRecorder;
 import com.portfolio.telemetry.EngagementType;
@@ -64,7 +64,7 @@ public class RecruiterController {
     private final AbuseLog abuseLog;
     private final PortfolioContextService contextService;
     private final RecruiterPromptBuilder promptBuilder;
-    private final LlmProvider llmProvider;
+    private final LlmRouter llmRouter;
     private final RecruiterMatchService matchService;
     private final RecruiterLeadRepository leadRepository;
     private final NotificationService notificationService;
@@ -75,7 +75,7 @@ public class RecruiterController {
                                AbuseLog abuseLog,
                                PortfolioContextService contextService,
                                RecruiterPromptBuilder promptBuilder,
-                               LlmProvider llmProvider,
+                               LlmRouter llmRouter,
                                RecruiterMatchService matchService,
                                RecruiterLeadRepository leadRepository,
                                NotificationService notificationService,
@@ -85,7 +85,7 @@ public class RecruiterController {
         this.abuseLog = abuseLog;
         this.contextService = contextService;
         this.promptBuilder = promptBuilder;
-        this.llmProvider = llmProvider;
+        this.llmRouter = llmRouter;
         this.matchService = matchService;
         this.leadRepository = leadRepository;
         this.notificationService = notificationService;
@@ -153,7 +153,7 @@ public class RecruiterController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid request payload");
         }
 
-        if (!llmProvider.isConfigured()) {
+        if (!llmRouter.isConfigured()) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Recruiter mode is temporarily unavailable.");
         }
 
@@ -173,7 +173,7 @@ public class RecruiterController {
         // Passive engagement signal (D2). No score: the letter's matchResult is client-echoed.
         engagementRecorder.record(EngagementType.RECRUITER_LETTER, null, clientIp, null);
 
-        return llmProvider.streamChat(LlmRequest.prompt(prompt, LETTER_MAX_TOKENS, LETTER_TEMPERATURE))
+        return llmRouter.streamChat(LlmRequest.prompt(prompt, LETTER_MAX_TOKENS, LETTER_TEMPERATURE))
                 .map(text -> event(Map.of("type", "delta", "text", text)))
                 .concatWithValues(event(Map.of("type", "done")))
                 .onErrorResume(e -> {

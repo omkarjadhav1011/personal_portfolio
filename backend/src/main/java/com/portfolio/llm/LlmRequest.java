@@ -16,9 +16,10 @@ public record LlmRequest(
         Double temperature,
         Map<String, Object> responseSchema) {
 
-    /** Multi-turn chat with a system prompt (the /api/chat shape). */
-    public static LlmRequest chat(String systemPrompt, List<ChatMessage> messages, int maxOutputTokens) {
-        return new LlmRequest(systemPrompt, messages, maxOutputTokens, null, null);
+    /** Multi-turn chat with a system prompt (the /api/chat shape). Null temperature = provider default. */
+    public static LlmRequest chat(String systemPrompt, List<ChatMessage> messages, int maxOutputTokens,
+                                  Double temperature) {
+        return new LlmRequest(systemPrompt, messages, maxOutputTokens, temperature, null);
     }
 
     /** Single free-text prompt with explicit limits (the cover-letter shape). */
