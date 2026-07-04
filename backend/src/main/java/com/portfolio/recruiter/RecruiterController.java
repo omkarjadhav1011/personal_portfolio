@@ -2,11 +2,12 @@ package com.portfolio.recruiter;
 
 import com.portfolio.chatbot.AbuseLog;
 import com.portfolio.chatbot.DailyBudgetGuard;
-import com.portfolio.chatbot.GeminiClient;
 import com.portfolio.chatbot.PortfolioContext;
 import com.portfolio.chatbot.PortfolioContextService;
 import com.portfolio.chatbot.RateLimiter;
 import com.portfolio.common.Hashing;
+import com.portfolio.llm.LlmProvider;
+import com.portfolio.llm.LlmRequest;
 import com.portfolio.notify.NotificationService;
 import com.portfolio.telemetry.EngagementRecorder;
 import com.portfolio.telemetry.EngagementType;
@@ -35,7 +36,7 @@ import java.util.Map;
 
 /**
  * Recruiter mode. Ports {@code api/recruiter/match}: scores a job description against the
- * live portfolio using Gemini structured output. Public, with its own rate-limit bucket
+ * live portfolio using LLM structured output. Public, with its own rate-limit bucket
  * ({@code recruiter-match:<ip>}) so it doesn't share the chatbot's quota.
  */
 @Tag(name = "Recruiter", description = "JD-to-profile match scoring")
@@ -63,7 +64,7 @@ public class RecruiterController {
     private final AbuseLog abuseLog;
     private final PortfolioContextService contextService;
     private final RecruiterPromptBuilder promptBuilder;
-    private final GeminiClient geminiClient;
+    private final LlmProvider llmProvider;
     private final RecruiterMatchService matchService;
     private final RecruiterLeadRepository leadRepository;
     private final NotificationService notificationService;
@@ -74,7 +75,7 @@ public class RecruiterController {
                                AbuseLog abuseLog,
                                PortfolioContextService contextService,
                                RecruiterPromptBuilder promptBuilder,
-                               GeminiClient geminiClient,
+                               LlmProvider llmProvider,
                                RecruiterMatchService matchService,
                                RecruiterLeadRepository leadRepository,
                                NotificationService notificationService,
@@ -84,7 +85,7 @@ public class RecruiterController {
         this.abuseLog = abuseLog;
         this.contextService = contextService;
         this.promptBuilder = promptBuilder;
-        this.geminiClient = geminiClient;
+        this.llmProvider = llmProvider;
         this.matchService = matchService;
         this.leadRepository = leadRepository;
         this.notificationService = notificationService;
@@ -152,7 +153,7 @@ public class RecruiterController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid request payload");
         }
 
-        if (!geminiClient.isConfigured()) {
+        if (!llmProvider.isConfigured()) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Recruiter mode is temporarily unavailable.");
         }
 
@@ -172,7 +173,7 @@ public class RecruiterController {
         // Passive engagement signal (D2). No score: the letter's matchResult is client-echoed.
         engagementRecorder.record(EngagementType.RECRUITER_LETTER, null, clientIp, null);
 
-        return geminiClient.streamPrompt(prompt, LETTER_MAX_TOKENS, LETTER_TEMPERATURE)
+        return llmProvider.streamChat(LlmRequest.prompt(prompt, LETTER_MAX_TOKENS, LETTER_TEMPERATURE))
                 .map(text -> event(Map.of("type", "delta", "text", text)))
                 .concatWithValues(event(Map.of("type", "done")))
                 .onErrorResume(e -> {

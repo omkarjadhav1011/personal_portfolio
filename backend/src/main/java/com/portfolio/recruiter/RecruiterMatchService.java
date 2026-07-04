@@ -2,9 +2,10 @@ package com.portfolio.recruiter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.portfolio.chatbot.DailyBudgetGuard;
-import com.portfolio.chatbot.GeminiClient;
 import com.portfolio.chatbot.PortfolioContext;
 import com.portfolio.chatbot.PortfolioContextService;
+import com.portfolio.llm.LlmProvider;
+import com.portfolio.llm.LlmRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -14,7 +15,7 @@ import org.springframework.stereotype.Service;
  * endpoint ({@link RecruiterController}) and the public MCP {@code match_against_jd} tool — one
  * implementation, two front doors (no parallel match path).
  *
- * <p>It owns: availability (Gemini configured), the shared daily cost ceiling
+ * <p>It owns: availability (LLM provider configured), the shared daily cost ceiling
  * ({@link DailyBudgetGuard} — OWASP LLM04), prompt construction over the PUBLIC context via
  * {@link RecruiterPromptBuilder} (which neutralizes injection delimiters and pins a structured
  * fit-score schema, so a malicious JD is data, never instructions), the structured LLM call, and
@@ -31,18 +32,18 @@ public class RecruiterMatchService {
 
     private final PortfolioContextService contextService;
     private final RecruiterPromptBuilder promptBuilder;
-    private final GeminiClient geminiClient;
+    private final LlmProvider llmProvider;
     private final DailyBudgetGuard budgetGuard;
     private final ObjectMapper objectMapper;
 
     public RecruiterMatchService(PortfolioContextService contextService,
                                  RecruiterPromptBuilder promptBuilder,
-                                 GeminiClient geminiClient,
+                                 LlmProvider llmProvider,
                                  DailyBudgetGuard budgetGuard,
                                  ObjectMapper objectMapper) {
         this.contextService = contextService;
         this.promptBuilder = promptBuilder;
-        this.geminiClient = geminiClient;
+        this.llmProvider = llmProvider;
         this.budgetGuard = budgetGuard;
         this.objectMapper = objectMapper;
     }
@@ -53,11 +54,11 @@ public class RecruiterMatchService {
      * block declared as reference-only; the structured output schema means the JD can't change the
      * response shape.
      *
-     * @throws RecruiterMatchUnavailableException Gemini not configured, or the daily cost cap is hit
+     * @throws RecruiterMatchUnavailableException no LLM provider configured, or the daily cost cap is hit
      * @throws RecruiterMatchException           the model call or response parsing failed
      */
     public MatchResult match(String jobDescription) {
-        if (!geminiClient.isConfigured()) {
+        if (!llmProvider.isConfigured()) {
             throw new RecruiterMatchUnavailableException("Recruiter matching is temporarily unavailable.");
         }
         if (!budgetGuard.tryAcquire()) {
@@ -75,8 +76,8 @@ public class RecruiterMatchService {
 
         String json;
         try {
-            json = geminiClient.generateStructured(
-                    prompt, RecruiterPromptBuilder.MATCH_RESPONSE_SCHEMA, MAX_OUTPUT_TOKENS, TEMPERATURE);
+            json = llmProvider.generateStructured(LlmRequest.structured(
+                    prompt, RecruiterPromptBuilder.MATCH_RESPONSE_SCHEMA, MAX_OUTPUT_TOKENS, TEMPERATURE));
         } catch (Exception e) {
             log.warn("[recruiter-match] model call failed", e);
             throw new RecruiterMatchException("The model call failed", e);

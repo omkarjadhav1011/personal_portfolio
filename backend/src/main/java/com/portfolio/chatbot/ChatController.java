@@ -1,5 +1,8 @@
 package com.portfolio.chatbot;
 
+import com.portfolio.llm.ChatMessage;
+import com.portfolio.llm.LlmProvider;
+import com.portfolio.llm.LlmRequest;
 import com.portfolio.rag.RetrievalService;
 import com.portfolio.telemetry.EngagementRecorder;
 import com.portfolio.telemetry.EngagementType;
@@ -22,7 +25,7 @@ import java.util.Map;
 /*
  * Chat endpoint: POST /api/chat with body {messages:[{role:"user|assistant",content}]}. Validates the
  * request, checks the rate limit, builds the system prompt from the context, and proxies to
- * Gemini's streaming API. The response is an SSE stream of JSON objects:
+ * the configured LLM provider's streaming API. The response is an SSE stream of JSON objects:
  * */
 
 @Tag(name = "Chat", description = "Streaming AI assistant (SSE)")
@@ -31,13 +34,15 @@ public class ChatController {
 
     private static final int MAX_MESSAGES = 10;
     private static final int MAX_CONTENT = 2000;
+    /** Bounds each answer's token use (was a GeminiClient constant before the provider abstraction). */
+    private static final int MAX_OUTPUT_TOKENS = 1024;
 
     private final RateLimiter rateLimiter;
     private final DailyBudgetGuard budgetGuard;
     private final AbuseLog abuseLog;
     private final PortfolioContextService contextService;
     private final PromptBuilder promptBuilder;
-    private final GeminiClient geminiClient;
+    private final LlmProvider llmProvider;
     private final RetrievalService retrievalService;
     private final EngagementRecorder engagementRecorder;
 
@@ -46,7 +51,7 @@ public class ChatController {
                           AbuseLog abuseLog,
                           PortfolioContextService contextService,
                           PromptBuilder promptBuilder,
-                          GeminiClient geminiClient,
+                          LlmProvider llmProvider,
                           RetrievalService retrievalService,
                           EngagementRecorder engagementRecorder) {
         this.rateLimiter = rateLimiter;
@@ -54,7 +59,7 @@ public class ChatController {
         this.abuseLog = abuseLog;
         this.contextService = contextService;
         this.promptBuilder = promptBuilder;
-        this.geminiClient = geminiClient;
+        this.llmProvider = llmProvider;
         this.retrievalService = retrievalService;
         this.engagementRecorder = engagementRecorder;
     }
@@ -89,7 +94,7 @@ public class ChatController {
             abuseLog.warnSuspicious("chat", clientIp, lastUserMessage);
         }
 
-        if (!geminiClient.isConfigured()) {
+        if (!llmProvider.isConfigured()) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Chat is temporarily unavailable.");
         }
 
@@ -111,7 +116,7 @@ public class ChatController {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Chat is temporarily unavailable.");
         }
 
-        return geminiClient.streamGenerateContent(systemPrompt, req.messages())
+        return llmProvider.streamChat(LlmRequest.chat(systemPrompt, req.messages(), MAX_OUTPUT_TOKENS))
                 .map(text -> event(Map.of("type", "delta", "text", text)))
                 .concatWithValues(event(Map.of("type", "done")))
                 .onErrorResume(e -> {

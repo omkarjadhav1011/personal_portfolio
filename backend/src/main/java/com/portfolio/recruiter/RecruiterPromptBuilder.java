@@ -9,51 +9,60 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Builds the recruiter "match" prompt and the Gemini response schema.
+ * Builds the recruiter "match" prompt and the structured-output response schema.
  */
 @Component
 public class RecruiterPromptBuilder {
 
-    /** Gemini structured-output schema (OpenAPI subset) for the match result. */
+    /**
+     * Structured-output schema for the match result, in standard JSON Schema — strict-ready
+     * (every object carries {@code additionalProperties:false} and lists all properties as
+     * required), so OpenAI-compatible providers can use it verbatim in {@code response_format}.
+     * The Gemini adapter translates it to Gemini's OpenAPI-subset dialect via
+     * {@code GeminiSchemaConverter}.
+     */
     public static final Map<String, Object> MATCH_RESPONSE_SCHEMA = Map.of(
-            "type", "OBJECT",
+            "type", "object",
+            "additionalProperties", false,
             "properties", Map.of(
                     "fitScore", Map.of(
-                            "type", "NUMBER",
+                            "type", "number",
                             "description", "Overall fit, 0–100. 0 = no overlap, 100 = ideal candidate."),
                     "matchedProjects", Map.of(
-                            "type", "ARRAY",
+                            "type", "array",
                             "items", Map.of(
-                                    "type", "OBJECT",
+                                    "type", "object",
+                                    "additionalProperties", false,
                                     "properties", Map.of(
-                                            "slug", Map.of("type", "STRING",
+                                            "slug", Map.of("type", "string",
                                                     "description", "Must be a slug from the provided projects list. Do not invent."),
-                                            "reason", Map.of("type", "STRING",
+                                            "reason", Map.of("type", "string",
                                                     "description", "One concrete sentence on why this project demonstrates fit for the role."),
-                                            "relevantTags", Map.of("type", "ARRAY",
-                                                    "items", Map.of("type", "STRING"),
+                                            "relevantTags", Map.of("type", "array",
+                                                    "items", Map.of("type", "string"),
                                                     "description", "Tags from the project that overlap with the JD requirements.")),
                                     "required", List.of("slug", "reason", "relevantTags"))),
                     "matchedSkills", Map.of(
-                            "type", "ARRAY",
+                            "type", "array",
                             "items", Map.of(
-                                    "type", "OBJECT",
+                                    "type", "object",
+                                    "additionalProperties", false,
                                     "properties", Map.of(
-                                            "name", Map.of("type", "STRING",
+                                            "name", Map.of("type", "string",
                                                     "description", "Must be a skill name from the provided skills list. Do not invent."),
-                                            "reason", Map.of("type", "STRING",
+                                            "reason", Map.of("type", "string",
                                                     "description", "Brief note on how the JD asks for or implies this skill.")),
                                     "required", List.of("name", "reason"))),
                     "gapSkills", Map.of(
-                            "type", "ARRAY",
+                            "type", "array",
                             "items", Map.of(
-                                    "type", "OBJECT",
+                                    "type", "object",
+                                    "additionalProperties", false,
                                     "properties", Map.of(
-                                            "name", Map.of("type", "STRING",
+                                            "name", Map.of("type", "string",
                                                     "description", "A skill the JD requires that is NOT in the candidate's skill list."),
-                                            "importance", Map.of("type", "STRING",
-                                                    "enum", List.of("must-have", "nice-to-have"),
-                                                    "format", "enum")),
+                                            "importance", Map.of("type", "string",
+                                                    "enum", List.of("must-have", "nice-to-have"))),
                                     "required", List.of("name", "importance")))),
             "required", List.of("fitScore", "matchedProjects", "matchedSkills", "gapSkills"));
 
