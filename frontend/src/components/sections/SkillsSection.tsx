@@ -59,7 +59,7 @@ function BranchBlock({
 }) {
   const color = branch.color;
   return (
-    <div className="relative pl-12 pb-6">
+    <div className="relative pl-10 sm:pl-12 pb-6">
       {/* Vertical rail */}
       <div
         className="absolute left-[14px] top-0 w-px"

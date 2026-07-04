@@ -41,7 +41,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, scale: 0.94 }}
               transition={{ duration: 0.2 }}
-              className={`font-mono text-xs px-4 py-2.5 rounded-lg border shadow-terminal pointer-events-auto ${
+              className={`max-w-[calc(100vw-2rem)] break-words font-mono text-xs px-4 py-2.5 rounded-lg border shadow-terminal pointer-events-auto ${
                 t.type === "success"
                   ? "bg-terminal-surface border-git-green/40 text-git-green"
                   : "bg-terminal-surface border-git-red/40 text-git-red"

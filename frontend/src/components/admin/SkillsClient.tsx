@@ -126,7 +126,7 @@ function SortableRow({
           {...attributes}
           {...listeners}
           disabled={searchActive || reorderingId !== null}
-          className={`p-0.5 rounded text-text-faint transition-colors ${
+          className={`hidden md:inline-block p-0.5 rounded text-text-faint transition-colors ${
             searchActive || reorderingId !== null
               ? "opacity-30 cursor-not-allowed"
               : "cursor-grab hover:text-text-muted active:cursor-grabbing"
@@ -149,7 +149,7 @@ function SortableRow({
           <button
             onClick={() => onReorder(d.id, "up")}
             disabled={isFirst || reorderingId !== null}
-            className="p-0.5 rounded hover:bg-terminal-bg disabled:opacity-30 disabled:cursor-not-allowed text-text-muted hover:text-text-primary transition-colors"
+            className="p-2.5 md:p-0.5 rounded hover:bg-terminal-bg disabled:opacity-30 disabled:cursor-not-allowed text-text-muted hover:text-text-primary transition-colors"
             title="Move up"
           >
             <ChevronUp size={14} />
@@ -157,7 +157,7 @@ function SortableRow({
           <button
             onClick={() => onReorder(d.id, "down")}
             disabled={isLast || reorderingId !== null}
-            className="p-0.5 rounded hover:bg-terminal-bg disabled:opacity-30 disabled:cursor-not-allowed text-text-muted hover:text-text-primary transition-colors"
+            className="p-2.5 md:p-0.5 rounded hover:bg-terminal-bg disabled:opacity-30 disabled:cursor-not-allowed text-text-muted hover:text-text-primary transition-colors"
             title="Move down"
           >
             <ChevronDown size={14} />
@@ -471,13 +471,13 @@ export function SkillsClient({
                   {skill.icon && <span>{skill.icon}</span>}
                   <span>{skill.name}</span>
                   <span className="text-[10px] opacity-60">({skill.level}/5)</span>
-                  <button onClick={() => openEditSkill(skill)} className="ml-1 opacity-60 hover:opacity-100 transition-opacity">✎</button>
+                  <button onClick={() => openEditSkill(skill)} className="ml-1 p-1.5 md:p-0 opacity-60 hover:opacity-100 transition-opacity">✎</button>
                   <LoadingButton
                     variant="ghost"
                     loading={deletingSkillId === skill.id}
                     loadingText=""
                     onClick={() => handleSkillDelete(branch.id, skill.id)}
-                    className="border-0 bg-transparent p-0 hover:bg-transparent opacity-60 hover:opacity-100"
+                    className="border-0 bg-transparent p-1.5 md:p-0 hover:bg-transparent opacity-60 hover:opacity-100"
                     style={{ color: branch.color }}
                   >
                     <span className="hover:text-git-red">×</span>
@@ -508,6 +508,7 @@ export function SkillsClient({
 
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <div className="rounded-xl border border-terminal-border bg-terminal-surface overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-terminal-border bg-terminal-bg">
@@ -560,6 +561,7 @@ export function SkillsClient({
             </LayoutGroup>
             </SortableContext>
           </table>
+          </div>
         </div>
         </DndContext>
       </div>
@@ -569,7 +571,7 @@ export function SkillsClient({
         <form onSubmit={handleSkillSubmit} className="space-y-4">
           <FormInput label="skill name" value={skillForm.name} onChange={(e) => setSkillForm((p) => ({ ...p, name: e.target.value }))} error={skillValidation.errors.name} required />
           <FormSelect label="proficiency level" value={skillForm.level} onChange={(e) => setSkillForm((p) => ({ ...p, level: e.target.value }))} options={LEVEL_OPTIONS} />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FormInput label="tag (optional)" value={skillForm.tag} onChange={(e) => setSkillForm((p) => ({ ...p, tag: e.target.value }))} placeholder="v14" />
             <FormInput label="icon (optional)" value={skillForm.icon} onChange={(e) => setSkillForm((p) => ({ ...p, icon: e.target.value }))} placeholder="⚛ or emoji" />
           </div>

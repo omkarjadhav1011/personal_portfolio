@@ -227,7 +227,7 @@ export function CommandPalette() {
                         aria-selected={!isAI}
                         onClick={() => setMode("terminal")}
                         className={cn(
-                          "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-2xs transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-git-green/40",
+                          "flex items-center gap-1.5 px-2.5 py-1.5 sm:py-1 rounded-md text-xs sm:text-2xs transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-git-green/40",
                           !isAI
                             ? "bg-terminal-surface text-git-green"
                             : "text-text-faint hover:text-text-muted"
@@ -241,7 +241,7 @@ export function CommandPalette() {
                         aria-selected={isAI}
                         onClick={() => setMode("ai")}
                         className={cn(
-                          "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-2xs transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-git-green/40",
+                          "flex items-center gap-1.5 px-2.5 py-1.5 sm:py-1 rounded-md text-xs sm:text-2xs transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-git-green/40",
                           isAI
                             ? "bg-terminal-surface text-git-green"
                             : "text-text-faint hover:text-text-muted"
@@ -398,7 +398,7 @@ export function CommandPalette() {
                       onChange={(e) => setLocalInput(e.target.value)}
                       onKeyDown={handleKeyDown}
                       placeholder={isAI ? "Ask about his skills, projects, experience…" : "git checkout projects"}
-                      className="flex-1 bg-transparent text-sm text-text-primary placeholder-text-faint outline-none focus-visible:ring-1 focus-visible:ring-git-green/40 rounded font-mono"
+                      className="flex-1 bg-transparent text-base sm:text-sm text-text-primary placeholder-text-faint outline-none focus-visible:ring-1 focus-visible:ring-git-green/40 rounded font-mono"
                       autoComplete="off"
                       spellCheck={false}
                     />
@@ -430,12 +430,12 @@ export function CommandPalette() {
 
                   {/* ── Footer hint ───────────────────────────────────────── */}
                   <div className="flex items-center justify-between px-4 py-1.5 bg-terminal-surface border-t border-terminal-border">
-                    <span className="text-2xs text-text-faint">
+                    <span className="text-xs sm:text-2xs text-text-faint">
                       {isAI
                         ? "Enter to send · grounded in public portfolio data"
                         : "Arrow Up/Down to navigate history"}
                     </span>
-                    <span className="text-2xs text-text-faint">
+                    <span className="text-xs sm:text-2xs text-text-faint">
                       <kbd className="px-1 py-0.5 rounded bg-terminal-bg border border-terminal-border text-2xs">
                         ESC
                       </kbd>{" "}

@@ -60,7 +60,7 @@ export function ProjectsSection({ projects, githubUrl }: ProjectsSectionProps) {
                   key={f.k}
                   type="button"
                   onClick={() => setFilter(f.k)}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-mono text-xs font-medium transition-colors"
+                  className="inline-flex items-center gap-2 px-3 py-2.5 sm:py-1.5 rounded-lg font-mono text-xs font-medium transition-colors"
                   style={{
                     background: active ? "rgb(var(--color-git-green) / 0.15)" : "transparent",
                     border: `1px solid ${

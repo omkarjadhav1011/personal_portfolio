@@ -55,7 +55,7 @@ export function ChatContactCard() {
 
   const busy = status === "loading";
   const inputCls =
-    "w-full bg-terminal-bg border border-terminal-border rounded-md px-2.5 py-1.5 font-mono text-xs text-text-primary placeholder-text-faint outline-none focus:border-git-green/60 focus-visible:ring-1 focus-visible:ring-git-green/30 transition-colors disabled:opacity-50";
+    "w-full bg-terminal-bg border border-terminal-border rounded-md px-2.5 py-1.5 font-mono text-base sm:text-xs text-text-primary placeholder-text-faint outline-none focus:border-git-green/60 focus-visible:ring-1 focus-visible:ring-git-green/30 transition-colors disabled:opacity-50";
 
   return (
     <motion.form
@@ -65,7 +65,7 @@ export function ChatContactCard() {
       onSubmit={handleSubmit}
       className="rounded-lg border border-terminal-border bg-terminal-surface p-3 space-y-2"
     >
-      <p className="text-2xs text-text-faint font-mono"># leave your details — Omkar will reach out</p>
+      <p className="text-xs sm:text-2xs text-text-faint font-mono"># leave your details — Omkar will reach out</p>
       {/* Honeypot — hidden from real users, filled by bots */}
       <input
         type="text"
@@ -104,12 +104,12 @@ export function ChatContactCard() {
           type="button"
           onClick={() => setOpen(false)}
           disabled={busy}
-          className="text-2xs text-text-faint hover:text-text-muted transition-colors cursor-pointer"
+          className="text-xs sm:text-2xs p-1 sm:p-0 text-text-faint hover:text-text-muted transition-colors cursor-pointer"
         >
           cancel
         </button>
         {status === "error" && (
-          <span className="text-2xs text-git-red font-mono" role="alert">✗ {error}</span>
+          <span className="text-xs sm:text-2xs text-git-red font-mono" role="alert">✗ {error}</span>
         )}
       </div>
     </motion.form>

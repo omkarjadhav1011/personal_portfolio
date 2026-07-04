@@ -81,7 +81,7 @@ export default function MfaVerify() {
                 onChange={(e) => setCode(e.target.value)}
                 required
                 placeholder="123456 or recovery code"
-                className="w-full bg-terminal-bg border border-terminal-border rounded-lg px-3 py-2 text-xs text-text-primary placeholder-text-faint outline-none focus:border-git-blue/50 focus-visible:ring-1 focus-visible:ring-git-blue/20 transition-colors tracking-widest"
+                className="w-full bg-terminal-bg border border-terminal-border rounded-lg px-3 py-2 text-base sm:text-xs text-text-primary placeholder-text-faint outline-none focus:border-git-blue/50 focus-visible:ring-1 focus-visible:ring-git-blue/20 transition-colors tracking-widest"
               />
             </div>
 

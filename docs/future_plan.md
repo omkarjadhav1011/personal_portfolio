@@ -76,6 +76,10 @@ each item live in the sections below.
 - [ ] A3 — Drive quick wins: sensitivity toggle + real upload progress (S).
 - [ ] A4 — RAG-ground the recruiter match/letter (M).
 - [ ] A5 — streaming Drive uploads (M).
+- 💭 Mobile follow-ups (from the 2026-07-04 responsive pass): stacked-card mobile variants for the
+      admin tables (chose horizontal scroll for now) · optional strict-16px body type on mobile
+      (kept the 14px terminal scale, only inputs/tiny labels were bumped) · drag-reorder on touch
+      (handles hidden below `md`, up/down buttons are the mobile mechanism).
 
 **4. Larger / someday:** A6 resume builder Phase 2 (L) · C1 clonable career repo · C3
 `ask_candidate` MCP tool (telemetry prerequisite now DONE — Group D shipped) · C4 curl-able

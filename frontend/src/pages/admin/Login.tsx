@@ -124,7 +124,7 @@ export default function Login() {
                   onChange={(e) => setUsername(e.target.value)}
                   required
                   autoComplete="username"
-                  className="w-full bg-terminal-bg border border-terminal-border rounded-lg px-3 py-2 text-xs text-text-primary placeholder-text-faint outline-none focus:border-git-blue/50 focus-visible:ring-1 focus-visible:ring-git-blue/20 transition-colors"
+                  className="w-full bg-terminal-bg border border-terminal-border rounded-lg px-3 py-2 text-base sm:text-xs text-text-primary placeholder-text-faint outline-none focus:border-git-blue/50 focus-visible:ring-1 focus-visible:ring-git-blue/20 transition-colors"
                   placeholder="admin"
                 />
               </div>
@@ -136,7 +136,7 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="current-password"
-                  className="w-full bg-terminal-bg border border-terminal-border rounded-lg px-3 py-2 text-xs text-text-primary placeholder-text-faint outline-none focus:border-git-blue/50 focus-visible:ring-1 focus-visible:ring-git-blue/20 transition-colors"
+                  className="w-full bg-terminal-bg border border-terminal-border rounded-lg px-3 py-2 text-base sm:text-xs text-text-primary placeholder-text-faint outline-none focus:border-git-blue/50 focus-visible:ring-1 focus-visible:ring-git-blue/20 transition-colors"
                   placeholder="••••••••"
                 />
               </div>

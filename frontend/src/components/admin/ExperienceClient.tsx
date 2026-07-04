@@ -249,13 +249,13 @@ export function ExperienceClient({ initialEntries }: { initialEntries: CommitEnt
 
       <AdminModal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? `edit — ${editing.hash}` : "new entry"}>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FormInput label="hash (7 chars)" value={form.hash} onChange={(e) => field("hash", e.target.value)} error={errors.hash} required placeholder="a1b2c3d" />
             <FormSelect label="type" value={form.type} onChange={(e) => field("type", e.target.value)} options={TYPE_OPTIONS} />
           </div>
           <FormInput label="title" value={form.title} onChange={(e) => field("title", e.target.value)} error={errors.title} required />
           <FormInput label="organization" value={form.org} onChange={(e) => field("org", e.target.value)} error={errors.org} required />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FormInput label="start date" value={form.date} onChange={(e) => field("date", e.target.value)} error={errors.date} required placeholder="Jan 2024" />
             <FormInput label="end date (optional)" value={form.dateEnd ?? ""} onChange={(e) => field("dateEnd", e.target.value)} placeholder="Dec 2024 or leave blank" />
           </div>
@@ -267,16 +267,16 @@ export function ExperienceClient({ initialEntries }: { initialEntries: CommitEnt
             rows={4}
             placeholder="Built X using Y&#10;Achieved Z"
           />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FormInput label="branch name" value={form.branch} onChange={(e) => field("branch", e.target.value)} error={errors.branch} required placeholder="work/company-name" />
             <FormInput label="branch color (hex)" value={form.branchColor} onChange={(e) => field("branchColor", e.target.value)} error={errors.branchColor} placeholder="#00ff88" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FormSelect label="color key" value={form.colorKey ?? "green"} onChange={(e) => field("colorKey", e.target.value)} options={COLOR_OPTIONS} />
             <FormInput label="url (optional)" value={form.url ?? ""} onChange={(e) => field("url", e.target.value)} error={errors.url} placeholder="https://..." />
           </div>
           <TagInput label="tags" values={form.tags ?? []} onChange={(v) => field("tags", v)} />
-          <div className="flex gap-2 pt-2">
+          <div className="flex flex-wrap gap-2 pt-2">
             <LoadingButton type="submit" loading={loading} loadingText="Saving..." className="flex-1 py-2">
               {editing ? "$ git commit --amend" : "$ git commit -m 'new entry'"}
             </LoadingButton>

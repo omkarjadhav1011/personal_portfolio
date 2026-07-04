@@ -112,7 +112,7 @@ export default function McpPage() {
           </p>
           <TerminalWindow title="claude_desktop_config.json">
             <div className="flex items-start justify-between gap-3">
-              <pre className="overflow-x-auto text-xs sm:text-sm text-text-primary whitespace-pre">
+              <pre className="min-w-0 flex-1 overflow-x-auto text-xs sm:text-sm text-text-primary whitespace-pre">
                 {CLAUDE_CONFIG}
               </pre>
               <CopyButton value={CLAUDE_CONFIG} />
@@ -188,7 +188,7 @@ function SectionHeading({ label, title }: { label: string; title: string }) {
 function CopyRow({ value }: { value: string }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border border-terminal-border bg-terminal-bg px-3 py-2.5 font-mono text-xs sm:text-sm">
-      <code className="overflow-x-auto whitespace-nowrap text-git-green">{value}</code>
+      <code className="block min-w-0 flex-1 overflow-x-auto whitespace-nowrap text-git-green">{value}</code>
       <CopyButton value={value} />
     </div>
   );

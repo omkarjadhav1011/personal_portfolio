@@ -68,7 +68,7 @@ export function DragHandleCell() {
         {...attributes}
         {...listeners}
         disabled={disabled}
-        className={`p-0.5 rounded text-text-faint transition-colors ${
+        className={`hidden md:inline-block p-0.5 rounded text-text-faint transition-colors ${
           disabled
             ? "opacity-30 cursor-not-allowed"
             : "cursor-grab hover:text-text-muted active:cursor-grabbing"
@@ -102,7 +102,7 @@ export function ReorderButtonsCell({
         <button
           onClick={() => onReorder(id, "up")}
           disabled={isFirst || reorderingId !== null}
-          className="p-0.5 rounded hover:bg-terminal-bg disabled:opacity-30 disabled:cursor-not-allowed text-text-muted hover:text-text-primary transition-colors"
+          className="p-2.5 md:p-0.5 rounded hover:bg-terminal-bg disabled:opacity-30 disabled:cursor-not-allowed text-text-muted hover:text-text-primary transition-colors"
           title="Move up"
         >
           <ChevronUp size={14} />
@@ -110,7 +110,7 @@ export function ReorderButtonsCell({
         <button
           onClick={() => onReorder(id, "down")}
           disabled={isLast || reorderingId !== null}
-          className="p-0.5 rounded hover:bg-terminal-bg disabled:opacity-30 disabled:cursor-not-allowed text-text-muted hover:text-text-primary transition-colors"
+          className="p-2.5 md:p-0.5 rounded hover:bg-terminal-bg disabled:opacity-30 disabled:cursor-not-allowed text-text-muted hover:text-text-primary transition-colors"
           title="Move down"
         >
           <ChevronDown size={14} />

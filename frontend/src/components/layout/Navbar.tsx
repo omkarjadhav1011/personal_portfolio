@@ -146,7 +146,7 @@ export function Navbar() {
 
             {/* Mobile hamburger */}
             <button
-              className="md:hidden text-text-muted hover:text-text-primary transition-colors p-2 cursor-pointer"
+              className="md:hidden text-text-muted hover:text-text-primary transition-colors p-3 -mr-1 cursor-pointer"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Toggle mobile menu"
             >
@@ -193,7 +193,7 @@ export function Navbar() {
             >
               <FileSearch size={14} className="text-git-green/70" />
               <span>Recruiter mode</span>
-              <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-git-green/15 border border-git-green/30 text-git-green uppercase tracking-wider">
+              <span className="ml-auto text-xs px-1.5 py-0.5 rounded bg-git-green/15 border border-git-green/30 text-git-green uppercase tracking-wider">
                 new
               </span>
             </Link>

@@ -212,7 +212,7 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
   }
 
   const inputClass =
-    "w-full bg-terminal-bg border border-terminal-border rounded-lg px-3 py-2.5 font-mono text-[13px] text-text-primary placeholder-text-faint outline-none focus:border-git-blue/50 focus-visible:ring-1 focus-visible:ring-git-blue/20 transition-colors";
+    "w-full bg-terminal-bg border border-terminal-border rounded-lg px-3 py-2.5 font-mono text-base sm:text-[13px] text-text-primary placeholder-text-faint outline-none focus:border-git-blue/50 focus-visible:ring-1 focus-visible:ring-git-blue/20 transition-colors";
 
   const role = form.currentRole ?? DEFAULT_ROLE;
 
@@ -348,13 +348,13 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
 
         {/* Basic info */}
         <Section icon={User} title="Basic Info" accent="git-blue">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormInput label="name" value={form.name} onChange={(e) => field("name", e.target.value)} error={errors.name} required />
             <FormInput label="handle" value={form.handle} onChange={(e) => field("handle", e.target.value)} error={errors.handle} required placeholder="omkarjadhav" />
           </div>
           <FormInput label="headline" value={form.headline} onChange={(e) => field("headline", e.target.value)} error={errors.headline} required />
           <FormTextarea label="bio" value={form.bio} onChange={(e) => field("bio", e.target.value)} error={errors.bio} rows={5} required />
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormInput label="email" type="email" value={form.email} onChange={(e) => field("email", e.target.value)} error={errors.email} required />
             <FormInput label="location" value={form.location} onChange={(e) => field("location", e.target.value)} error={errors.location} required />
           </div>
@@ -362,7 +362,7 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
 
         {/* Git status */}
         <Section icon={GitBranch} title="Git Status" accent="git-green">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormInput label="current branch" value={form.currentBranch} onChange={(e) => field("currentBranch", e.target.value)} error={errors.currentBranch} required placeholder="main" />
             <FormInput label="current status" value={form.currentStatus} onChange={(e) => field("currentStatus", e.target.value)} error={errors.currentStatus} required placeholder="Open to internships" />
           </div>
@@ -383,7 +383,7 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
           />
           {role.enabled && (
             <>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormInput
                   label="role title"
                   value={role.title}
@@ -397,7 +397,7 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
                   placeholder="NonStop io Technologies"
                 />
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <FormInput
                   label="monogram (1-2 chars)"
                   value={role.monogram ?? ""}
@@ -418,7 +418,7 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
                   placeholder="https://nonstopio.com"
                 />
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <FormInput
                   label="started at"
                   value={role.startedAt}
@@ -501,7 +501,7 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
             </p>
           )}
           {form.socials.map((social, i) => (
-            <div key={i} className="grid grid-cols-3 items-end gap-2">
+            <div key={i} className="grid grid-cols-1 sm:grid-cols-3 sm:items-end gap-2">
               <div>
                 <label className="mb-1 block font-mono text-[10px] text-text-muted">label</label>
                 <input className={inputClass} value={social.label} onChange={(e) => updateSocial(i, "label", e.target.value)} placeholder="GitHub" />

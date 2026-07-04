@@ -251,12 +251,12 @@ export function ProjectsClient({ initialProjects }: { initialProjects: Project[]
         title={editing ? `edit — ${editing.repoName}` : "new project"}
       >
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FormInput label="repo name" value={form.repoName} onChange={(e) => field("repoName", e.target.value)} error={errors.repoName} required />
             <FormInput label="slug (url)" value={form.slug} onChange={(e) => field("slug", e.target.value)} error={errors.slug} required placeholder="my-project" />
           </div>
           <FormInput label="description" value={form.description} onChange={(e) => field("description", e.target.value)} error={errors.description} required />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FormInput label="language" value={form.language} onChange={(e) => field("language", e.target.value)} error={errors.language} required />
             <FormInput label="language color (hex)" value={form.languageColor} onChange={(e) => field("languageColor", e.target.value)} error={errors.languageColor} placeholder="#3178c6" />
           </div>
@@ -265,22 +265,22 @@ export function ProjectsClient({ initialProjects }: { initialProjects: Project[]
             <FormInput label="forks" type="number" value={form.forks} onChange={(e) => field("forks", e.target.value)} error={errors.forks} min={0} />
             <FormInput label="commits" type="number" value={form.commits} onChange={(e) => field("commits", e.target.value)} error={errors.commits} min={0} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FormInput label="last commit" value={form.lastCommit} onChange={(e) => field("lastCommit", e.target.value)} error={errors.lastCommit} placeholder="just now" />
             <FormInput label="last commit msg" value={form.lastCommitMsg} onChange={(e) => field("lastCommitMsg", e.target.value)} error={errors.lastCommitMsg} />
           </div>
           <TagInput label="tags" values={form.tags} onChange={(v) => field("tags", v)} />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FormInput label="live url" value={form.liveUrl ?? ""} onChange={(e) => field("liveUrl", e.target.value)} error={errors.liveUrl} placeholder="https://..." />
             <FormInput label="repo url" value={form.repoUrl ?? ""} onChange={(e) => field("repoUrl", e.target.value)} error={errors.repoUrl} placeholder="https://github.com/..." />
           </div>
-          <div className="grid grid-cols-2 gap-3 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
             <FormSelect label="status" value={form.status} onChange={(e) => field("status", e.target.value)} options={STATUS_OPTIONS} />
             <FormCheckbox label="pinned" checked={form.pinned} onChange={(v) => field("pinned", v)} />
           </div>
           <FormTextarea label="long description" value={form.longDescription ?? ""} onChange={(e) => field("longDescription", e.target.value)} rows={4} />
 
-          <div className="flex gap-2 pt-2">
+          <div className="flex flex-wrap gap-2 pt-2">
             <LoadingButton type="submit" loading={loading} loadingText="Saving..." className="flex-1 py-2">
               {editing ? "$ git commit --amend" : "$ git commit -m 'new project'"}
             </LoadingButton>
