@@ -1,6 +1,7 @@
 package com.portfolio.recruiter;
 
 import com.portfolio.chatbot.AbuseLog;
+import com.portfolio.chatbot.ChatController;
 import com.portfolio.chatbot.DailyBudgetGuard;
 import com.portfolio.chatbot.PortfolioContext;
 import com.portfolio.chatbot.PortfolioContextService;
@@ -109,6 +110,7 @@ public class RecruiterController {
             response.setHeader("Retry-After", String.valueOf(limit.retryAfterSeconds()));
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many submissions. Try again in a minute.");
         }
+        checkAiDailyLimit(clientIp, response);
 
         String jd = req == null ? null : req.jobDescription();
         if (jd == null || jd.length() < JD_MIN || jd.length() > JD_MAX) {
@@ -147,6 +149,7 @@ public class RecruiterController {
             response.setHeader("Retry-After", String.valueOf(limit.retryAfterSeconds()));
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many submissions. Try again in a minute.");
         }
+        checkAiDailyLimit(clientIp, response);
 
         String jd = req == null ? null : req.jobDescription();
         if (jd == null || jd.length() < JD_MIN || jd.length() > JD_MAX || req.matchResult() == null) {
@@ -185,6 +188,17 @@ public class RecruiterController {
 
     private static ServerSentEvent<Map<String, Object>> event(Map<String, Object> data) {
         return ServerSentEvent.<Map<String, Object>>builder().data(data).build();
+    }
+
+    /** Per-IP daily AI allowance, shared with the chatbot (same {@code ai-daily:<ip>} bucket). */
+    private void checkAiDailyLimit(String clientIp, HttpServletResponse response) {
+        RateLimiter.Result daily = rateLimiter.checkDaily(
+                ChatController.AI_DAILY_LIMIT_PREFIX + ":" + clientIp);
+        if (!daily.ok()) {
+            response.setHeader("Retry-After", String.valueOf(daily.retryAfterSeconds()));
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Daily limit reached. Please try again tomorrow.");
+        }
     }
 
     /**

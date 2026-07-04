@@ -38,6 +38,8 @@ public class ChatController {
     private static final int MAX_OUTPUT_TOKENS = 1024;
     /** Pinned so chat tone doesn't vary with each provider's own default (consistency, phase 3). */
     private static final double TEMPERATURE = 0.7;
+    /** One daily per-IP allowance shared by every AI endpoint (chat + recruiter). */
+    public static final String AI_DAILY_LIMIT_PREFIX = "ai-daily";
 
     private final RateLimiter rateLimiter;
     private final DailyBudgetGuard budgetGuard;
@@ -79,6 +81,14 @@ public class ChatController {
         if (!limit.ok()) {
             response.setHeader("Retry-After", String.valueOf(limit.retryAfterSeconds()));
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many requests. Please slow down.");
+        }
+        // Per-IP daily cap (shared with recruiter endpoints) — a slow single-IP bot must not
+        // drain the global AI budget; see AI_IP_DAILY_CAP.
+        RateLimiter.Result daily = rateLimiter.checkDaily(AI_DAILY_LIMIT_PREFIX + ":" + clientIp);
+        if (!daily.ok()) {
+            response.setHeader("Retry-After", String.valueOf(daily.retryAfterSeconds()));
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Daily limit reached. Please try again tomorrow.");
         }
 
         if (req == null) {
