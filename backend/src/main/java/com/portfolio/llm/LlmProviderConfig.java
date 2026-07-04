@@ -43,7 +43,7 @@ public class LlmProviderConfig {
             @Value("${MISTRAL_MODEL:mistral-small-latest}") String mistralModel,
             @Value("${MISTRAL_API_URL:https://api.mistral.ai/v1}") String mistralUrl,
             @Value("${OPENROUTER_API_KEY:}") String openrouterKey,
-            @Value("${OPENROUTER_MODEL:qwen/qwen3-next-80b-a3b-instruct:free}") String openrouterModel,
+            @Value("${OPENROUTER_MODEL:openai/gpt-oss-20b:free}") String openrouterModel,
             @Value("${OPENROUTER_API_URL:https://openrouter.ai/api/v1}") String openrouterUrl,
             @Value("${LLM_GROQ_DAILY_CAP:950}") int groqDailyCap,
             @Value("${LLM_GEMINI_DAILY_CAP:900}") int geminiDailyCap,

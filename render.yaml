@@ -74,7 +74,7 @@ services:
       - key: OPENROUTER_API_KEY
         sync: false
       - key: OPENROUTER_MODEL
-        value: qwen/qwen3-next-80b-a3b-instruct:free
+        value: openai/gpt-oss-20b:free   # qwen3-next-80b:free was persistently 429 upstream (2026-07-04)
       - key: LLM_OPENROUTER_DAILY_CAP
         value: "45"                  # free tier is 50/day ($10 one-time credit -> 1000/day)
       - key: GEMINI_API_KEY
