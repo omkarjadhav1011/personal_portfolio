@@ -192,12 +192,24 @@ directly."). Recruiter leads keep their own per-IP bucket; this cap is contact-f
   (per-application tokens writing `RESUME_LINK_HIT` engagement events), X3 in-app reply from
   the inbox (needs the same Resend domain as F2).
 
-## AWS migration (aws_migration_plan.md)
+## Custom domain + 24/7 uptime (current initiative, 2026-07-04)
 
-- 🔜 **Migrate to AWS + custom domain** — decided 2026-07-04: S3+CloudFront (frontend) + single
-  EC2 with Docker Compose (Spring Boot + pgvector Postgres + Caddy) + S3 (vault/backups) +
-  Route 53, ~₹590–730/mo post-credits. Full comparison of 7 options + phased runbook (Phases
-  0–7, confirmation-gated) in `aws_migration_plan.md`. Execution not started.
+- 🔜 **Custom domain + keep-alive on the existing Vercel + Render stack (₹0/mo)** — replaces the
+  AWS migration (pivot 2026-07-04): the real pain was only Render free-tier spin-down (15 idle
+  min → ~50 s JVM cold start). Fix: UptimeRobot pinging `/actuator/health` every 5 min (750 free
+  instance-hrs/mo covers 24/7) + domain from Cloudflare/Namecheap → apex/`www` on Vercel,
+  `api.<domain>` on Render. Runbook: `DEPLOY.md` → "Custom domain + keep-alive". Cutover
+  checklist includes tightening the `vercel.json` CSP from `*.onrender.com` to `api.<domain>`
+  (closes the B2 post-deploy tightening note above) + OAuth console redirect URIs.
+
+## AWS migration (aws_migration_plan.md) — ⏸️ shelved 2026-07-04
+
+- ⏸️ **Migrate to AWS + custom domain** — was decided, then shelved same day in favour of the
+  ₹0 domain+pinger fix above (the pain was uptime, not the platform). The doc stays as the
+  full roadmap: S3+CloudFront (frontend) + single EC2 with Docker Compose (Spring Boot +
+  pgvector Postgres + Caddy) + S3 (vault/backups) + Route 53, ~₹590–730/mo post-credits;
+  comparison of 7 options + phased runbook (Phases 0–7, confirmation-gated). Escalation
+  ladder: pinger → Render Starter (~₹600/mo) → Option 7.
 - ⏸️ **RDS upgrade** (swap the PG container for RDS, ~₹1,900/mo total) when budget allows —
   `DATABASE_URL` flip + dump restore, nothing else changes.
 - ⏸️ **ECS Fargate + ALB** as AWS learning milestone #2 (possibly build-then-teardown to cap cost).

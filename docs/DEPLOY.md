@@ -205,6 +205,76 @@ browser blocks all API calls.
 
 ---
 
+## Custom domain + keep-alive (24/7 on the free tier)
+
+Two independent problems, two fixes (decided 2026-07-04; background + shelved AWS alternative
+in `aws_migration_plan.md`):
+
+1. **Render free spins down after 15 idle minutes** and the JVM cold-starts slowly (~50 s) —
+   the site is effectively not live 24/7.
+2. The site runs on platform subdomains (`*.vercel.app` / `*.onrender.com`) instead of a
+   custom domain.
+
+### A. Keep-alive pinger (₹0 — do this first, no domain needed)
+
+Render's free tier includes **750 instance-hours/month** — more than a full month (744 h) for
+one service — it only *spins down on idleness*. An external monitor that pings more often than
+the 15-minute idle window keeps it warm:
+
+1. **[you]** Create a free [UptimeRobot](https://uptimerobot.com) account → **Add Monitor** →
+   type HTTP(s), URL `https://<backend>.onrender.com/actuator/health`, interval **5 minutes**,
+   alert contact = your email.
+2. That's it. The health endpoint is public (Render's own health check uses it) and cheap.
+
+Bonus: this doubles as real uptime monitoring — you get an email when the backend is actually
+down. **Caveats (honest):** keeping a free instance warm via pings is gray-area use of Render's
+free tier; occasional platform restarts still happen (in-memory OTP/download-token stores reset
+— already true today); the first request *after a deploy* still cold-starts once.
+
+**Verify:** after >30 min with no human traffic, the site responds instantly (no cold-start
+spinner); next morning the UptimeRobot log shows ~100% uptime overnight.
+
+**Escalation ladder** if this ever stops being enough (policy change / real traffic):
+Render **Starter** ($7/mo ≈ ₹600, officially always-on, two clicks) → the shelved AWS plan
+(`aws_migration_plan.md`, Option 7).
+
+### B. Custom domain
+
+Buy the domain at **Cloudflare Registrar** (at-cost, ~₹800–1,000/yr for `.com`) or Namecheap;
+DNS stays at the registrar. Then, in order (site never breaks):
+
+1. **Frontend — [you]:** Vercel project → Settings → Domains → add `<domain>` + `www.<domain>`;
+   create the `A`/`CNAME` records Vercel shows at the registrar; pick the apex↔www redirect.
+   Vercel issues TLS automatically.
+   *Verify:* `https://<domain>` serves the SPA with a valid cert; a deep-link refresh works.
+2. **Backend — [you]:** Render service → Settings → Custom Domains → add `api.<domain>` →
+   create the shown CNAME at the registrar; Render issues TLS.
+3. **Coordinated cutover (one sitting, ~30 min):**
+   - Render env: `CORS_ALLOWED_ORIGIN=https://<domain>` (single origin, no trailing slash),
+     `APP_FRONTEND_URL=https://<domain>`, and if the vault is enabled
+     `DRIVE_PUBLIC_BASE_URL=https://api.<domain>`.
+   - OAuth consoles (see §5 below): add the `https://api.<domain>/login/oauth2/code/{google,github}`
+     redirect/callback URIs (the old onrender ones can stay during transition).
+   - Repo: in `frontend/vercel.json`, tighten the CSP — replace `https://*.onrender.com` with
+     `https://api.<domain>` in **both** `img-src` and `connect-src`.
+   - Vercel env: `VITE_API_URL=https://api.<domain>` → redeploy (build-time var; the CSP commit
+     deploys with it).
+   - Point the UptimeRobot monitor at `https://api.<domain>/actuator/health`.
+
+   *Verify:* login (password **and** OAuth) via the new domain; a chat/recruiter AI call
+   succeeds; avatar image + vault download load with no CSP errors in devtools; contact form
+   sends. *Rollback:* revert `VITE_API_URL` + the CSP edit to the onrender URL and redeploy
+   the frontend (minutes).
+
+### C. Contingency — if Render's free Postgres ever warns about expiry/limits
+
+Render's free-database policy has changed over time — check the dashboard. If it ever becomes a
+problem, the free managed-Postgres escape hatches are **Neon** or **Supabase** (both support
+**pgvector**, which `V9__add_pgvector.sql` requires). Migration is the standard
+`pg_dump -Fc` → `pg_restore` → flip `DATABASE_URL` on Render.
+
+---
+
 ## 5. OAuth2 login (Google + GitHub) — **[you]** create the apps
 
 Optional second way to sign in to `/admin`. The backend's redirect-uri is always

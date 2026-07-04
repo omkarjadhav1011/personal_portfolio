@@ -1,6 +1,15 @@
 # AWS Migration — Brainstorming, Option Comparison & Phased Runbook
 
-**Created:** 2026-07-04 · **Status:** 🔜 decided, execution not started
+**Created:** 2026-07-04 · **Status:** ⏸️ **SHELVED (2026-07-04)** — see pivot note below
+
+> **⏸️ Pivot (2026-07-04, same day):** on reflection the actual pain was only Render's
+> free-tier **spin-down after 15 idle minutes + slow JVM cold start** — not Vercel, not the
+> platform choice. Decision: solve that for ₹0 with a **keep-alive pinger + custom domain on
+> the existing Vercel + Render stack** (runbook: `DEPLOY.md` → "Custom domain + keep-alive"),
+> and **shelve this migration**. This document is kept intact as the roadmap for when AWS is
+> picked up again (the comparison, cost math, and phased runbook all still stand; re-check
+> prices first). Escalation ladder if the pinger ever stops being enough:
+> Render Starter ($7/mo ≈ ₹600) → this plan's Option 7.
 **Goal:** buy a custom domain and migrate the portfolio (Vercel + Render + R2) to AWS as a
 *learning-first* exercise, with production-ready practices, on a **₹500–700/month** budget
 (~$6–8.5 USD) once free-tier credits run out.
