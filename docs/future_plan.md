@@ -192,8 +192,25 @@ directly."). Recruiter leads keep their own per-IP bucket; this cap is contact-f
   (per-application tokens writing `RESUME_LINK_HIT` engagement events), X3 in-app reply from
   the inbox (needs the same Resend domain as F2).
 
+## AWS migration (aws_migration_plan.md)
+
+- 🔜 **Migrate to AWS + custom domain** — decided 2026-07-04: S3+CloudFront (frontend) + single
+  EC2 with Docker Compose (Spring Boot + pgvector Postgres + Caddy) + S3 (vault/backups) +
+  Route 53, ~₹590–730/mo post-credits. Full comparison of 7 options + phased runbook (Phases
+  0–7, confirmation-gated) in `aws_migration_plan.md`. Execution not started.
+- ⏸️ **RDS upgrade** (swap the PG container for RDS, ~₹1,900/mo total) when budget allows —
+  `DATABASE_URL` flip + dump restore, nothing else changes.
+- ⏸️ **ECS Fargate + ALB** as AWS learning milestone #2 (possibly build-then-teardown to cap cost).
+- ⏸️ **IAM-role auth for the Drive S3 client** — `DriveStorageConfig` should fall back to the
+  default credentials provider chain when static `STORAGE_ACCESS_KEY` is absent.
+- 💭 Compute Savings Plan after the t4g.small-vs-micro sizing decision (~30–40% off EC2).
+- 💭 Terraform/CDK second pass re-creating the whole stack (also fixes the single-instance
+  rebuild story).
+- 💭 CloudFront/WAF in front of `api.` if AI-endpoint abuse ever outgrows app-level caps.
+
 ## Other initiatives (detailed plans in this folder)
 
+- `aws_migration_plan.md` — AWS migration: option comparison, chosen architecture, phased runbook.
 - `LLM_plan.md` — LLM/chatbot roadmap.
 - `llm_failover_plan.md` — multi-provider LLM failover: design decisions + step-by-step
   implementation plan (2026-07-04, ready to execute).
