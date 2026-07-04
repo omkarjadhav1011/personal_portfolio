@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * The failover orchestrator: walks the provider chain and serves each request from the first
- * provider that is configured, circuit-closed, and (from step 3) not quota-exhausted. Business
+ * provider that is configured, circuit-closed, and not quota-exhausted. Business
  * code injects this instead of a concrete {@link LlmProvider} — it never learns who answered.
  *
  * <p>Failover rules ({@code docs/llm_failover_plan.md}): 429 hops immediately (no retry, no
@@ -31,16 +31,18 @@ public class LlmRouter {
 
     private final List<LlmProvider> chain;
     private final ProviderHealth health;
+    private final ProviderQuota quota;
     private final long retryBackoffMillis;
 
     @Autowired
-    public LlmRouter(List<LlmProvider> chain, ProviderHealth health) {
-        this(chain, health, 500);
+    public LlmRouter(List<LlmProvider> chain, ProviderHealth health, ProviderQuota quota) {
+        this(chain, health, quota, 500);
     }
 
-    LlmRouter(List<LlmProvider> chain, ProviderHealth health, long retryBackoffMillis) {
+    LlmRouter(List<LlmProvider> chain, ProviderHealth health, ProviderQuota quota, long retryBackoffMillis) {
         this.chain = chain;
         this.health = health;
+        this.quota = quota;
         this.retryBackoffMillis = retryBackoffMillis;
     }
 
@@ -69,13 +71,16 @@ public class LlmRouter {
                 .doOnNext(delta -> {
                     if (emitted.compareAndSet(false, true)) {
                         health.recordSuccess(provider.id());
+                        quota.recordSuccessStart(provider.id());
                         log.info("[llm] provider={} op=stream outcome=ok firstDelta={}ms",
                                 provider.id(), System.currentTimeMillis() - startedAt);
                     }
                 })
                 .onErrorResume(error -> {
                     LlmError classified = LlmError.classify(error);
-                    if (classified != LlmError.RATE_LIMITED) {
+                    if (classified == LlmError.RATE_LIMITED) {
+                        quota.recordRateLimit(provider.id(), LlmError.retryAfter(error));
+                    } else {
                         health.recordFailure(provider.id());
                     }
                     if (emitted.get()) {
@@ -96,12 +101,15 @@ public class LlmRouter {
             try {
                 String json = callStructuredWithRetry(provider, request);
                 health.recordSuccess(provider.id());
+                quota.recordSuccessStart(provider.id());
                 log.info("[llm] provider={} op=structured outcome=ok latency={}ms",
                         provider.id(), System.currentTimeMillis() - startedAt);
                 return json;
             } catch (Exception error) {
                 LlmError classified = LlmError.classify(error);
-                if (classified != LlmError.RATE_LIMITED) {
+                if (classified == LlmError.RATE_LIMITED) {
+                    quota.recordRateLimit(provider.id(), LlmError.retryAfter(error));
+                } else {
                     health.recordFailure(provider.id());
                 }
                 log.warn("[llm] provider={} op=structured failed ({}: {}) — failing over",
@@ -123,11 +131,12 @@ public class LlmRouter {
         }
     }
 
-    /** Providers eligible for this request: configured and circuit-closed (quota joins in step 3). */
+    /** Providers eligible for this request: configured, circuit-closed, and not quota-exhausted. */
     private List<LlmProvider> candidates() {
         return chain.stream()
                 .filter(LlmProvider::isConfigured)
                 .filter(p -> health.isAvailable(p.id()))
+                .filter(p -> quota.isAvailable(p.id()))
                 .toList();
     }
 

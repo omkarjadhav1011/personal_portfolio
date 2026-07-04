@@ -4,6 +4,8 @@ import org.springframework.web.reactive.function.client.WebClientRequestExceptio
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.Exceptions;
 
+import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -43,5 +45,22 @@ public enum LlmError {
             return error.getCause();
         }
         return error;
+    }
+
+    /**
+     * The parsed {@code Retry-After} of a 429, when the provider sent one in delta-seconds form
+     * (the HTTP-date form and provider-specific reset headers fall back to the caller's default).
+     */
+    public static Optional<Duration> retryAfter(Throwable error) {
+        if (!(unwrap(error) instanceof WebClientResponseException http)) {
+            return Optional.empty();
+        }
+        try {
+            String value = http.getHeaders().getFirst("Retry-After");
+            return value == null ? Optional.empty() : Optional.of(Duration.ofSeconds(Long.parseLong(value.trim())));
+        } catch (RuntimeException ignored) {
+            // no headers attached, or a non-numeric form — let the default window apply
+            return Optional.empty();
+        }
     }
 }

@@ -1,5 +1,6 @@
 package com.portfolio.llm;
 
+import com.portfolio.common.counter.DailyCounterStore;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -8,6 +9,7 @@ import reactor.core.publisher.Flux;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
@@ -86,9 +88,11 @@ class LlmRouterTest {
     }
 
     private final ProviderHealth health = new ProviderHealth(3, Duration.ofMinutes(5), Clock.systemUTC());
+    private final ProviderQuota quota =
+            new ProviderQuota(Map.of(), DailyCounterStore.NOOP, Clock.systemUTC());
 
     private LlmRouter router(LlmProvider... providers) {
-        return new LlmRouter(List.of(providers), health, 0);
+        return new LlmRouter(List.of(providers), health, quota, 0);
     }
 
     // ── structured ──────────────────────────────────────────────────────────
@@ -160,6 +164,20 @@ class LlmRouterTest {
         // circuit open → not even called anymore
         router.generateStructured(REQUEST);
         assertEquals(3, broken.calls.get());
+    }
+
+    @Test
+    void rateLimitedProviderIsSkippedOnTheNextRequestWithoutACall() {
+        FakeProvider limited = throwing("limited", http(HttpStatus.TOO_MANY_REQUESTS));
+        FakeProvider fallback = returning("fallback", "ok");
+        LlmRouter router = router(limited, fallback);
+
+        router.generateStructured(REQUEST); // observes the 429 → 60s quota window
+        assertEquals(1, limited.calls.get());
+
+        router.generateStructured(REQUEST); // skipped proactively — no wasted call
+        assertEquals(1, limited.calls.get());
+        assertEquals(2, fallback.calls.get());
     }
 
     @Test
