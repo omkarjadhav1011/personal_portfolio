@@ -44,6 +44,14 @@ services:
       - key: ADMIN_PASSWORD_HASH
         sync: false
 
+      # ── Demo content ───────────────────────────────────────────────────────
+      # Seeds placeholder profile/projects/experience/skills into an EMPTY database so the
+      # site isn't blank on first boot. Flip to "false" (or delete) once real content is
+      # entered in the admin panel: while it's true, a placeholder row you delete comes back
+      # on the next restart, and Render's free tier restarts often.
+      - key: SEED_DEMO_DATA
+        value: "true"
+
       # ── CORS ─────────────────────────────────────────────────────────────
       # The Vercel frontend's public origin, e.g. https://your-portfolio.vercel.app
       # (no trailing slash). Set after the frontend URL is known.

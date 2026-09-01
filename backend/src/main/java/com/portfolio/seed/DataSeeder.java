@@ -16,15 +16,24 @@ import com.portfolio.skill.SkillDiffRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
-// Auto-seeding disabled — @Component commented out so this runner does NOT execute
-// on startup/rebuild. It was re-inserting deleted placeholder rows every rebuild.
-// Re-enable by uncommenting @Component (and its import) to bootstrap a fresh DB.
-// import org.springframework.stereotype.Component;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-// @Component
+/**
+ * Bootstraps demo content into an empty database. Follows the conditional-wiring pattern:
+ * inert unless {@code SEED_DEMO_DATA=true}, so it can be switched off from the deploy
+ * environment without a code change.
+ *
+ * <p><b>Turn this off once real content is curated.</b> Only {@code seedProfile} guards on
+ * {@code count() > 0}; projects/experience/skill-diffs guard per-row on slug/hash/name, so a
+ * placeholder you delete in the admin panel is re-inserted on the next restart while this
+ * stays enabled — and Render's free tier restarts often.
+ */
+@Component
+@ConditionalOnProperty(name = "SEED_DEMO_DATA", havingValue = "true")
 public class DataSeeder implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
