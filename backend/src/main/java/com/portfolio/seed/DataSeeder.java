@@ -16,15 +16,24 @@ import com.portfolio.skill.SkillDiffRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
-// Auto-seeding disabled — @Component commented out so this runner does NOT execute
-// on startup/rebuild. It was re-inserting deleted placeholder rows every rebuild.
-// Re-enable by uncommenting @Component (and its import) to bootstrap a fresh DB.
-// import org.springframework.stereotype.Component;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-// @Component
+/**
+ * Bootstraps demo content into an empty database. Follows the conditional-wiring pattern:
+ * inert unless {@code SEED_DEMO_DATA=true}, so it can be switched off from the deploy
+ * environment without a code change.
+ *
+ * <p><b>Turn this off once real content is curated.</b> Only {@code seedProfile} guards on
+ * {@code count() > 0}; projects/experience/skill-diffs guard per-row on slug/hash/name, so a
+ * placeholder you delete in the admin panel is re-inserted on the next restart while this
+ * stays enabled — and Render's free tier restarts often.
+ */
+@Component
+@ConditionalOnProperty(name = "SEED_DEMO_DATA", havingValue = "true")
 public class DataSeeder implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
@@ -80,7 +89,7 @@ public class DataSeeder implements CommandLineRunner {
         p.setEmail("jadhavomkar101103@gmail.com");
         p.setLocation("Kolhapur, Maharashtra, India");
         p.setSocials(List.of(
-                new SocialLink("GitHub", "https://github.com/omkarjadhav", "github"),
+                new SocialLink("GitHub", "https://github.com/omkarjadhav1011", "github"),
                 new SocialLink("LinkedIn", "https://linkedin.com/in/omkarjadhav", "linkedin"),
                 new SocialLink("Twitter", "https://twitter.com/omkarjadhav", "twitter")));
         p.setFunFacts(List.of(
@@ -107,7 +116,7 @@ public class DataSeeder implements CommandLineRunner {
                         "TypeScript", "#3178c6", 12, 3, 47, "just now",
                         "feat: add command palette with Ctrl+K shortcut",
                         List.of("Next.js", "Tailwind", "Framer Motion"),
-                        "https://omkarjadhav.vercel.app", "https://github.com/omkarjadhav/git-portfolio",
+                        "https://omkarjadhav.vercel.app", "https://github.com/omkarjadhav1011/git-portfolio",
                         "active", true,
                         "Built with Next.js 14, this portfolio reimagines personal websites through the lens of Git — commit timelines, branch visualizations, and a fully interactive terminal command palette."),
                 project("dev-mobiles", "dev-mobiles",
@@ -115,21 +124,21 @@ public class DataSeeder implements CommandLineRunner {
                         "PHP", "#4F5D95", 8, 2, 84, "2 months ago",
                         "feat: add purchase flow with payment integration",
                         List.of("PHP", "HTML", "CSS", "JavaScript", "MySQL"),
-                        null, "https://github.com/omkarjadhav/dev-mobiles", "active", true,
+                        null, "https://github.com/omkarjadhav1011/dev-mobiles", "active", true,
                         "A full-featured mobile shopping platform built during my internship at Dnyanda Solutions. Supports user login, product search, cart management, and a complete purchase flow with payment integration."),
                 project("crop-recommendation", "crop-recommendation",
                         "ML-based crop suggestion system using soil and weather data with a real-time farmer UI.",
                         "Python", "#3572A5", 19, 5, 62, "3 months ago",
                         "feat: integrate real-time weather API for dynamic predictions",
                         List.of("Python", "Scikit-learn", "Pandas", "NumPy"),
-                        null, "https://github.com/omkarjadhav/crop-recommendation", "active", true,
+                        null, "https://github.com/omkarjadhav1011/crop-recommendation", "active", true,
                         "A machine learning system that recommends optimal crops based on soil composition and real-time weather conditions. Built with Scikit-learn classification models and a clean farmer-friendly UI."),
                 project("snapsktch", "snapsktch",
                         "AI-powered text-to-image generator using Hugging Face API and Streamlit.",
                         "Python", "#3572A5", 14, 3, 38, "4 months ago",
                         "chore: update model endpoint to stable-diffusion-xl",
                         List.of("Python", "Streamlit", "Hugging Face", "AI"),
-                        null, "https://github.com/omkarjadhav/snapsktch", "active", true,
+                        null, "https://github.com/omkarjadhav1011/snapsktch", "active", true,
                         "A text-to-image generation app powered by Hugging Face's diffusion models. Users describe an image in text, and SnapSktch renders it in seconds via Streamlit's interactive UI."));
 
         int order = 0;
