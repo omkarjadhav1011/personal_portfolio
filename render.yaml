@@ -4,14 +4,14 @@
 # Docs: https://render.com/docs/blueprint-spec
 
 databases:
-  - name: portfolio-db
+  - name: portfolio-simple-db
     databaseName: portfolio
     user: portfolio
     plan: free
 
 services:
   - type: web
-    name: portfolio-backend
+    name: portfolio-simple-backend
     runtime: docker
     plan: free
     dockerfilePath: ./backend/Dockerfile
@@ -21,15 +21,15 @@ services:
     envVars:
       # ── Database (auto-wired from the managed Postgres above) ──────────────
       - key: DB_HOST
-        fromDatabase: { name: portfolio-db, property: host }
+        fromDatabase: { name: portfolio-simple-db, property: host }
       - key: DB_PORT
-        fromDatabase: { name: portfolio-db, property: port }
+        fromDatabase: { name: portfolio-simple-db, property: port }
       - key: DB_NAME
-        fromDatabase: { name: portfolio-db, property: database }
+        fromDatabase: { name: portfolio-simple-db, property: database }
       - key: DB_USERNAME
-        fromDatabase: { name: portfolio-db, property: user }
+        fromDatabase: { name: portfolio-simple-db, property: user }
       - key: DB_PASSWORD
-        fromDatabase: { name: portfolio-db, property: password }
+        fromDatabase: { name: portfolio-simple-db, property: password }
 
       # ── Auth ───────────────────────────────────────────────────────────────
       # JWT signing key — Render generates a strong random value on first deploy.
