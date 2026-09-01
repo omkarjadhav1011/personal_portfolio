@@ -221,10 +221,18 @@ Render's free tier includes **750 instance-hours/month** — more than a full mo
 one service — it only *spins down on idleness*. An external monitor that pings more often than
 the 15-minute idle window keeps it warm:
 
-1. **[you]** Create a free [UptimeRobot](https://uptimerobot.com) account → **Add Monitor** →
-   type HTTP(s), URL `https://<backend>.onrender.com/actuator/health`, interval **5 minutes**,
-   alert contact = your email.
-2. That's it. The health endpoint is public (Render's own health check uses it) and cheap.
+Ping **`/health`** (`common/HealthController`), *not* `/actuator/health`: the actuator route runs
+the DataSource probe on every call and 503s when Postgres is down — right for Render's own
+`healthCheckPath`, wrong for a pinger. `/health` does no I/O and returns `{"status":"ok"}`.
+
+1. **[you]** Primary — [cron-job.org](https://console.cron-job.org): sign up free → **Create
+   cronjob** → URL `https://<backend>.onrender.com/health`, schedule **every 10 minutes**,
+   enabled, save.
+2. **[you]** Backup/alternative — [UptimeRobot](https://uptimerobot.com): **Add Monitor** →
+   type HTTP(s), URL `https://<backend>.onrender.com/health`, interval **5 minutes** (the free
+   floor), alert contact = your email.
+3. Keep the interval **under 15 minutes**. One service pinged 24/7 fits the 750 h/month quota;
+   two do not.
 
 Bonus: this doubles as real uptime monitoring — you get an email when the backend is actually
 down. **Caveats (honest):** keeping a free instance warm via pings is gray-area use of Render's

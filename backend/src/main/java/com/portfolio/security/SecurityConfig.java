@@ -76,6 +76,10 @@ public class SecurityConfig {
                                         + "style-src 'self' 'unsafe-inline'")))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/error").permitAll()
+                        // Keep-alive ping for the external uptime cron (Render free tier
+                        // sleeps after 15 min idle). Explicit and FIRST so it can never be
+                        // shadowed by a future matcher; HealthController does no I/O.
+                        .requestMatchers(HttpMethod.GET, "/health").permitAll()
                         // OAuth2 authorization + provider callback endpoints must be reachable
                         // before any token exists. The success handler then mints the JWT.
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
