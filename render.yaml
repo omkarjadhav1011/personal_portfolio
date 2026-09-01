@@ -88,7 +88,11 @@ services:
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_MODEL
-        value: gemini-3-flash        # free RPD is per-project — verify in AI Studio
+        # gemini-3-flash does NOT exist — the API rejects it with 404 NOT_FOUND, which fails
+        # every chat/match call. Verified against ListModels on 2026-09-02: use gemini-2.5-flash
+        # (also GeminiProvider's own default, and the model the thinkingBudget:0 workaround for
+        # structured output was written against). Free RPD is per-project — check AI Studio.
+        value: gemini-2.5-flash
       - key: GEMINI_API_URL
         value: https://generativelanguage.googleapis.com/v1beta
       - key: LLM_GEMINI_DAILY_CAP
