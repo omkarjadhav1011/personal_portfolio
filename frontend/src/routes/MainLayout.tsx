@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { Outlet } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { CommandPalette } from "@/components/layout/CommandPalette";
+import { CommandPaletteHost } from "@/components/layout/CommandPaletteHost";
 import { StatusBar } from "@/components/layout/StatusBar";
 import { FloatingAIButton } from "@/components/ui/FloatingAIButton";
 import { RouteFallback } from "./RouteFallback";
@@ -17,7 +17,7 @@ export function MainLayout() {
   return (
     <>
       <Navbar />
-      <CommandPalette />
+      <CommandPaletteHost />
       <main className="pb-[calc(1.75rem+env(safe-area-inset-bottom))]">
         <Suspense fallback={<RouteFallback />}>
           <Outlet />

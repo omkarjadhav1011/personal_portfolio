@@ -31,7 +31,15 @@ const SOCIAL_ICON: Record<string, { Icon: React.ElementType; tint: string }> = {
   twitter: { Icon: Twitter, tint: "var(--color-git-purple, 210 168 255)" },
 };
 
-function Avatar({ name, avatarUrl }: { name: string; avatarUrl?: string }) {
+function Avatar({
+  name,
+  avatarUrl,
+  headline,
+}: {
+  name: string;
+  avatarUrl?: string;
+  headline?: string;
+}) {
   const initials = name
     .split(" ")
     .map((s) => s[0])
@@ -54,7 +62,16 @@ function Avatar({ name, avatarUrl }: { name: string; avatarUrl?: string }) {
         {avatarUrl ? (
           <img
             src={assetUrl(avatarUrl)}
-            alt={name}
+            // Names the role, not just the person: alt text on a portrait is a
+            // real description slot, and "Omkar Jadhav" alone wastes it.
+            alt={`${name}${headline ? `, ${headline}` : ""}`}
+            // The container is a fixed 128px square (w-32 h-32); declaring the
+            // intrinsic size lets the browser reserve the box before the bytes
+            // arrive instead of reflowing the text beside it.
+            width={128}
+            height={128}
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover"
             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
           />
@@ -107,7 +124,15 @@ function TechChip({ t }: { t: TechPick }) {
         }}
       >
         {isUrl ? (
-          <img src={t.glyph} alt={t.name} className="w-full h-full object-contain p-0.5" />
+          <img
+          src={t.glyph}
+          alt={t.name}
+          width={24}
+          height={24}
+          loading="lazy"
+          decoding="async"
+          className="w-full h-full object-contain p-0.5"
+        />
         ) : (
           t.glyph
         )}
@@ -225,7 +250,7 @@ export function AboutSection({ profile, topSkills }: AboutSectionProps) {
             <div className="p-6 sm:p-8">
               {/* Profile header */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-5 mb-5">
-                <Avatar name={profile.name} avatarUrl={profile.avatarUrl} />
+                <Avatar name={profile.name} avatarUrl={profile.avatarUrl} headline={profile.headline} />
                 <div className="min-w-0 flex-1">
                   <h2 className="font-mono font-bold text-2xl sm:text-3xl tracking-tight leading-tight text-text-primary">
                     {profile.name}
@@ -282,7 +307,11 @@ export function AboutSection({ profile, topSkills }: AboutSectionProps) {
                     {role.logoUrl ? (
                       <img
                         src={role.logoUrl}
-                        alt={role.company}
+                        alt={`${role.company} logo`}
+                        width={40}
+                        height={40}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).style.display = "none";

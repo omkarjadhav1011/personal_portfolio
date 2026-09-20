@@ -37,12 +37,21 @@
       content="Backend developer in Pune working in C#, NestJS and SQL. B.Tech CSE (Data Science), KIT's College of Engineering, Kolhapur, 2026."
     />
     <meta name="twitter:image" content="%VITE_SITE_URL%/opengraph-image.png" />
-    <!-- Webfont backs --font-mono only; --font-sans uses GitHub's native system stack. -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!--
+      Webfont backs --font-mono only; --font-sans uses GitHub's native system stack.
+
+      Self-hosted (public/fonts, @font-face in globals.css). The previous
+      Google Fonts <link rel="stylesheet"> was render-blocking and added a
+      third-party DNS + TLS + fetch to the critical path before first paint.
+      Preloading the file itself starts it immediately rather than waiting for
+      the CSS to be parsed and the @font-face discovered.
+    -->
     <link
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap"
-      rel="stylesheet"
+      rel="preload"
+      href="/fonts/jetbrains-mono-latin-var.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
     />
   </head>
   <body class="relative">

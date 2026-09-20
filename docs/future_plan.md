@@ -445,8 +445,13 @@ appetite. The current consolidated order lives in "Now / Next" at the top of thi
   Runbook: `docs/seo/00-RECON.md` §0.8.
 - ⏳ **`Referrer-Policy: no-referrer`** (`frontend/vercel.json:14`) will blank referrer data in any
   analytics added in Phase 5. Loosen to `strict-origin-when-cross-origin` if that data is wanted.
-- ⏳ **Self-host JetBrains Mono.** The Google Fonts stylesheet in `index.html` is render-blocking.
-  Wave 4.
+- ⏳ **Measure real Core Web Vitals.** Wave 4's numbers are build-output and critical-path
+  analysis, not lab or field data — no browser was available. Run Lighthouse and PageSpeed
+  Insights against the deployed site, and read CrUX in Search Console once traffic exists.
+- ⏳ **The 467 KB entry bundle is still the largest remaining weight.** framer-motion and the
+  Radix primitives dominate it. Worth an audit, but only after real measurement says it matters.
+- ⏳ **Replacing the self-hosted font needs a new filename.** `/fonts/*` is served
+  `immutable` for a year and Vite does not content-hash files in `public/`.
 - ⏳ **Thin pages after Wave 3.** `/experience` is 258 words against a 400 floor, and the project
   pages run 137-233 against a 300 floor. Both are thin because the underlying content is short,
   not because of layout — the fix is fuller write-ups, and two project descriptions are still
