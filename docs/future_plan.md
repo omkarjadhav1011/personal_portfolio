@@ -465,6 +465,13 @@ appetite. The current consolidated order lives in "Now / Next" at the top of thi
   DRAFT pending the owner's review. Do not pad.
 - ⏳ **`/skills` and `/contact` were not built** (Wave 3 scope decision). Skills and contact remain
   full sections on the homepage. Revisit if `omkar jadhav contact` becomes worth its own URL.
+- ⏳ **Wave 5 is incomplete — the run hit the account spend limit.** 8 briefs and 5 of 8 drafts
+  were recovered from the workflow journal into `docs/seo/drafts/`; 3 drafts were never written
+  and most drafts never went through the 4 verify lenses. State per article is tabulated in
+  `docs/seo/drafts/README.md`. Re-run with resume when budget allows — cached agents replay, so
+  only the missing work costs anything.
+- ⏳ **`spring-ai-mcp-server.md` has 18 unresolved verifier findings** recorded in its front
+  matter (2 of 20 applied by hand). Every other recovered draft is unverified.
 - ⏳ **`/blog` does not exist yet.** The 8 article topics in `03-KEYWORD-MAP.md` need the route
   shell before Wave 5 content can land.
 - ⏳ **Google Rich Results Test still unrun** — it needs a live public URL. Run it against `/` and
