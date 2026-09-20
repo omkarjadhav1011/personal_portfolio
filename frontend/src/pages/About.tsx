@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { PageShell } from "@/components/layout/PageShell";
+import { CANONICAL_STATEMENT } from "@/lib/identity";
 
 /**
  * The biography page — and the page that carries the ProfilePage schema.
@@ -29,14 +30,11 @@ export default function About() {
           About <span className="text-git-green">Omkar Jadhav</span>
         </>
       }
-      intro={
-        <>
-          Omkar Jayvant Jadhav is a Software Development Engineer I at Nonstop IO Technologies in
-          Kharadi, Pune. He builds backend services in C#, NestJS and SQL for an enterprise
-          reporting product, and graduated from KIT&apos;s College of Engineering (Autonomous),
-          Kolhapur in 2026.
-        </>
-      }
+      // Rendered verbatim from the shared constant rather than rewritten here:
+      // corroboration across sources works on matching, so the same sentence on
+      // the site, in llms.txt, in the schema description and on his GitHub and
+      // LinkedIn profiles is worth far more than five paraphrases.
+      intro={CANONICAL_STATEMENT}
     >
       <article className="space-y-10 text-sm sm:text-base leading-relaxed text-text-muted">
         <section aria-labelledby="work-today">

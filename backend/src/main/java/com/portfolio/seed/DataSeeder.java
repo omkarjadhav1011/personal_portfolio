@@ -79,15 +79,14 @@ public class DataSeeder implements CommandLineRunner {
         // Written to be quotable in isolation: an AI assistant retrieves a passage,
         // not a page, so the opening sentence names the subject in full instead of
         // starting with "I". Education is past tense — he graduated in 2026.
+        // The first paragraph must stay byte-identical to CANONICAL_STATEMENT in
+        // frontend/src/lib/identity.ts. The site, the JSON-LD description and
+        // llms.txt all publish that same sentence, and corroboration across
+        // sources works on matching -- rewording it here fragments the signal.
         p.setBio("""
-                Omkar Jayvant Jadhav is a Software Development Engineer I at Nonstop IO
-                Technologies in Kharadi, Pune. He works on backend development for an
-                enterprise reporting product, writing C#, NestJS and SQL against live
-                production modules.
+                Omkar Jayvant Jadhav is a Software Development Engineer I at Nonstop IO                 Technologies in Kharadi, Pune, India. He graduated from KIT's College of                 Engineering (Autonomous), Kolhapur in 2026 with a B.Tech in Computer Science                 & Engineering (Data Science), and works on backend development in C#, NestJS                 and SQL.
 
-                He graduated from KIT's College of Engineering (Autonomous), Kolhapur in
-                2026 with a B.Tech in Computer Science & Engineering (Data Science), and
-                builds LLM-integrated applications with the Gemini and Hugging Face APIs.""");
+                He implemented end-to-end user audit functionality on an enterprise reporting                 product, contributed to its Report Builder module, and builds LLM-integrated                 applications with the Gemini and Hugging Face APIs.""");
         p.setCurrentBranch("main");
         p.setCurrentStatus("Building backend services at Nonstop IO Technologies");
         p.setAvailableForWork(false);

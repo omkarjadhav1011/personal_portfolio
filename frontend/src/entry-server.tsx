@@ -18,6 +18,9 @@ export { normalizeSiteUrl } from "@/lib/site-url";
 // The JSON-LD graph is built at prerender time and injected into <head>,
 // where structured data belongs, so it is re-exported for the same reason.
 export { buildGraph } from "@/lib/schema/graph";
+// llms.txt publishes the same canonical statement the pages do, so the
+// prerender script reads it from the one place it is defined.
+export { CANONICAL_STATEMENT, LEGAL_NAME, NAME_VARIANTS } from "@/lib/identity";
 import Home from "@/pages/Home";
 import About from "@/pages/About";
 import Projects from "@/pages/Projects";

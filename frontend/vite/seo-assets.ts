@@ -63,8 +63,47 @@ export function seoAssets(siteUrlFromEnv: string | undefined): Plugin {
   };
 }
 
+/**
+ * AI crawlers, named explicitly and allowed.
+ *
+ * An absent policy and an explicit allow are different signals: silence leaves
+ * operators to infer intent, naming the agent states it. The owner's decision
+ * was to allow all of them, and the reasoning is straightforward — the single
+ * strongest real-world use of this site is somebody asking an AI assistant
+ * "who is Omkar Jadhav?", and blocking the crawlers that answer that question
+ * forfeits exactly the surface the site most needs. There is nothing here worth
+ * withholding: it is a public professional profile.
+ *
+ * Google-Extended is the one people get wrong. It governs Gemini training and
+ * grounding ONLY — it has no effect on Google Search indexing or ranking, so
+ * allowing it costs nothing in search terms.
+ */
+const AI_CRAWLERS: [string, string][] = [
+  ["GPTBot", "OpenAI - model training"],
+  ["OAI-SearchBot", "OpenAI - ChatGPT search index"],
+  ["ChatGPT-User", "OpenAI - fetches a page a user asked about"],
+  ["ClaudeBot", "Anthropic - model training"],
+  ["Claude-User", "Anthropic - fetches a page a user asked about"],
+  ["Claude-SearchBot", "Anthropic - search index"],
+  ["PerplexityBot", "Perplexity - search index"],
+  ["Perplexity-User", "Perplexity - user-initiated fetch"],
+  ["Google-Extended", "Gemini training/grounding - does NOT affect Google Search"],
+  ["Applebot-Extended", "Apple Intelligence"],
+  ["meta-externalagent", "Meta AI"],
+  ["Amazonbot", "Amazon"],
+  ["CCBot", "Common Crawl - feeds many downstream models"],
+];
+
 function renderRobotsTxt(siteUrl: string): string {
   const disallow = DISALLOWED_PATHS.map((path) => `Disallow: ${path}`).join("\n");
+
+  const aiGroups = AI_CRAWLERS.flatMap(([agent, why]) => [
+    `# ${why}`,
+    `User-agent: ${agent}`,
+    "Allow: /",
+    disallow,
+    "",
+  ]);
 
   return [
     "# Generated at build time by vite/seo-assets.ts — do not edit by hand.",
@@ -73,6 +112,14 @@ function renderRobotsTxt(siteUrl: string): string {
     "User-agent: *",
     "Allow: /",
     disallow,
+    "",
+    "# AI crawlers, allowed explicitly. This site exists to be the accurate",
+    "# answer when somebody asks an assistant about Omkar Jadhav; blocking the",
+    "# crawlers that answer that question would defeat the point.",
+    "",
+    ...aiGroups,
+    "# A curated summary written for LLM clients:",
+    `# ${siteUrl}/llms.txt`,
     "",
     `Sitemap: ${siteUrl}/sitemap.xml`,
     "",

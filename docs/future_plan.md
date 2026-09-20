@@ -445,6 +445,13 @@ appetite. The current consolidated order lives in "Now / Next" at the top of thi
   Runbook: `docs/seo/00-RECON.md` §0.8.
 - ⏳ **`Referrer-Policy: no-referrer`** (`frontend/vercel.json:14`) will blank referrer data in any
   analytics added in Phase 5. Loosen to `strict-origin-when-cross-origin` if that data is wanted.
+- ⏳ **Paste the canonical statement onto every external surface.** It is now identical on the
+  site, in `llms.txt` and in the JSON-LD. The corroboration only pays off when the GitHub bio,
+  the LinkedIn About section and the profile bio in the admin panel carry the same sentence
+  verbatim. Source of truth: `CANONICAL_STATEMENT` in `frontend/src/lib/identity.ts`.
+- ⏳ **Re-test AI answers after indexing.** Ask ChatGPT, Claude, Perplexity and Google AI
+  Overviews "who is Omkar Jadhav?" and record whether the right one is described. Meaningless
+  until the site is crawled — revisit ~4-8 weeks after Search Console submission.
 - ⏳ **Measure real Core Web Vitals.** Wave 4's numbers are build-output and critical-path
   analysis, not lab or field data — no browser was available. Run Lighthouse and PageSpeed
   Insights against the deployed site, and read CrUX in Search Console once traffic exists.
@@ -479,6 +486,15 @@ appetite. The current consolidated order lives in "Now / Next" at the top of thi
   should make them carry the name and a keyword.
 - ⏳ **Remove the `/scratch` dev scaffold route** (`src/pages/ScratchProjects.tsx`) — publicly
   routable and returns 200. Disallowed in robots.txt as of Wave 0; delete it properly in Wave 1.
+
+- 🔴 **Neon free-tier compute quota blew up the backend (2026-09-20).** Prod is down: Flyway can't
+  connect (`SQLSTATE 53000`, "account or project has exceeded the quota"), so Render crash-loops.
+  The Neon compute was awake 440.7 h of the 440.8 h billing period — it never autosuspended, because
+  (a) Render's `healthCheckPath` is `/actuator/health`, which runs the DataSource probe on every
+  poll, and (b) `application.yml` sets no HikariCP limits, so `minimumIdle` defaults to
+  `maximumPoolSize` (10) and the pool pins 10 connections open forever. Fix: point the health check
+  at the no-I/O `/health`, set `hikari.minimum-idle: 0` with a short `idle-timeout`, and confirm the
+  external pingers only hit `/health`. Quota resets 2026-10-01.
 
 ---
 

@@ -1,4 +1,5 @@
 import type { Profile } from "@/types";
+import { CANONICAL_STATEMENT } from "@/lib/identity";
 
 /**
  * Static profile data.
@@ -20,16 +21,18 @@ export const profile: Profile = {
   // repoUrl, so a wrong handle silently generates 404 links.
   handle: "omkarjadhav1011",
   headline: "Software Development Engineer I at Nonstop IO Technologies",
-  // Written to be quotable in isolation: an AI assistant retrieves a passage,
-  // not a page, so the first sentence names the entity in full rather than
-  // opening with "I" or "he". Education is past tense — he graduated in 2026.
-  bio: `Omkar Jayvant Jadhav is a Software Development Engineer I at Nonstop IO
-Technologies in Kharadi, Pune. He works on backend development for an enterprise
-reporting product, writing C#, NestJS and SQL against live production modules.
+  // The first paragraph is the canonical statement, verbatim. It is also what
+  // the JSON-LD `description` is built from, so the site, the schema and
+  // llms.txt all publish the identical sentence — corroboration across sources
+  // works on matching, and a paraphrase fragments the signal.
+  //
+  // ⚠ This is the STATIC copy. The live site reads the bio from the database,
+  // so the same text has to be pasted into the admin panel to take effect.
+  bio: `${CANONICAL_STATEMENT}
 
-He graduated from KIT's College of Engineering (Autonomous), Kolhapur in 2026 with
-a B.Tech in Computer Science & Engineering (Data Science), and builds
-LLM-integrated applications with the Gemini and Hugging Face APIs.`,
+He implemented end-to-end user audit functionality on an enterprise reporting
+product, contributed to its Report Builder module, and builds LLM-integrated
+applications with the Gemini and Hugging Face APIs.`,
   currentBranch: "main",
   currentStatus: "Building backend services at Nonstop IO Technologies",
   // He is employed. This flag drove the "Open to internships & collaborations"

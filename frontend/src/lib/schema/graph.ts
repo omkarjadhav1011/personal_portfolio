@@ -31,6 +31,7 @@
  */
 
 import { crumbsFor } from "@/lib/breadcrumbs";
+import { LEGAL_NAME, NAME_VARIANTS } from "@/lib/identity";
 
 /** Minimal JSON-LD shapes. Deliberately loose: schema.org is not a closed set. */
 export type JsonLdValue = string | number | boolean | null | JsonLdNode | JsonLdValue[];
@@ -110,25 +111,6 @@ export interface GraphInput {
 }
 
 // ─── Constants that are facts, not page content ──────────────────────────────
-
-/**
- * His full legal name. Not read from the profile record because that field holds
- * the common form ("Omkar Jadhav") that the site displays everywhere.
- *
- * This is the single most valuable string in the graph. "Omkar Jadhav" is shared
- * with at least fifteen software engineers; "Omkar Jayvant Jadhav" is effectively
- * unique. It is visible on the page — the biography opens with it — so marking it
- * up is legitimate.
- */
-const LEGAL_NAME = "Omkar Jayvant Jadhav";
-
-/**
- * Name variants worth resolving to this entity, including one common
- * misspelling. Deliberately NOT included: strings like "Omkar Jadhav Pune" or
- * "Omkar Jadhav KIT Kolhapur". Those are search queries, not names, and putting
- * them here would be keyword stuffing in structured data.
- */
-const NAME_VARIANTS = ["Omkar J. Jadhav", "Omkar Jaywant Jadhav"];
 
 /**
  * Institution names exactly as the institutions write them, with the @id each
