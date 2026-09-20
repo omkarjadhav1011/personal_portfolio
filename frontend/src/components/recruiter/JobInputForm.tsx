@@ -12,13 +12,13 @@ frontend and a Java/Spring Boot backend. You'll design REST APIs, model data in
 PostgreSQL, and ship to cloud infrastructure with CI/CD.
 
 Requirements:
-- 3+ years building production web applications
-- Strong React, TypeScript, and modern CSS
-- Java + Spring Boot (or similar backend framework)
-- PostgreSQL schema design and query tuning
-- Docker and cloud deployment experience
+- Backend development in C# or TypeScript/NestJS
+- Strong SQL: query tuning, reporting and audit-log workloads
+- REST API design and integration
+- Relational schema design (PostgreSQL or MySQL)
+- Git, Docker, and a working knowledge of CI
 
-Nice to have: LLM/RAG integrations, security hardening, OAuth2/JWT auth flows.`;
+Nice to have: React, Spring Boot, LLM API integration, OAuth2/JWT auth flows.`;
 
 interface JobInputFormProps {
   value: string;

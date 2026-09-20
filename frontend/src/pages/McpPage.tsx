@@ -70,10 +70,10 @@ export default function McpPage() {
             MCP Server
           </h1>
           <p className="text-text-muted text-sm sm:text-base font-mono max-w-2xl leading-relaxed">
-            This portfolio runs a public, read-only{" "}
+            Omkar Jadhav&apos;s portfolio runs a public, read-only{" "}
             <strong className="text-text-primary">Model Context Protocol</strong> server. Point your
-            own AI assistant at it and ask whether I&apos;m a fit — it pulls real, current data
-            straight from my portfolio instead of guessing.
+            own AI assistant at it and ask whether he is a fit for your role — it pulls real,
+            current data straight from the portfolio instead of guessing.
           </p>
         </ScrollReveal>
 
@@ -83,9 +83,10 @@ export default function McpPage() {
             <p className="mb-2 text-git-green"># what is this?</p>
             <p>
               MCP is an open standard that lets AI apps (like Claude Desktop) discover and call
-              external <span className="text-text-primary">tools</span>. This server exposes my
-              portfolio as read-only tools, so a recruiter&apos;s AI can evaluate me using live,
-              accurate data. It&apos;s read-only and public — no account, nothing to install on my side.
+              external <span className="text-text-primary">tools</span>. This server exposes Omkar
+              Jadhav&apos;s projects, skills and experience as read-only tools, so a recruiter&apos;s
+              AI can evaluate him using live, accurate data. It&apos;s read-only and public — no
+              account, nothing to install.
             </p>
           </div>
         </ScrollReveal>

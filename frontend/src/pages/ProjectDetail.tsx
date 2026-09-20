@@ -83,6 +83,19 @@ export default function ProjectDetail() {
                   </h1>
                 </div>
                 <p className="text-text-muted text-sm">{project.description}</p>
+                {/* Author byline. Two jobs: it names the entity on a page that
+                    otherwise only ever says "this project" (an AI assistant
+                    retrieves a passage, not a page, so an unnamed one is
+                    unusable), and it is the visible content that Wave 2's
+                    SoftwareSourceCode.author must mirror — schema may only
+                    claim what a reader can see. */}
+                <p className="mt-2 text-xs text-text-faint">
+                  A project by{" "}
+                  <Link to="/" className="text-text-muted hover:text-git-green transition-colors">
+                    Omkar Jadhav
+                  </Link>
+                  {project.language ? ` · ${project.language}` : ""}
+                </p>
               </div>
               <span
                 className={`text-xs px-2.5 py-1 rounded-full border font-mono ${STATUS_COLORS[project.status] ?? ""}`}

@@ -10,13 +10,15 @@ interface TechPick {
   tint: string;
 }
 
+// Visible on the About section, so this is a public skill claim and must stay
+// inside the confirmed skills list (rulebook E3/E10). Next.js was removed here.
 const TECH_PICKS_FALLBACK: TechPick[] = [
+  { name: "C#", glyph: "#", tint: "#9b4f96" },
+  { name: "NestJS", glyph: "Ns", tint: "#e0234e" },
+  { name: "SQL", glyph: "◧", tint: "#e38c00" },
   { name: "TypeScript", glyph: "TS", tint: "#3178c6" },
   { name: "React", glyph: "⚛", tint: "#61dafb" },
-  { name: "Next.js", glyph: "▲", tint: "#ffffff" },
-  { name: "Tailwind", glyph: "≈", tint: "#38bdf8" },
-  { name: "Python", glyph: "🐍", tint: "#3776ab" },
-  { name: "Node.js", glyph: "⬢", tint: "#3c873a" },
+  { name: "Spring Boot", glyph: "🌿", tint: "#6db33f" },
   { name: "PostgreSQL", glyph: "◆", tint: "#336791" },
   { name: "Git", glyph: "⎇", tint: "#f05033" },
 ];

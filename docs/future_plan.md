@@ -239,6 +239,10 @@ directly."). Recruiter leads keep their own per-IP bucket; this cap is contact-f
 - `oauth2_mfa_admin_hardening_plan.md` — OAuth2 + TOTP MFA + admin hardening (largely shipped; kept
   for reference).
 - 💭 **Resume builder** — Phase 1 (upload + serve) shipped; a full structured resume builder is planned.
+- 📝 **`docs/SETUP.md` header is stale** — it still says "Spring Boot 3.3.5" and "React + Vite"
+  while `pom.xml` is on 3.5.15; it also predates the LLM chain / MCP / telemetry subsystems, so its
+  prerequisite + `.env` sections need a refresh pass (surfaced while writing the root `README.md`,
+  2026-09-02).
 
 ## AI assistant / RAG (LLM_plan.md)
 
@@ -384,6 +388,82 @@ already in this file are marked *(expands existing entry above)*.
 
 **Recommended order:** ~~B1~~ ~~A2~~ (done) → B2/B3 (same sitting) → A1 → C2 → then pick by
 appetite. The current consolidated order lives in "Now / Next" at the top of this file.
+
+---
+
+- 💭 **Simple-portfolio branch (`release/simple-portfolio`, at `eb90d36`).** A pre-AI cut of the site
+  (portfolio + admin + OAuth2/MFA + vault, no chatbot/recruiter-agent/MCP/LLM-failover) kept
+  deployable side by side with the live site. Render blueprint resources renamed to
+  `portfolio-simple-db` / `portfolio-simple-backend`, and `DataSeeder` is re-enabled behind a new
+  `SEED_DEMO_DATA` flag so a fresh database isn't blank. Deferred: no Render CLI or MCP is
+  configured locally, so creating that Blueprint is a manual dashboard step; `/recruiter` is still
+  routable on that branch and errors without `GEMINI_API_KEY` — hide the route if the simple deploy
+  goes public; and `SEED_DEMO_DATA` must be flipped to false once real content is curated, since
+  the per-row seed guards otherwise resurrect deleted placeholders on every restart.
+
+---
+
+- 💭 **Postgres moved off Render to Neon (2026-09-02).** Render's free Postgres expires 30 days after
+  creation, so prod now runs on Neon (`aws-us-west-2`, pgvector 0.8.0, forever-free, auto-resume from
+  idle). The backend connects via `DATABASE_URL` as a full JDBC URL against Neon's **direct** endpoint —
+  not the `-pooler` one, whose PgBouncer transaction mode breaks Flyway advisory locks and Hibernate
+  prepared statements. Deferred: `render.yaml` still describes a `fromDatabase`-wired Render Postgres and
+  no longer matches production — update it (or drop it) so a future Blueprint sync can't recreate the old
+  pair; Neon's free plan caps at 0.5 GB / 100 CU-hours, worth watching if the vault or embeddings grow.
+
+---
+
+- 💭 **Keep-alive pinger not yet created (2026-09-02).** `GET /health` ships and is live on
+  `portfolio-backend-sfzm`, but nothing pings it yet, so the free service still cold-starts after
+  15 idle minutes. Deferred because it's a manual dashboard step: cron-job.org every 10 min
+  (primary), UptimeRobot every 5 min (backup) — steps in `DEPLOY.md`. Ping only **one** free
+  service: the 750 instance-hours/month quota is per workspace and a full month is 744 h, so a
+  second warm service exhausts it mid-month and Render suspends both.
+
+---
+
+## SEO overhaul (`seo/overhaul` branch — see `docs/seo/`)
+
+- ⏳ **Replace the resume PDF served at `/api/profile/resume`.** The live `Omkar_Jadhav_Ace.pdf`
+  still carries the old phone number, "final-year student", "seeking a role", and Next.js /
+  FastAPI / ChromaDB / RAG. Needs a regenerated PDF uploaded through the admin panel — only the
+  owner can do this. Blocks Wave 3. (`docs/seo/00-RECON.md` §9.6)
+- ⏳ **Confirm the real LinkedIn URL.** The one published today resolves to a different person;
+  the resume cites `linkedin.com/in/omkar-jadhav-st`. Blocks the `sameAs` graph in Wave 2.
+- ⏳ **LeetCode profile URL** never supplied — omitted from `sameAs`, and the "210+ problems"
+  claim stays off the site until there is a profile to link.
+- ⏳ **Real descriptions for `crop-recommendation` and `dev-mobiles`.** Both were kept, but their
+  only copy is fabricated demo-seed text and `dev-mobiles` credits an employer being deleted.
+- ⏳ **Per-page `<lastmod>` in the sitemap.** Deliberately omitted in Wave 0 — a build date is not
+  a content change. Add real dates when the prerender step knows per-page content mtimes.
+- ⏳ **Project detail routes in the sitemap.** `/projects/:slug` is dynamic; concrete slugs get
+  enumerated once prerendering resolves them at build time (Wave 1/3).
+- ⏳ **Admin content edits must trigger a Vercel deploy hook.** Once content is prerendered at
+  build time, editing via the admin panel no longer reaches the served HTML without a rebuild.
+- ⏳ **Custom domain purchase.** Treated as certain. Buy it *before* Wave 5 content work — every
+  week on the `vercel.app` subdomain accrues authority to an address that will be abandoned.
+  Runbook: `docs/seo/00-RECON.md` §0.8.
+- ⏳ **`Referrer-Policy: no-referrer`** (`frontend/vercel.json:14`) will blank referrer data in any
+  analytics added in Phase 5. Loosen to `strict-origin-when-cross-origin` if that data is wanted.
+- ⏳ **Self-host JetBrains Mono.** The Google Fonts stylesheet in `index.html` is render-blocking.
+  Wave 4.
+- ⏳ **Verify client hydration in a real browser.** Wave 1 prerenders every public route and
+  `main.tsx` now hydrates instead of re-rendering. The server HTML is verified; hydration is NOT —
+  no browser was available. Run `npm run preview` and check the console for React hydration
+  warnings before deploying.
+- ⏳ **Admin panel content fixes.** The live database still holds the stale profile, the Dnyanda
+  role, the fabricated project metrics and the Next.js skill. The prerender content guard blocks
+  a deploy until they are corrected at `/admin`.
+- ⏳ **Certification dates unconfirmed** (Jan 2023 / Mar 2023 carried over unverified; the AI/ML
+  bootcamp has none). Confirm or reduce all three to year-only.
+- ⏳ **Skills removed pending a decision:** Tailwind CSS, C++, MongoDB, NumPy, Pandas,
+  Scikit-learn, Jupyter. They were on the site but are absent from the confirmed skills list.
+- ⏳ **Two project descriptions are DRAFT** (`crop-recommendation`, `Mobile_Shop`) — reconstructed
+  by reading the repositories, not supplied by the owner. Review before publishing.
+- ⏳ **`/mcp` and `/projects/:slug` h1s are weak** ("MCP Server", the bare repo name). Wave 3
+  should make them carry the name and a keyword.
+- ⏳ **Remove the `/scratch` dev scaffold route** (`src/pages/ScratchProjects.tsx`) — publicly
+  routable and returns 200. Disallowed in robots.txt as of Wave 0; delete it properly in Wave 1.
 
 ---
 

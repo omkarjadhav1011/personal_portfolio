@@ -7,12 +7,11 @@ import { RouteError } from "@/routes/RouteError";
 import { NotFound } from "@/routes/NotFound";
 import Home from "@/pages/Home";
 
-// Lazy-loaded routes keep admin + recruiter + detail/scratch out of the initial
+// Lazy-loaded routes keep admin + recruiter + detail out of the initial
 // public bundle (Suspense fallbacks live in RootLayout/MainLayout/AdminLayout).
 const ProjectDetail = lazy(() => import("@/pages/ProjectDetail"));
 const RecruiterPage = lazy(() => import("@/pages/RecruiterPage"));
 const McpPage = lazy(() => import("@/pages/McpPage"));
-const ScratchProjects = lazy(() => import("@/pages/ScratchProjects"));
 const Login = lazy(() => import("@/pages/admin/Login"));
 const OAuthCallback = lazy(() => import("@/pages/admin/OAuthCallback"));
 const MfaVerify = lazy(() => import("@/pages/admin/MfaVerify"));
@@ -73,7 +72,6 @@ export const router = createBrowserRouter([
           },
         ],
       },
-      { path: "scratch", element: <ScratchProjects /> },
       { path: "*", element: <NotFound /> },
     ],
   },
