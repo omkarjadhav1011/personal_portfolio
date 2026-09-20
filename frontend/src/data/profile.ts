@@ -48,13 +48,16 @@ LLM-integrated applications with the Gemini and Hugging Face APIs.`,
       url: "https://leetcode.com/u/jadhav_omkar1013/",
       icon: "leetcode",
     },
-    // ⚠ LinkedIn is deliberately absent. The URL previously published here
-    // (linkedin.com/in/omkarjadhav) resolves to a DIFFERENT person — an Omkar
-    // Jadhav at Dropouts Technologies LLP, University of Pune 2005-2009. A
-    // profile link is an identity claim: publishing the wrong one tells Google
-    // to merge this entity with a stranger's, which is worse than having no
-    // link at all. The resume PDF cites linkedin.com/in/omkar-jadhav-st;
-    // restore the entry once the correct URL is confirmed by the owner.
+    // Confirmed by the owner. Note this is NOT linkedin.com/in/omkarjadhav,
+    // which was published here for months and belongs to a different Omkar
+    // Jadhav (Dropouts Technologies LLP, University of Pune 2005-2009). A
+    // profile link is an identity claim, and a wrong one tells Google to merge
+    // this entity with a stranger's. Do not "simplify" this slug.
+    {
+      label: "LinkedIn",
+      url: "https://www.linkedin.com/in/omkar-jadhav-st/",
+      icon: "linkedin",
+    },
   ],
   funFacts: [
     "Solved 210+ problems on LeetCode",

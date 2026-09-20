@@ -132,11 +132,13 @@ describe("JSON-LD entity graph", () => {
 
     expect(sameAs).toContain("https://github.com/omkarjadhav1011");
     expect(sameAs).toContain("https://leetcode.com/u/jadhav_omkar1013/");
+    expect(sameAs).toContain("https://www.linkedin.com/in/omkar-jadhav-st/");
 
-    // linkedin.com/in/omkarjadhav belongs to a different Omkar Jadhav. A wrong
+    // The bare in/omkarjadhav slug belongs to a DIFFERENT Omkar Jadhav. A wrong
     // sameAs does not merely fail to help — it tells Google to merge this
-    // entity with a stranger's, and reciprocity will never verify.
-    expect(sameAs.some((u) => u.includes("linkedin.com/in/omkarjadhav"))).toBe(false);
+    // entity with a stranger's, and reciprocity will never verify. This guards
+    // against anyone "tidying" the URL back to the shorter form.
+    expect(sameAs.some((u) => /linkedin\.com\/in\/omkarjadhav/.test(u))).toBe(false);
     // He does not own an X/Twitter account.
     expect(sameAs.some((u) => /twitter\.com|x\.com/.test(u))).toBe(false);
   });

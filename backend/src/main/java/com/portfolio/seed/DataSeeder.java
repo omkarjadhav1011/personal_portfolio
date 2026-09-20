@@ -94,13 +94,15 @@ public class DataSeeder implements CommandLineRunner {
         p.setEmail("jadhavomkar101103@gmail.com");
         p.setLocation("Pune, Maharashtra, India");
         // A profile link is an identity claim, so only confirmed ones belong here.
-        // Removed: an X/Twitter account he does not own, and a LinkedIn URL that
-        // resolves to a different Omkar Jadhav (Dropouts Technologies LLP) --
-        // publishing that would tell Google to merge him with a stranger.
-        // LinkedIn returns once the correct URL is confirmed.
+        // Removed: an X/Twitter account he does not own. The LinkedIn slug is
+        // omkar-jadhav-st, NOT the shorter in/omkarjadhav that was published for
+        // months -- that one belongs to a different Omkar Jadhav (Dropouts
+        // Technologies LLP), and a wrong sameAs tells Google to merge him with a
+        // stranger. Do not "simplify" this URL.
         p.setSocials(List.of(
                 new SocialLink("GitHub", "https://github.com/omkarjadhav1011", "github"),
-                new SocialLink("LeetCode", "https://leetcode.com/u/jadhav_omkar1013/", "leetcode")));
+                new SocialLink("LeetCode", "https://leetcode.com/u/jadhav_omkar1013/", "leetcode"),
+                new SocialLink("LinkedIn", "https://www.linkedin.com/in/omkar-jadhav-st/", "linkedin")));
         // Replaced template filler with claims that are actually verifiable.
         p.setFunFacts(List.of(
                 "Solved 210+ problems on LeetCode",
