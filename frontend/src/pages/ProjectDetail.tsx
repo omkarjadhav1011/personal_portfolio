@@ -60,6 +60,32 @@ export default function ProjectDetail() {
           git checkout main
         </Link>
 
+        {/* Visible breadcrumb trail. Required before the BreadcrumbList in the
+            JSON-LD graph is legitimate: structured data may only describe what a
+            reader can actually see, and the positions and labels here must match
+            the schema's item for item. Styled as a path to fit the terminal
+            theme, but it is a real <nav> with real links, so a crawler reads it
+            as hierarchy and it is keyboard navigable. */}
+        <nav aria-label="Breadcrumb" className="mt-4 font-mono text-xs text-text-faint">
+          <ol className="flex flex-wrap items-center gap-1.5">
+            <li>
+              <Link to="/" className="hover:text-git-green transition-colors">
+                Home
+              </Link>
+            </li>
+            <li aria-hidden="true">/</li>
+            <li>
+              <Link to="/#projects" className="hover:text-git-green transition-colors">
+                Projects
+              </Link>
+            </li>
+            <li aria-hidden="true">/</li>
+            <li className="text-text-muted" aria-current="page">
+              {project.repoName}
+            </li>
+          </ol>
+        </nav>
+
         {/* Project header */}
         <div className="rounded-xl border border-terminal-border bg-terminal-surface overflow-hidden shadow-terminal">
           {/* Terminal title bar */}

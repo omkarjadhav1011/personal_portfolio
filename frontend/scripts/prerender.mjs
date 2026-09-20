@@ -174,7 +174,7 @@ function absolute(route) {
  * runs during server rendering and is invisible to a crawler regardless. Until
  * this step existed, every URL on the site served one identical <head>.
  */
-function buildPage(template, { markup, seed, title, description, canonical, noindex }) {
+function buildPage(template, { markup, seed, title, description, canonical, noindex, jsonLd }) {
   let html = template;
 
   html = html.replace(
@@ -203,6 +203,17 @@ function buildPage(template, { markup, seed, title, description, canonical, noin
     /<meta property="og:url"[^>]*\/>/,
     `<meta property="og:url" content="${escapeAttr(canonical)}" />`,
   );
+
+  if (jsonLd) {
+    // Emitted in <head>, once per page, carrying the whole @graph. Every node
+    // has a stable @id and cross-references it, so several pages describing the
+    // same Person contribute evidence to ONE entity rather than creating
+    // several competing ones.
+    html = html.replace(
+      "</head>",
+      `  <script type="application/ld+json">${toScriptJson(jsonLd)}</script>\n  </head>`,
+    );
+  }
 
   if (noindex) {
     html = html.replace(
@@ -266,7 +277,7 @@ function writeSitemap(routes) {
 }
 
 async function main() {
-  const { render, normalizeSiteUrl } = await import(pathToFileURL(ssrEntry).href);
+  const { render, normalizeSiteUrl, buildGraph } = await import(pathToFileURL(ssrEntry).href);
   SITE_URL = normalizeSiteUrl(env.VITE_SITE_URL);
 
   console.log(`[prerender] site:    ${SITE_URL}`);
@@ -286,7 +297,10 @@ async function main() {
     seed.push({ key: endpoint.key, data });
   }
 
-  const projects = seed.find((s) => s.key[0] === "projects")?.data ?? [];
+  const seeded = (name) => seed.find((s) => s.key[0] === name)?.data ?? [];
+  const projects = seeded("projects");
+  const experience = seeded("experience");
+  const skillBranches = seeded("skill-branches");
   const projectRoutes = projects
     .map((p) => p?.slug)
     .filter(Boolean)
@@ -364,11 +378,24 @@ async function main() {
       );
     }
 
+    // One graph per page, built from the same payload that rendered the
+    // visible markup — structured data may only claim what a reader can see.
+    const jsonLd = buildGraph({
+      siteUrl: SITE_URL,
+      assetOrigin: API_URL,
+      route: page.route,
+      profile,
+      projects,
+      experience,
+      skillBranches,
+    });
+
     const out = writePage(
       page.route,
       buildPage(template, {
         markup,
         seed,
+        jsonLd,
         title: page.title,
         description: page.description,
         canonical: absolute(page.route),

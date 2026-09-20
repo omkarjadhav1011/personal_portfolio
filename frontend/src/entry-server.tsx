@@ -15,6 +15,9 @@ import { NotFound } from "@/routes/NotFound";
 // Re-exported so scripts/prerender.mjs (plain Node, cannot import TypeScript)
 // validates VITE_SITE_URL with the very same function the app uses.
 export { normalizeSiteUrl } from "@/lib/site-url";
+// The JSON-LD graph is built at prerender time and injected into <head>,
+// where structured data belongs, so it is re-exported for the same reason.
+export { buildGraph } from "@/lib/schema/graph";
 import Home from "@/pages/Home";
 import ProjectDetail from "@/pages/ProjectDetail";
 import RecruiterPage from "@/pages/RecruiterPage";
