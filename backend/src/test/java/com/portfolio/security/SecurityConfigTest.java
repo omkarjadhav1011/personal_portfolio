@@ -89,6 +89,13 @@ class SecurityConfigTest {
     }
 
     @Test
+    void unauthenticatedAdminTelemetryAccessIsRejected() throws Exception {
+        // Lead-capture D3: engagement data is owner-only — another GET under /api/admin/**
+        // that must never slip through the public GET /** catch-all.
+        mvc.perform(get("/api/admin/telemetry")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void unauthenticatedDriveAccessIsRejected() throws Exception {
         // The keystone: drive reads AND writes are ADMIN-only — a GET must not slip through the
         // public GET /** catch-all. (No controller is wired here, but security runs first → 401.)

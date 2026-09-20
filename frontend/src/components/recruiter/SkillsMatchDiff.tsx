@@ -51,7 +51,7 @@ export function SkillsMatchDiff({ matched, gaps }: SkillsMatchDiffProps) {
             <div key={`-${i}`} className={rowClass}>
               <span className={`${textClass} font-bold w-3 shrink-0`}>−</span>
               <span className={textClass}>{g.name}</span>
-              <span className={`${noteClass} text-xs ml-auto`}>
+              <span className={`${noteClass} text-xs ml-auto truncate max-w-[60%]`}>
                 # {g.importance}
               </span>
             </div>

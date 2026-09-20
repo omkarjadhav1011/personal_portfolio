@@ -5,6 +5,21 @@ import { LoadingButton } from "@/components/ui/LoadingButton";
 import { cn } from "@/lib/utils";
 import { JD_MAX, JD_MIN } from "@/lib/recruiter/types";
 
+const SAMPLE_JD = `Senior Full-Stack Engineer at AcmeCorp
+
+We're looking for an engineer to own features end-to-end across a React + TypeScript
+frontend and a Java/Spring Boot backend. You'll design REST APIs, model data in
+PostgreSQL, and ship to cloud infrastructure with CI/CD.
+
+Requirements:
+- Backend development in C# or TypeScript/NestJS
+- Strong SQL: query tuning, reporting and audit-log workloads
+- REST API design and integration
+- Relational schema design (PostgreSQL or MySQL)
+- Git, Docker, and a working knowledge of CI
+
+Nice to have: React, Spring Boot, LLM API integration, OAuth2/JWT auth flows.`;
+
 interface JobInputFormProps {
   value: string;
   onChange: (next: string) => void;
@@ -55,7 +70,7 @@ export function JobInputForm({
           disabled={loading}
           rows={12}
           maxLength={JD_MAX + 200}
-          className="w-full resize-y bg-transparent p-4 text-sm font-mono text-text-primary placeholder-text-faint outline-none focus-visible:ring-1 focus-visible:ring-git-green/40 disabled:opacity-60 leading-relaxed min-h-[220px]"
+          className="w-full resize-y bg-transparent p-4 text-base sm:text-sm font-mono text-text-primary placeholder-text-faint outline-none focus-visible:ring-1 focus-visible:ring-git-green/40 disabled:opacity-60 leading-relaxed min-h-[220px]"
           spellCheck={false}
         />
       </div>
@@ -68,17 +83,34 @@ export function JobInputForm({
 
       <div className="flex items-center justify-between gap-3">
         <p className="text-text-faint text-[11px] font-mono">
-          {tooShort
-            ? `at least ${JD_MIN} chars please`
-            : tooLong
-              ? `over the ${JD_MAX} char limit`
-              : "we don't store anything — submissions are ephemeral"}
+          {tooShort ? (
+            `at least ${JD_MIN} chars please`
+          ) : tooLong ? (
+            `over the ${JD_MAX} char limit`
+          ) : (
+            <>
+              we don&apos;t store anything — submissions are ephemeral
+              {len === 0 && (
+                <>
+                  {" · "}
+                  <button
+                    type="button"
+                    onClick={() => onChange(SAMPLE_JD)}
+                    className="text-git-blue hover:underline cursor-pointer focus-visible:ring-1 focus-visible:ring-git-green/40 rounded outline-none"
+                  >
+                    or try a sample JD
+                  </button>
+                </>
+              )}
+            </>
+          )}
         </p>
         <LoadingButton
           type="submit"
           loading={loading}
           loadingText="Analyzing…"
           disabled={!canSubmit}
+          className="shrink-0 whitespace-nowrap"
         >
           <Sparkles size={12} />
           Analyze fit

@@ -2,70 +2,72 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Webfont ──────────────────────────────────────────────────
+   Self-hosted, replacing the Google Fonts <link> that used to sit in
+   index.html. That link was render-blocking and put a third-party DNS
+   lookup, TLS handshake and stylesheet fetch on the critical path before
+   the first paint; `preconnect` reduced that cost but could not remove it.
+
+   One file covers every weight: Google serves JetBrains Mono as a variable
+   font, and the three "separate" weight files it returns are byte-identical.
+   Requesting the 100..800 axis directly gets 39.5 KB instead of 92 KB, and
+   one request instead of three.
+
+   Latin subset only — the site is English. Glyphs outside it (⑂ ✦ ⌬) are not
+   in JetBrains Mono at all and fall through to the stack below regardless.
+
+   font-display: swap renders immediately in the fallback and swaps on load,
+   so the webfont never blocks text. `size-adjust` tunes the fallback's
+   metrics toward JetBrains Mono's so that swap causes as little reflow as
+   possible — swap WITHOUT a metric-matched fallback is itself a common
+   source of layout shift.                                                   */
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url("/fonts/jetbrains-mono-latin-var.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Metric-adjusted stand-in used while the webfont loads. */
+@font-face {
+  font-family: "JetBrains Mono Fallback";
+  src: local("Consolas"), local("Menlo"), local("DejaVu Sans Mono"), local("monospace");
+  size-adjust: 100%;
+  ascent-override: 102%;
+  descent-override: 30%;
+  line-gap-override: 0%;
+}
+
 /* ─── Theme Variables ──────────────────────────────────────── */
 /*  Store as space-separated RGB triplets so Tailwind's
-    opacity-modifier syntax (bg-terminal-bg/80) keeps working.  */
+    opacity-modifier syntax (bg-terminal-bg/80) keeps working.
+    Dark-only: the light theme was removed on purpose.          */
 
 :root {
-  /* Font stacks — replace Next.js next/font CSS variables.
-     Backing webfonts are loaded via <link> in index.html. */
-  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+  /* Font stacks. The webfont is self-hosted — see the @font-face above.
+     "JetBrains Mono Fallback" sits between the real face and the generic
+     stack so the pre-swap render is close to the final metrics. */
+  --font-mono: "JetBrains Mono", "JetBrains Mono Fallback", "Fira Code", monospace;
   /* GitHub's native UI font stack — matches github.com chrome/body text. */
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
 
-  /* Surfaces — Light theme (GitHub Light) */
-  --color-terminal-bg: 255 255 255;
-  --color-terminal-surface: 246 248 250;
-  --color-terminal-window: 255 255 255;
-  --color-terminal-border: 208 215 222;
-
-  /* Text — Light theme */
-  --color-text-primary: 31 35 40;
-  --color-text-secondary: 55 65 81;
-  --color-text-muted: 101 109 118;
-  --color-text-faint: 175 184 193;
-
-  /* Accents — Light theme (darkened for readability on white) */
-  --color-git-green: 26 127 55;
-  --color-git-green-dim: 26 127 55;
-  --color-git-green-muted: 218 251 225;
-  --color-git-blue: 9 105 218;
-  --color-git-blue-dim: 9 105 218;
-  --color-git-orange: 191 87 0;
-  --color-git-red: 207 34 46;
-  --color-git-purple: 130 80 223;
-  --color-git-yellow: 154 103 0;
-
-  /* macOS window chrome dots — semantic, not themeable */
-  --color-dot-red:    255 95 87;
-  --color-dot-yellow: 254 188 46;
-  --color-dot-green:  40 200 64;
-
-  /* Misc */
-  --color-selection-bg: 46 164 79 / 0.2;
-  --color-selection-text: 31 35 40;
-  --color-shadow-alpha: 0 0 0 / 0.1;
-  --color-scanline: 0 0 0 / 0.02;
-  --color-statusbar-bg: 0 122 204;
-  --color-text-glow: 26 127 55 / 0.3;
-
-  color-scheme: light;
-}
-
-.dark {
-  /* Surfaces — Dark theme (GitHub Dark) */
+  /* Surfaces — GitHub Dark */
   --color-terminal-bg: 13 17 23;
   --color-terminal-surface: 22 27 34;
   --color-terminal-window: 26 26 46;
   --color-terminal-border: 48 54 61;
 
-  /* Text — Dark theme */
+  /* Text */
   --color-text-primary: 230 237 243;
   --color-text-secondary: 201 209 217;
   --color-text-muted: 139 148 158;
   --color-text-faint: 72 79 88;
 
-  /* Accents — Dark theme (bright for dark backgrounds) */
+  /* Accents (bright for dark backgrounds) */
   --color-git-green: 0 255 136;
   --color-git-green-dim: 35 134 54;
   --color-git-green-muted: 26 71 49;
@@ -75,6 +77,11 @@
   --color-git-red: 255 123 114;
   --color-git-purple: 210 168 255;
   --color-git-yellow: 227 179 65;
+
+  /* macOS window chrome dots — semantic, not themeable */
+  --color-dot-red:    255 95 87;
+  --color-dot-yellow: 254 188 46;
+  --color-dot-green:  40 200 64;
 
   /* Misc */
   --color-selection-bg: 0 255 136 / 0.25;
@@ -97,6 +104,14 @@
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Keep our type scale in landscape on iOS instead of Safari's auto-inflation */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /* Focus is shown via focus-visible rings; the gray touch flash doubles it up */
+  a, button, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
@@ -138,14 +153,6 @@
     background: rgb(var(--color-selection-bg));
     color: rgb(var(--color-selection-text));
   }
-}
-
-/* ─── Theme Transition ─────────────────────────────────────── */
-html.theme-transition,
-html.theme-transition *,
-html.theme-transition *::before,
-html.theme-transition *::after {
-  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease !important;
 }
 
 /* ─── Utilities ─────────────────────────────────────────────── */

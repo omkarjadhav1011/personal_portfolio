@@ -37,7 +37,6 @@ const CATALOG: CatalogCategory[] = [
       { name: "React",       glyph: "⚛",  tint: "#61dafb" },
       { name: "Vue.js",      glyph: "V",  tint: "#42b883" },
       { name: "Angular",     glyph: "Ng", tint: "#dd0031" },
-      { name: "Next.js",     glyph: "▲",  tint: "#ffffff" },
       { name: "Svelte",      glyph: "S",  tint: "#ff3e00" },
       { name: "Tailwind",    glyph: "≈",  tint: "#38bdf8" },
       { name: "Flutter",     glyph: "◆",  tint: "#02569b" },
@@ -52,7 +51,6 @@ const CATALOG: CatalogCategory[] = [
       { name: "Node.js",     glyph: "⬢",  tint: "#3c873a" },
       { name: "Spring",      glyph: "🌿", tint: "#6db33f" },
       { name: "Django",      glyph: "Dj", tint: "#0c4b33" },
-      { name: "FastAPI",     glyph: "⚡", tint: "#009688" },
       { name: "Laravel",     glyph: "L",  tint: "#ff2d20" },
       { name: "Express",     glyph: "Ex", tint: "#68a063" },
       { name: "NestJS",      glyph: "Ns", tint: "#e0234e" },
@@ -108,7 +106,7 @@ const CATALOG: CatalogCategory[] = [
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const inputCls =
-  "w-full bg-terminal-bg border border-terminal-border rounded px-2 py-1 font-mono text-xs text-text-primary placeholder-text-faint outline-none focus:border-git-blue/50 focus-visible:ring-1 focus-visible:ring-git-blue/20 transition-colors";
+  "w-full bg-terminal-bg border border-terminal-border rounded px-2 py-1 font-mono text-base sm:text-xs text-text-primary placeholder-text-faint outline-none focus:border-git-blue/50 focus-visible:ring-1 focus-visible:ring-git-blue/20 transition-colors";
 
 function MiniChip({ item }: { item: TechPick }) {
   const isUrl = item.glyph.startsWith("http") || item.glyph.startsWith("/");
@@ -235,7 +233,7 @@ function TechRow({ item, isFirst, isLast, onUpdate, onDelete, onMoveUp, onMoveDo
   const [catalogOpen, setCatalogOpen] = useState(false);
 
   return (
-    <div className="relative flex items-center gap-2 p-2 rounded-lg border border-terminal-border bg-terminal-bg/40 group">
+    <div className="relative flex flex-wrap sm:flex-nowrap items-center gap-2 p-2 rounded-lg border border-terminal-border bg-terminal-bg/40 group">
       {/* Live preview chip */}
       <div className="shrink-0">
         <MiniChip item={item} />
@@ -247,7 +245,7 @@ function TechRow({ item, isFirst, isLast, onUpdate, onDelete, onMoveUp, onMoveDo
         value={item.name}
         onChange={(e) => onUpdate({ ...item, name: e.target.value })}
         placeholder="name"
-        className={`${inputCls} flex-1 min-w-0`}
+        className={`${inputCls} flex-1 min-w-[120px] sm:min-w-0`}
       />
 
       {/* Glyph + catalog picker */}

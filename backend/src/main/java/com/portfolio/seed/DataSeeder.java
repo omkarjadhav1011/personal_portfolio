@@ -16,15 +16,24 @@ import com.portfolio.skill.SkillDiffRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
-// Auto-seeding disabled — @Component commented out so this runner does NOT execute
-// on startup/rebuild. It was re-inserting deleted placeholder rows every rebuild.
-// Re-enable by uncommenting @Component (and its import) to bootstrap a fresh DB.
-// import org.springframework.stereotype.Component;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-// @Component
+/**
+ * Bootstraps demo content into an empty database. Follows the conditional-wiring pattern:
+ * inert unless {@code SEED_DEMO_DATA=true}, so it can be switched off from the deploy
+ * environment without a code change.
+ *
+ * <p><b>Turn this off once real content is curated.</b> Only {@code seedProfile} guards on
+ * {@code count() > 0}; projects/experience/skill-diffs guard per-row on slug/hash/name, so a
+ * placeholder you delete in the admin panel is re-inserted on the next restart while this
+ * stays enabled — and Render's free tier restarts often.
+ */
+@Component
+@ConditionalOnProperty(name = "SEED_DEMO_DATA", havingValue = "true")
 public class DataSeeder implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
@@ -65,72 +74,61 @@ public class DataSeeder implements CommandLineRunner {
         }
         Profile p = new Profile();
         p.setName("Omkar Jadhav");
-        p.setHandle("omkarjadhav");
-        p.setHeadline("B.Tech CSE (Data Science) Student & Full-Stack Developer");
+        p.setHandle("omkarjadhav1011");
+        p.setHeadline("Software Development Engineer I at Nonstop IO Technologies");
+        // Written to be quotable in isolation: an AI assistant retrieves a passage,
+        // not a page, so the opening sentence names the subject in full instead of
+        // starting with "I". Education is past tense — he graduated in 2026.
+        // The first paragraph must stay byte-identical to CANONICAL_STATEMENT in
+        // frontend/src/lib/identity.ts. The site, the JSON-LD description and
+        // llms.txt all publish that same sentence, and corroboration across
+        // sources works on matching -- rewording it here fragments the signal.
         p.setBio("""
-                I build things for the web and explore the intersection of software and data.
-                Currently pursuing B.Tech in Computer Science (Data Science) at KIT Kolhapur,
-                obsessed with clean code, great UX, and systems that scale.
+                Omkar Jayvant Jadhav is a Software Development Engineer I at Nonstop IO                 Technologies in Kharadi, Pune, India. He graduated from KIT's College of                 Engineering (Autonomous), Kolhapur in 2026 with a B.Tech in Computer Science                 & Engineering (Data Science), and works on backend development in C#, NestJS                 and SQL.
 
-                When I'm not writing code, I'm experimenting with machine learning models,
-                building full-stack apps, or debugging something I broke at 2am.""");
+                He implemented end-to-end user audit functionality on an enterprise reporting                 product, contributed to its Report Builder module, and builds LLM-integrated                 applications with the Gemini and Hugging Face APIs.""");
         p.setCurrentBranch("main");
-        p.setCurrentStatus("Open to internships & collaborations");
-        p.setAvailableForWork(true);
+        p.setCurrentStatus("Building backend services at Nonstop IO Technologies");
+        p.setAvailableForWork(false);
         p.setEmail("jadhavomkar101103@gmail.com");
-        p.setLocation("Kolhapur, Maharashtra, India");
+        p.setLocation("Pune, Maharashtra, India");
+        // A profile link is an identity claim, so only confirmed ones belong here.
+        // Removed: an X/Twitter account he does not own. The LinkedIn slug is
+        // omkar-jadhav-st, NOT the shorter in/omkarjadhav that was published for
+        // months -- that one belongs to a different Omkar Jadhav (Dropouts
+        // Technologies LLP), and a wrong sameAs tells Google to merge him with a
+        // stranger. Do not "simplify" this URL.
         p.setSocials(List.of(
-                new SocialLink("GitHub", "https://github.com/omkarjadhav", "github"),
-                new SocialLink("LinkedIn", "https://linkedin.com/in/omkarjadhav", "linkedin"),
-                new SocialLink("Twitter", "https://twitter.com/omkarjadhav", "twitter")));
+                new SocialLink("GitHub", "https://github.com/omkarjadhav1011", "github"),
+                new SocialLink("LeetCode", "https://leetcode.com/u/jadhav_omkar1013/", "leetcode"),
+                new SocialLink("LinkedIn", "https://www.linkedin.com/in/omkar-jadhav-st/", "linkedin")));
+        // Replaced template filler with claims that are actually verifiable.
         p.setFunFacts(List.of(
-                "I've written more git commit messages than diary entries",
-                "Went from 94% in SSC to building ML models — the plot thickens",
-                "I debug in production (just kidding... mostly)",
-                "My Hugging Face API calls cost more than my monthly coffee budget"));
+                "Solved 210+ problems on LeetCode",
+                "Took the long route into engineering: diploma at ICRE Gargoti, then B.Tech at KIT Kolhapur",
+                "Wrote the audit-logging layer that tracks user actions across a production reporting product"));
         p.setStash(List.of(
-                "☕  Coffee-driven development — 3 cups before 10am",
-                "♟  Plays chess to debug decision-making",
-                "📚  Reading: Designing Data-Intensive Applications (DDIA)",
-                "🎵  Codes to lo-fi beats and post-rock",
-                "🌱  Contributing to open source, one PR at a time"));
-        p.setCurrentRole(new CurrentRole(true, "Full-Stack Developer Intern", "NonStop io Technologies",
-                "N", "", "https://nonstopio.com", "Pune, India · Hybrid", "Mar 2024", "8 mos", "#00ff88"));
+                "⑂  Built this site end to end: Spring Boot API, React SPA, PostgreSQL",
+                "🤖  Wrote a multi-provider LLM failover router so the assistant survives a dead provider",
+                "🔐  Encrypts every vault file with its own AES-256-GCM data key"));
+        // One spelling of the employer, everywhere: "NonStop io Technologies",
+        // "NonstopIO" and "Nonstop IO Technologies" were all live at once, which
+        // defeats the point of naming an employer for entity association.
+        p.setCurrentRole(new CurrentRole(true, "Software Development Engineer I", "Nonstop IO Technologies",
+                "N", "", "https://nonstopio.com", "Kharadi, Pune, Maharashtra, India · On-site",
+                "Feb 2026", "7 mos", "#00ff88"));
         profileRepository.save(p);
         log.info("✓ Profile seeded");
     }
 
     private void seedProjects() {
-        List<Project> projects = List.of(
-                project("git-portfolio", "git-portfolio",
-                        "A developer portfolio with Git-inspired UI — terminals, branches, and commit logs.",
-                        "TypeScript", "#3178c6", 12, 3, 47, "just now",
-                        "feat: add command palette with Ctrl+K shortcut",
-                        List.of("Next.js", "Tailwind", "Framer Motion"),
-                        "https://omkarjadhav.vercel.app", "https://github.com/omkarjadhav/git-portfolio",
-                        "active", true,
-                        "Built with Next.js 14, this portfolio reimagines personal websites through the lens of Git — commit timelines, branch visualizations, and a fully interactive terminal command palette."),
-                project("dev-mobiles", "dev-mobiles",
-                        "Mobile shopping e-commerce platform with full auth, cart, search, and purchase flow.",
-                        "PHP", "#4F5D95", 8, 2, 84, "2 months ago",
-                        "feat: add purchase flow with payment integration",
-                        List.of("PHP", "HTML", "CSS", "JavaScript", "MySQL"),
-                        null, "https://github.com/omkarjadhav/dev-mobiles", "active", true,
-                        "A full-featured mobile shopping platform built during my internship at Dnyanda Solutions. Supports user login, product search, cart management, and a complete purchase flow with payment integration."),
-                project("crop-recommendation", "crop-recommendation",
-                        "ML-based crop suggestion system using soil and weather data with a real-time farmer UI.",
-                        "Python", "#3572A5", 19, 5, 62, "3 months ago",
-                        "feat: integrate real-time weather API for dynamic predictions",
-                        List.of("Python", "Scikit-learn", "Pandas", "NumPy"),
-                        null, "https://github.com/omkarjadhav/crop-recommendation", "active", true,
-                        "A machine learning system that recommends optimal crops based on soil composition and real-time weather conditions. Built with Scikit-learn classification models and a clean farmer-friendly UI."),
-                project("snapsktch", "snapsktch",
-                        "AI-powered text-to-image generator using Hugging Face API and Streamlit.",
-                        "Python", "#3572A5", 14, 3, 38, "4 months ago",
-                        "chore: update model endpoint to stable-diffusion-xl",
-                        List.of("Python", "Streamlit", "Hugging Face", "AI"),
-                        null, "https://github.com/omkarjadhav/snapsktch", "active", true,
-                        "A text-to-image generation app powered by Hugging Face's diffusion models. Users describe an image in text, and SnapSktch renders it in seconds via Streamlit's interactive UI."));
+        // Intentionally empty. Every project previously seeded here carried
+        // fabricated engagement metrics (stars/forks/commit counts matching nothing
+        // in the real GitHub account) and repo URLs that 404. None of it was a
+        // confirmed fact. Real projects are entered through the admin panel, where
+        // the numbers can be true. Publishing invented metrics is a truthfulness
+        // problem before it is an SEO one.
+        List<Project> projects = List.of();
 
         int order = 0;
         int seeded = 0;
@@ -148,44 +146,50 @@ public class DataSeeder implements CommandLineRunner {
 
     private void seedExperience() {
         List<CommitEntry> entries = List.of(
-                experience("f3a9b1c", "job", "Web Developer Intern", "Dnyanda Solutions Pvt. Ltd.",
-                        "Jul 2022", "Sep 2022",
-                        List.of("Developed backend systems using PHP for client e-commerce applications",
-                                "Built a complete E-commerce platform with user authentication, cart, and payment flow",
-                                "Collaborated on HTML/CSS frontend for responsive shopping interfaces",
-                                "Worked with MySQL for product catalogue and order management"),
-                        "work/dnyanda-solutions", "#00ff88", "green",
-                        List.of("PHP", "HTML", "CSS", "JavaScript", "MySQL"), null),
-                experience("a2d8e4f", "achievement", "Python Bootcamp Certification", "Udemy",
-                        "Jan 2023", null,
-                        List.of("Completed comprehensive Python programming bootcamp",
-                                "Covered OOP, file handling, data structures, and web scraping"),
-                        "cert/python-bootcamp", "#e3b341", "yellow",
-                        List.of("Python", "Udemy", "Certification"), null),
-                experience("b5c7f2a", "achievement", "Java Programming Certification", "Udemy",
-                        "Mar 2023", null,
-                        List.of("Completed Java programming course covering core Java and OOP principles",
-                                "Built multiple project applications including a library management system"),
-                        "cert/java-programming", "#e3b341", "yellow",
-                        List.of("Java", "OOP", "Udemy", "Certification"), null),
-                experience("0d3f9e1", "education", "B.Tech Computer Science & Engineering (Data Science)",
-                        "KIT College of Engineering, Kolhapur", "Aug 2023", "May 2026",
-                        List.of("SGPA: 8.0/10 — Pursuing specialization in Data Science",
-                                "Relevant coursework: DSA, OS, DBMS, Computer Networks, Machine Learning",
-                                "Building projects in ML, full-stack web development, and systems programming"),
+                experience("9c4e1a7", "job", "Software Development Engineer I", "Nonstop IO Technologies",
+                        "Aug 2026", null,
+                        List.of("Backend development on an enterprise reporting product, contributing to live production modules",
+                                "Implemented end-to-end user audit functionality tracking and logging user actions across the application for compliance and traceability",
+                                "Contributed to the Report Builder module and wrote optimized SQL queries for reporting, audit logs, and data-retrieval flows"),
+                        "work/nonstop-io", "#00ff88", "green",
+                        List.of("C#", "NestJS", "SQL"), "https://nonstopio.com"),
+                experience("3b7d0f2", "job", "Software Developer Intern", "Nonstop IO Technologies",
+                        "Feb 2026", "Aug 2026",
+                        List.of("Joined the backend team working on the enterprise reporting product in C#, NestJS and SQL",
+                                "Converted to Software Development Engineer I in August 2026"),
+                        "work/nonstop-io", "#00ff88", "green",
+                        List.of("C#", "NestJS", "SQL"), "https://nonstopio.com"),
+                experience("0d3f9e1", "education", "B.Tech, Computer Science & Engineering (Data Science)",
+                        "KIT's College of Engineering (Autonomous), Kolhapur", "2023", "2026",
+                        List.of("Graduated in 2026 with 80%",
+                                "Coursework: Data Structures & Algorithms, DBMS, Operating Systems, Computer Networks, Data Science"),
                         "edu/btech-cse", "#58a6ff", "blue",
-                        List.of("DSA", "OS", "DBMS", "Machine Learning", "Data Science"), null),
-                experience("1e2b4c7", "education", "Diploma in Computer Engineering", "ICRE Gargoti",
-                        "Jun 2020", "May 2023",
-                        List.of("Graduated with 87% — Top performer in department",
-                                "Core subjects: C, C++, Java, DBMS, Digital Electronics, Networking"),
+                        List.of("DSA", "DBMS", "Data Science"), null),
+                experience("1e2b4c7", "education", "Diploma, Computer Engineering",
+                        "Institute of Civil and Rural Engineering, Gargoti", "2020", "2023",
+                        List.of("Graduated in 2023 with 87%"),
                         "edu/diploma-cse", "#58a6ff", "blue",
-                        List.of("C++", "Java", "Networking", "DBMS"), null),
-                experience("2c3d5e8", "education", "SSC (Class X)", "Dindewadi High School",
-                        "Mar 2020", null,
-                        List.of("Scored 94% — School topper in Mathematics and Science"),
+                        List.of("C++", "DBMS"), null),
+                experience("2c3d5e8", "education", "High School (SSC)",
+                        "Shankar Chakru Patil Madhyamik Vidhyalaya, Dindewadi", "2019", "2020",
+                        List.of("Completed in 2020 with 94%"),
                         "edu/high-school", "#58a6ff", "blue",
-                        List.of("Mathematics", "Science"), null));
+                        List.of(), null),
+                experience("a2d8e4f", "achievement", "Python Bootcamp: Zero to Hero", "Udemy",
+                        "Jan 2023", null,
+                        List.of("Completed the Python programming bootcamp"),
+                        "cert/python-bootcamp", "#e3b341", "yellow",
+                        List.of("Python", "Udemy"), null),
+                experience("b5c7f2a", "achievement", "Java Programming: Beginner to Master", "Udemy",
+                        "Mar 2023", null,
+                        List.of("Completed the Java programming course covering core Java and OOP"),
+                        "cert/java-programming", "#e3b341", "yellow",
+                        List.of("Java", "OOP", "Udemy"), null),
+                experience("c8e1a94", "achievement", "AI, Machine Learning & Data Science Bootcamp", "Udemy",
+                        "2023", null,
+                        List.of("Completed the AI, machine learning and data science bootcamp"),
+                        "cert/ai-ml-ds", "#e3b341", "yellow",
+                        List.of("Udemy"), null));
 
         int order = 0;
         int seeded = 0;
@@ -201,22 +205,37 @@ public class DataSeeder implements CommandLineRunner {
         }
     }
 
+    /**
+     * Mirrors {@code frontend/src/data/skills.ts}, which is itself the on-page mirror
+     * of the schema {@code knowsAbout} array — structured data may only claim what a
+     * reader can see, so all three must agree.
+     *
+     * <p>Next.js was removed: it is a withdrawn skill claim. So were Tailwind CSS,
+     * C++, MongoDB, NumPy, Pandas, Scikit-learn and Jupyter, which are absent from
+     * the confirmed skills list.
+     */
     private void seedSkills() {
-        seedBranch("feature/web", "#58a6ff", 0, List.of(
-                skill("HTML/CSS", 5, "🌐", null), skill("JavaScript", 4, "JS", null),
-                skill("PHP", 4, "🐘", "v8"), skill("React", 3, "⚛", null),
-                skill("Next.js", 3, "▲", "v14"), skill("Tailwind CSS", 3, "🎨", null)));
+        seedBranch("feature/languages", "#58a6ff", 0, List.of(
+                skill("C#", 4, "#", null), skill("SQL", 4, "🗄", null),
+                skill("JavaScript", 4, "JS", null), skill("TypeScript", 3, "TS", null),
+                skill("Python", 4, "🐍", null), skill("Java", 3, "☕", null)));
         seedBranch("feature/backend", "#00ff88", 1, List.of(
-                skill("Python", 4, "🐍", null), skill("Java", 3, "☕", null),
-                skill("C++", 3, "⚙", null), skill("MySQL", 4, "🗄", null),
-                skill("PostgreSQL", 3, "🐘", null), skill("MongoDB", 3, "🍃", null)));
-        seedBranch("feature/ml", "#f0883e", 2, List.of(
-                skill("NumPy", 4, "🔢", null), skill("Pandas", 4, "🐼", null),
-                skill("Scikit-learn", 3, "🧠", null), skill("Streamlit", 3, "📊", null),
-                skill("Jupyter", 4, "📓", null)));
-        seedBranch("feature/tools", "#d2a8ff", 3, List.of(
-                skill("Git", 5, "⑂", "v2.45"), skill("GitHub", 4, "🐙", null),
-                skill("VS Code", 5, "💻", null), skill("Postman", 4, "📮", null)));
+                skill("NestJS", 4, "🐱", null), skill("Spring Boot", 3, "🌱", null),
+                skill("REST APIs", 4, "🔌", null), skill("PostgreSQL", 3, "🐘", null),
+                skill("MySQL", 4, "🗃", null), skill("PHP", 3, "🐘", null)));
+        seedBranch("feature/frontend", "#f0883e", 2, List.of(
+                skill("React", 3, "⚛", null), skill("HTML5", 5, "🌐", null),
+                skill("CSS3", 4, "🎨", null)));
+        seedBranch("feature/ai", "#d2a8ff", 3, List.of(
+                skill("Gemini API", 4, "✦", null), skill("Hugging Face API", 3, "🤗", null),
+                skill("Prompt Engineering", 3, "💬", null)));
+        seedBranch("feature/tools", "#e3b341", 4, List.of(
+                skill("Git", 5, "⑂", null), skill("GitHub", 4, "🐙", null),
+                skill("Docker", 3, "🐳", null), skill("Postman", 4, "📮", null),
+                skill("Streamlit", 3, "📊", null), skill("VS Code", 5, "💻", null)));
+        seedBranch("feature/core-cs", "#7ee787", 5, List.of(
+                skill("Data Structures & Algorithms", 4, "🧮", null), skill("OOP", 4, "🧱", null),
+                skill("DBMS", 4, "🗂", null), skill("MVC Architecture", 3, "🏛", null)));
     }
 
     private void seedBranch(String branchName, String color, int offset, List<Skill> skills) {
@@ -237,14 +256,12 @@ public class DataSeeder implements CommandLineRunner {
 
     private void seedSkillDiffs() {
         List<SkillDiff> diffs = List.of(
-                skillDiff("TypeScript", "added", "migrating all JS projects"),
-                skillDiff("Next.js 14 App Router", "added", "used in this portfolio"),
-                skillDiff("Docker", "added", "learning containerization"),
-                skillDiff("PostgreSQL", "added", "replacing MySQL in new projects"),
-                skillDiff("Python", "modified", "leveling up: async + FastAPI"),
-                skillDiff("React", "modified", "deepening patterns & performance"),
-                skillDiff("jQuery", "deprecated", "replaced by React"),
-                skillDiff("Bootstrap", "deprecated", "replaced by Tailwind CSS"));
+                skillDiff("C#", "added", "day-to-day backend work at Nonstop IO"),
+                skillDiff("NestJS", "added", "services on the enterprise reporting product"),
+                skillDiff("TypeScript", "added", "typed everything, including this site"),
+                skillDiff("Docker", "added", "containerized local dependencies"),
+                skillDiff("SQL", "modified", "optimizing reporting, audit-log and data-retrieval queries"),
+                skillDiff("Spring Boot", "modified", "the API behind this portfolio"));
 
         int order = 0;
         int seeded = 0;

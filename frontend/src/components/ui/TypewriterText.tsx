@@ -45,8 +45,8 @@ export function TypewriterText({
           <div key={i} className={cn("flex items-start gap-0", colorClass)}>
             {isPromptLine ? (
               <>
-                <span className={cn("mr-2", promptColor)}>$</span>
-                <span>{displayed.slice(2)}</span>
+                <span className={cn("mr-2 shrink-0", promptColor)}>$</span>
+                <span className="min-w-0 break-words">{displayed.slice(2)}</span>
               </>
             ) : (
               <span className="whitespace-pre-wrap">{displayed}</span>

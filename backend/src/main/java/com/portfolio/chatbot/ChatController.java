@@ -1,6 +1,11 @@
 package com.portfolio.chatbot;
 
+import com.portfolio.llm.ChatMessage;
+import com.portfolio.llm.LlmRequest;
+import com.portfolio.llm.LlmRouter;
 import com.portfolio.rag.RetrievalService;
+import com.portfolio.telemetry.EngagementRecorder;
+import com.portfolio.telemetry.EngagementType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,7 +25,7 @@ import java.util.Map;
 /*
  * Chat endpoint: POST /api/chat with body {messages:[{role:"user|assistant",content}]}. Validates the
  * request, checks the rate limit, builds the system prompt from the context, and proxies to
- * Gemini's streaming API. The response is an SSE stream of JSON objects:
+ * the configured LLM provider's streaming API. The response is an SSE stream of JSON objects:
  * */
 
 @Tag(name = "Chat", description = "Streaming AI assistant (SSE)")
@@ -29,29 +34,38 @@ public class ChatController {
 
     private static final int MAX_MESSAGES = 10;
     private static final int MAX_CONTENT = 2000;
+    /** Bounds each answer's token use (was a GeminiClient constant before the provider abstraction). */
+    private static final int MAX_OUTPUT_TOKENS = 1024;
+    /** Pinned so chat tone doesn't vary with each provider's own default (consistency, phase 3). */
+    private static final double TEMPERATURE = 0.7;
+    /** One daily per-IP allowance shared by every AI endpoint (chat + recruiter). */
+    public static final String AI_DAILY_LIMIT_PREFIX = "ai-daily";
 
     private final RateLimiter rateLimiter;
     private final DailyBudgetGuard budgetGuard;
     private final AbuseLog abuseLog;
     private final PortfolioContextService contextService;
     private final PromptBuilder promptBuilder;
-    private final GeminiClient geminiClient;
+    private final LlmRouter llmRouter;
     private final RetrievalService retrievalService;
+    private final EngagementRecorder engagementRecorder;
 
     public ChatController(RateLimiter rateLimiter,
                           DailyBudgetGuard budgetGuard,
                           AbuseLog abuseLog,
                           PortfolioContextService contextService,
                           PromptBuilder promptBuilder,
-                          GeminiClient geminiClient,
-                          RetrievalService retrievalService) {
+                          LlmRouter llmRouter,
+                          RetrievalService retrievalService,
+                          EngagementRecorder engagementRecorder) {
         this.rateLimiter = rateLimiter;
         this.budgetGuard = budgetGuard;
         this.abuseLog = abuseLog;
         this.contextService = contextService;
         this.promptBuilder = promptBuilder;
-        this.geminiClient = geminiClient;
+        this.llmRouter = llmRouter;
         this.retrievalService = retrievalService;
+        this.engagementRecorder = engagementRecorder;
     }
 
     public record ChatRequest(List<ChatMessage> messages) {
@@ -68,18 +82,31 @@ public class ChatController {
             response.setHeader("Retry-After", String.valueOf(limit.retryAfterSeconds()));
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many requests. Please slow down.");
         }
+        // Per-IP daily cap (shared with recruiter endpoints) — a slow single-IP bot must not
+        // drain the global AI budget; see AI_IP_DAILY_CAP.
+        RateLimiter.Result daily = rateLimiter.checkDaily(AI_DAILY_LIMIT_PREFIX + ":" + clientIp);
+        if (!daily.ok()) {
+            response.setHeader("Retry-After", String.valueOf(daily.retryAfterSeconds()));
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Daily limit reached. Please try again tomorrow.");
+        }
 
         if (req == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid request payload");
         }
         validate(req.messages());
 
+        // Passive engagement signal (D2): a one-message history means a session just started.
+        if (req.messages().size() == 1) {
+            engagementRecorder.record(EngagementType.CHAT_SESSION, null, clientIp, null);
+        }
+
         String lastUserMessage = req.messages().get(req.messages().size() - 1).content();
         if (abuseLog.isSuspicious(lastUserMessage)) {
             abuseLog.warnSuspicious("chat", clientIp, lastUserMessage);
         }
 
-        if (!geminiClient.isConfigured()) {
+        if (!llmRouter.isConfigured()) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Chat is temporarily unavailable.");
         }
 
@@ -101,7 +128,7 @@ public class ChatController {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Chat is temporarily unavailable.");
         }
 
-        return geminiClient.streamGenerateContent(systemPrompt, req.messages())
+        return llmRouter.streamChat(LlmRequest.chat(systemPrompt, req.messages(), MAX_OUTPUT_TOKENS, TEMPERATURE))
                 .map(text -> event(Map.of("type", "delta", "text", text)))
                 .concatWithValues(event(Map.of("type", "done")))
                 .onErrorResume(e -> {

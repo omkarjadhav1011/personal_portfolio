@@ -329,7 +329,7 @@ function MessagesInbox() {
                 {selected.message}
               </pre>
             </div>
-            <div className="flex gap-2 pt-1">
+            <div className="flex flex-wrap gap-2 pt-1">
               <a
                 href={`mailto:${selected.email}?subject=${encodeURIComponent("Re: your message on my portfolio")}`}
                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-git-green-dim bg-git-green-muted px-3 py-1.5 text-xs text-git-green hover:bg-git-green-dim/30 transition-all"
@@ -551,7 +551,7 @@ function LeadsInbox() {
                 </pre>
               </div>
             )}
-            <div className="flex gap-2 pt-1">
+            <div className="flex flex-wrap gap-2 pt-1">
               <a
                 href={`mailto:${selected.email}?subject=${encodeURIComponent("Re: your JD match on my portfolio")}`}
                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-git-green-dim bg-git-green-muted px-3 py-1.5 text-xs text-git-green hover:bg-git-green-dim/30 transition-all"

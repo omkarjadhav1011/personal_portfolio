@@ -1,6 +1,7 @@
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useDomainProjects } from "@/api/projects";
 import { useProfile } from "@/api/profile";
+import { findBookingLink } from "@/lib/booking";
 import { profile as staticProfile } from "@/data/profile";
 import { RecruiterClient } from "@/components/recruiter/RecruiterClient";
 import { McpBadge } from "@/components/ui/McpBadge";
@@ -33,8 +34,8 @@ export default function RecruiterPage() {
           </h1>
           <p className="text-text-muted text-sm sm:text-base font-mono max-w-2xl">
             Paste the job description below. {profile.name} will be matched against it —
-            relevant projects, overlapping skills, honest gaps, and a short pitch tailored
-            to the role.
+            relevant projects, overlapping skills, honest gaps, and a direct line to reach
+            him about the role.
           </p>
 
           {/* Prefer your own AI? The same match runs as a public MCP tool. */}
@@ -47,6 +48,7 @@ export default function RecruiterPage() {
           projects={projects}
           handle={handle}
           ownerName={profile.name}
+          bookingUrl={findBookingLink(profile.socials)?.url}
         />
       </div>
     </section>

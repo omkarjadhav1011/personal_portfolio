@@ -11,7 +11,6 @@ const KIND_MAP: Record<EntryType, { label: string; glyph: string }> = {
   project: { label: "Project", glyph: "✦" },
 };
 
-const ROW_MIN_HEIGHT = 200;
 
 const MONTHS: Record<string, number> = {
   Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
@@ -76,7 +75,7 @@ export function ExperienceSection({ timeline }: ExperienceSectionProps) {
         </ScrollReveal>
 
         <div className="relative">
-          <div className="grid grid-cols-[56px_1fr] gap-4 md:gap-8">
+          <div className="grid grid-cols-[40px_minmax(0,1fr)] md:grid-cols-[56px_minmax(0,1fr)] gap-4 md:gap-8">
             {/* Timeline rail */}
             <div className="relative">
               <div
@@ -96,10 +95,9 @@ export function ExperienceSection({ timeline }: ExperienceSectionProps) {
               {sorted.map((c, i) => (
                 <div
                   key={c.hash}
-                  className="relative flex items-center justify-center"
+                  className="relative flex items-center justify-center min-h-[160px] sm:min-h-[200px]"
                   style={{
                     height: `calc(100% / ${sorted.length})`,
-                    minHeight: ROW_MIN_HEIGHT,
                   }}
                 >
                   <div
@@ -141,8 +139,7 @@ export function ExperienceSection({ timeline }: ExperienceSectionProps) {
                       refs.current[i] = el;
                     }}
                     data-idx={i}
-                    style={{ minHeight: ROW_MIN_HEIGHT }}
-                    className="flex items-center"
+                    className="flex items-center py-2.5 sm:py-0 min-h-[160px] sm:min-h-[200px]"
                   >
                     <ScrollReveal className="w-full">
                       <article
@@ -158,7 +155,7 @@ export function ExperienceSection({ timeline }: ExperienceSectionProps) {
                         }}
                       >
                         {/* Header */}
-                        <div className="flex items-start gap-3 p-5 pb-3">
+                        <div className="flex flex-wrap sm:flex-nowrap items-start gap-3 p-5 pb-3">
                           <div
                             className="shrink-0 w-11 h-11 rounded-lg flex items-center justify-center font-mono text-lg transition-transform duration-300 group-hover:scale-105"
                             style={{
@@ -187,7 +184,7 @@ export function ExperienceSection({ timeline }: ExperienceSectionProps) {
                             </div>
                           </div>
 
-                          <div className="shrink-0 flex flex-col items-end gap-1.5">
+                          <div className="shrink-0 flex basis-full order-last flex-row items-center gap-2 sm:basis-auto sm:order-none sm:flex-col sm:items-end sm:gap-1.5">
                             <span
                               className="px-2 py-0.5 rounded-full font-mono text-[10px] font-semibold uppercase tracking-wider"
                               style={{

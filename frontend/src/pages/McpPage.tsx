@@ -70,10 +70,10 @@ export default function McpPage() {
             MCP Server
           </h1>
           <p className="text-text-muted text-sm sm:text-base font-mono max-w-2xl leading-relaxed">
-            This portfolio runs a public, read-only{" "}
+            Omkar Jadhav&apos;s portfolio runs a public, read-only{" "}
             <strong className="text-text-primary">Model Context Protocol</strong> server. Point your
-            own AI assistant at it and ask whether I&apos;m a fit — it pulls real, current data
-            straight from my portfolio instead of guessing.
+            own AI assistant at it and ask whether he is a fit for your role — it pulls real,
+            current data straight from the portfolio instead of guessing.
           </p>
         </ScrollReveal>
 
@@ -83,9 +83,10 @@ export default function McpPage() {
             <p className="mb-2 text-git-green"># what is this?</p>
             <p>
               MCP is an open standard that lets AI apps (like Claude Desktop) discover and call
-              external <span className="text-text-primary">tools</span>. This server exposes my
-              portfolio as read-only tools, so a recruiter&apos;s AI can evaluate me using live,
-              accurate data. It&apos;s read-only and public — no account, nothing to install on my side.
+              external <span className="text-text-primary">tools</span>. This server exposes Omkar
+              Jadhav&apos;s projects, skills and experience as read-only tools, so a recruiter&apos;s
+              AI can evaluate him using live, accurate data. It&apos;s read-only and public — no
+              account, nothing to install.
             </p>
           </div>
         </ScrollReveal>
@@ -112,7 +113,7 @@ export default function McpPage() {
           </p>
           <TerminalWindow title="claude_desktop_config.json">
             <div className="flex items-start justify-between gap-3">
-              <pre className="overflow-x-auto text-xs sm:text-sm text-text-primary whitespace-pre">
+              <pre className="min-w-0 flex-1 overflow-x-auto text-xs sm:text-sm text-text-primary whitespace-pre">
                 {CLAUDE_CONFIG}
               </pre>
               <CopyButton value={CLAUDE_CONFIG} />
@@ -188,7 +189,7 @@ function SectionHeading({ label, title }: { label: string; title: string }) {
 function CopyRow({ value }: { value: string }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border border-terminal-border bg-terminal-bg px-3 py-2.5 font-mono text-xs sm:text-sm">
-      <code className="overflow-x-auto whitespace-nowrap text-git-green">{value}</code>
+      <code className="block min-w-0 flex-1 overflow-x-auto whitespace-nowrap text-git-green">{value}</code>
       <CopyButton value={value} />
     </div>
   );

@@ -1,12 +1,17 @@
 package com.portfolio.recruiter;
 
 import com.portfolio.chatbot.AbuseLog;
+import com.portfolio.chatbot.ChatController;
 import com.portfolio.chatbot.DailyBudgetGuard;
-import com.portfolio.chatbot.GeminiClient;
 import com.portfolio.chatbot.PortfolioContext;
 import com.portfolio.chatbot.PortfolioContextService;
 import com.portfolio.chatbot.RateLimiter;
 import com.portfolio.common.Hashing;
+import com.portfolio.llm.LlmRequest;
+import com.portfolio.llm.LlmRouter;
+import com.portfolio.notify.NotificationService;
+import com.portfolio.telemetry.EngagementRecorder;
+import com.portfolio.telemetry.EngagementType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,7 +37,7 @@ import java.util.Map;
 
 /**
  * Recruiter mode. Ports {@code api/recruiter/match}: scores a job description against the
- * live portfolio using Gemini structured output. Public, with its own rate-limit bucket
+ * live portfolio using LLM structured output. Public, with its own rate-limit bucket
  * ({@code recruiter-match:<ip>}) so it doesn't share the chatbot's quota.
  */
 @Tag(name = "Recruiter", description = "JD-to-profile match scoring")
@@ -60,26 +65,32 @@ public class RecruiterController {
     private final AbuseLog abuseLog;
     private final PortfolioContextService contextService;
     private final RecruiterPromptBuilder promptBuilder;
-    private final GeminiClient geminiClient;
+    private final LlmRouter llmRouter;
     private final RecruiterMatchService matchService;
     private final RecruiterLeadRepository leadRepository;
+    private final NotificationService notificationService;
+    private final EngagementRecorder engagementRecorder;
 
     public RecruiterController(RateLimiter rateLimiter,
                                DailyBudgetGuard budgetGuard,
                                AbuseLog abuseLog,
                                PortfolioContextService contextService,
                                RecruiterPromptBuilder promptBuilder,
-                               GeminiClient geminiClient,
+                               LlmRouter llmRouter,
                                RecruiterMatchService matchService,
-                               RecruiterLeadRepository leadRepository) {
+                               RecruiterLeadRepository leadRepository,
+                               NotificationService notificationService,
+                               EngagementRecorder engagementRecorder) {
         this.rateLimiter = rateLimiter;
         this.budgetGuard = budgetGuard;
         this.abuseLog = abuseLog;
         this.contextService = contextService;
         this.promptBuilder = promptBuilder;
-        this.geminiClient = geminiClient;
+        this.llmRouter = llmRouter;
         this.matchService = matchService;
         this.leadRepository = leadRepository;
+        this.notificationService = notificationService;
+        this.engagementRecorder = engagementRecorder;
     }
 
     public record MatchRequest(String jobDescription) {
@@ -99,6 +110,7 @@ public class RecruiterController {
             response.setHeader("Retry-After", String.valueOf(limit.retryAfterSeconds()));
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many submissions. Try again in a minute.");
         }
+        checkAiDailyLimit(clientIp, response);
 
         String jd = req == null ? null : req.jobDescription();
         if (jd == null || jd.length() < JD_MIN || jd.length() > JD_MAX) {
@@ -114,7 +126,11 @@ public class RecruiterController {
         // The match itself (availability, daily cost ceiling, prompt, model call, parse) is the
         // shared RecruiterMatchService — one implementation, also used by the MCP match_against_jd tool.
         try {
-            return matchService.match(jd);
+            MatchResult result = matchService.match(jd);
+            // Passive engagement signal (D2): a completed match with its server-computed score.
+            engagementRecorder.record(EngagementType.RECRUITER_MATCH, null, clientIp,
+                    (int) Math.round(result.fitScore()));
+            return result;
         } catch (RecruiterMatchUnavailableException e) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage());
         } catch (RecruiterMatchException e) {
@@ -133,13 +149,14 @@ public class RecruiterController {
             response.setHeader("Retry-After", String.valueOf(limit.retryAfterSeconds()));
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many submissions. Try again in a minute.");
         }
+        checkAiDailyLimit(clientIp, response);
 
         String jd = req == null ? null : req.jobDescription();
         if (jd == null || jd.length() < JD_MIN || jd.length() > JD_MAX || req.matchResult() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid request payload");
         }
 
-        if (!geminiClient.isConfigured()) {
+        if (!llmRouter.isConfigured()) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Recruiter mode is temporarily unavailable.");
         }
 
@@ -156,7 +173,10 @@ public class RecruiterController {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Recruiter mode is temporarily unavailable.");
         }
 
-        return geminiClient.streamPrompt(prompt, LETTER_MAX_TOKENS, LETTER_TEMPERATURE)
+        // Passive engagement signal (D2). No score: the letter's matchResult is client-echoed.
+        engagementRecorder.record(EngagementType.RECRUITER_LETTER, null, clientIp, null);
+
+        return llmRouter.streamChat(LlmRequest.prompt(prompt, LETTER_MAX_TOKENS, LETTER_TEMPERATURE))
                 .map(text -> event(Map.of("type", "delta", "text", text)))
                 .concatWithValues(event(Map.of("type", "done")))
                 .onErrorResume(e -> {
@@ -168,6 +188,17 @@ public class RecruiterController {
 
     private static ServerSentEvent<Map<String, Object>> event(Map<String, Object> data) {
         return ServerSentEvent.<Map<String, Object>>builder().data(data).build();
+    }
+
+    /** Per-IP daily AI allowance, shared with the chatbot (same {@code ai-daily:<ip>} bucket). */
+    private void checkAiDailyLimit(String clientIp, HttpServletResponse response) {
+        RateLimiter.Result daily = rateLimiter.checkDaily(
+                ChatController.AI_DAILY_LIMIT_PREFIX + ":" + clientIp);
+        if (!daily.ok()) {
+            response.setHeader("Retry-After", String.valueOf(daily.retryAfterSeconds()));
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Daily limit reached. Please try again tomorrow.");
+        }
     }
 
     /**
@@ -227,7 +258,10 @@ public class RecruiterController {
                 truncate(trimToNull(req.jdExcerpt()), LEAD_JD_EXCERPT_LENGTH),
                 Hashing.sha256Hex(clientIp)));
         log.info("[recruiter] lead {} stored (fit={})", saved.getId(), saved.getFitScore());
-        // notifyOwner("🎯 Recruiter lead ...") lands when Group B (notify) merges to dev.
+
+        // DB commit → notify (B2): async and fail-open, never part of the request outcome.
+        notificationService.notifyOwner("🎯 Recruiter lead: " + saved.getEmail()
+                + (saved.getFitScore() == null ? "" : " (fit " + saved.getFitScore() + "%)"));
 
         return new LeadResponse(true);
     }

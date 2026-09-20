@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FileSearch, Sparkles, Terminal } from "lucide-react";
@@ -8,15 +8,24 @@ import { useCommandPaletteStore } from "@/store/commandPalette";
 import { profile as staticProfile } from "@/data/profile";
 import { useProfile } from "@/api/profile";
 import { cn } from "@/lib/utils";
-// Theme toggle (dark mode) removed — replaced by the terminal trigger button
-// import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
-const NAV_SECTIONS = [
-  { id: "about", label: "about" },
-  { id: "skills", label: "skills" },
-  { id: "projects", label: "projects" },
-  { id: "experience", label: "log" },
-  { id: "contact", label: "contact" },
+/**
+ * Primary navigation.
+ *
+ * Items with `to` are real routes and render as <Link>, i.e. real <a href>
+ * elements. This matters more than it looks: the whole nav used to be
+ * <button onClick={scrollTo}>, so with JavaScript disabled the site had no
+ * links at all and a crawler could not reach anything from the homepage.
+ *
+ * Items with `id` are still homepage sections — skills and contact were not
+ * split into their own pages — and keep the smooth-scroll behaviour.
+ */
+const NAV_ITEMS: { label: string; to?: string; id?: string }[] = [
+  { label: "about", to: "/about" },
+  { label: "skills", id: "skills" },
+  { label: "projects", to: "/projects" },
+  { label: "log", to: "/experience" },
+  { label: "contact", id: "contact" },
 ];
 
 // The "new" badge on the recruiter link auto-retires after this date so it
@@ -36,6 +45,16 @@ export function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const showRecruiterBadge = new Date() < RECRUITER_BADGE_UNTIL;
+
+  // While the mobile menu is open, the page behind it shouldn't scroll.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileOpen]);
 
   // Section anchors only exist on the home page. When we're on another route
   // (e.g. a project detail page), route home first and let Home scroll to the
@@ -74,25 +93,34 @@ export function Navbar() {
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-1 font-mono text-sm">
-            {NAV_SECTIONS.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => goTo(s.id)}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg transition-colors duration-200",
-                  // #1 — one signal for active: green text + the `*` marker.
-                  // The bordered/tinted pill was removed to lighten the bar.
-                  activeSection === s.id
-                    ? "text-git-green"
-                    : "text-text-muted hover:text-text-primary hover:bg-terminal-surface"
-                )}
-              >
-                {activeSection === s.id && (
-                  <span className="mr-1 text-git-green">*</span>
-                )}
-                {s.label}
-              </button>
-            ))}
+            {NAV_ITEMS.map((item) => {
+              const isActive = item.to
+                ? location.pathname === item.to
+                : activeSection === item.id;
+              const className = cn(
+                "px-3 py-1.5 rounded-lg transition-colors duration-200",
+                // #1 — one signal for active: green text + the `*` marker.
+                // The bordered/tinted pill was removed to lighten the bar.
+                isActive
+                  ? "text-git-green"
+                  : "text-text-muted hover:text-text-primary hover:bg-terminal-surface",
+              );
+              const body = (
+                <>
+                  {isActive && <span className="mr-1 text-git-green">*</span>}
+                  {item.label}
+                </>
+              );
+              return item.to ? (
+                <Link key={item.label} to={item.to} className={className}>
+                  {body}
+                </Link>
+              ) : (
+                <button key={item.label} onClick={() => goTo(item.id!)} className={className}>
+                  {body}
+                </button>
+              );
+            })}
 
             {/* #2 — divider separates content nav from the recruiter CTA */}
             <span className="mx-2 h-4 w-px bg-terminal-border" aria-hidden="true" />
@@ -146,7 +174,7 @@ export function Navbar() {
 
             {/* Mobile hamburger */}
             <button
-              className="md:hidden text-text-muted hover:text-text-primary transition-colors p-2 cursor-pointer"
+              className="md:hidden text-text-muted hover:text-text-primary transition-colors p-3 -mr-1 cursor-pointer"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Toggle mobile menu"
             >
@@ -163,18 +191,29 @@ export function Navbar() {
       {/* Mobile menu */}
       <AnimatePresence>
         {mobileOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0, transition: { duration: 0.25, ease: "easeOut" } }}
-            exit={{ opacity: 0, y: -16, transition: { duration: 0.2, ease: "easeIn" } }}
-            className="fixed top-14 left-0 right-0 z-40 bg-terminal-bg/95 backdrop-blur-md border-b border-terminal-border p-4 font-mono space-y-1 md:hidden"
-          >
+          <>
+            {/* Backdrop — tap outside the panel to close */}
+            <motion.button
+              type="button"
+              aria-label="Close mobile menu"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1, transition: { duration: 0.2 } }}
+              exit={{ opacity: 0, transition: { duration: 0.15 } }}
+              onClick={() => setMobileOpen(false)}
+              className="fixed inset-0 top-14 z-30 bg-black/40 md:hidden"
+            />
+            <motion.div
+              initial={{ opacity: 0, y: -16 }}
+              animate={{ opacity: 1, y: 0, transition: { duration: 0.25, ease: "easeOut" } }}
+              exit={{ opacity: 0, y: -16, transition: { duration: 0.2, ease: "easeIn" } }}
+              className="fixed top-14 left-0 right-0 z-40 max-h-[calc(100dvh-3.5rem)] overflow-y-auto overscroll-contain bg-terminal-bg/95 backdrop-blur-md border-b border-terminal-border p-4 font-mono space-y-1 md:hidden"
+            >
             <button
               onClick={() => { openInMode("ai"); setMobileOpen(false); }}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-git-green bg-git-green/5 border border-git-green/20 hover:bg-git-green/10 transition-colors cursor-pointer"
             >
               <Sparkles size={14} className="text-git-green/70" />
-              <span>Ask AI about this developer</span>
+              <span>Ask AI about {profile.name.split(" ")[0]}</span>
             </button>
 
             {/* Terminal trigger — opens the command palette */}
@@ -193,30 +232,54 @@ export function Navbar() {
             >
               <FileSearch size={14} className="text-git-green/70" />
               <span>Recruiter mode</span>
-              <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-git-green/15 border border-git-green/30 text-git-green uppercase tracking-wider">
+              <span className="ml-auto text-xs px-1.5 py-0.5 rounded bg-git-green/15 border border-git-green/30 text-git-green uppercase tracking-wider">
                 new
               </span>
             </Link>
 
             <div className="border-t border-terminal-border my-1" />
 
-            {NAV_SECTIONS.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => { goTo(s.id); setMobileOpen(false); }}
-                className={cn(
-                  "w-full text-left px-4 py-3 rounded-lg text-sm transition-colors",
-                  activeSection === s.id
-                    ? "text-git-green bg-git-green/10"
-                    : "text-text-muted hover:text-text-primary hover:bg-terminal-surface"
-                )}
-              >
-                <span className="text-text-faint mr-3">$</span>
-                git checkout {s.id}
-              </button>
-            ))}
+            {NAV_ITEMS.map((item) => {
+              const isActive = item.to
+                ? location.pathname === item.to
+                : activeSection === item.id;
+              const className = cn(
+                "w-full text-left px-4 py-3 rounded-lg text-sm transition-colors",
+                isActive
+                  ? "text-git-green bg-git-green/10"
+                  : "text-text-muted hover:text-text-primary hover:bg-terminal-surface",
+              );
+              const body = (
+                <>
+                  <span className="text-text-faint mr-3">$</span>
+                  git checkout {item.label}
+                </>
+              );
+              return item.to ? (
+                <Link
+                  key={item.label}
+                  to={item.to}
+                  onClick={() => setMobileOpen(false)}
+                  className={className}
+                >
+                  {body}
+                </Link>
+              ) : (
+                <button
+                  key={item.label}
+                  onClick={() => {
+                    goTo(item.id!);
+                    setMobileOpen(false);
+                  }}
+                  className={className}
+                >
+                  {body}
+                </button>
+              );
+            })}
 
-          </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </>

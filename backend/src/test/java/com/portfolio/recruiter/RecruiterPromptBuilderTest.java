@@ -37,6 +37,26 @@ class RecruiterPromptBuilderTest {
         assertTrue(prompt.contains("Output JSON now"), "asks for structured output");
     }
 
+    @Test
+    void matchSchemaExtractsRequirementsAndNeverAsksForAScore() {
+        String schema = RecruiterPromptBuilder.MATCH_RESPONSE_SCHEMA.toString();
+
+        assertTrue(schema.contains("isJobDescription"), "spam guard flag present");
+        assertTrue(schema.contains("requirements"), "requirement extraction present");
+        assertTrue(schema.contains("must-have"), "importance labels present");
+        assertTrue(schema.contains("matchedProjects"), "project narrative kept");
+        // The determinism keystone: the model must never be asked for the score.
+        assertFalse(schema.contains("fitScore"), "no score field in the LLM schema");
+    }
+
+    @Test
+    void matchPromptForbidsScoringByTheModel() {
+        String prompt = builder.buildMatchPrompt(sampleContext(), "A Java role with Spring Boot.");
+
+        assertTrue(prompt.contains("you do NOT score"), "model role limited to extraction");
+        assertFalse(prompt.contains("fitScore"), "no score instructions in the prompt");
+    }
+
     private PortfolioContext sampleContext() {
         var profile = new PortfolioContext.ProfileSummary(
                 "Omkar Jadhav", "omkarjadhav", "Full-Stack Dev", "Builder.",

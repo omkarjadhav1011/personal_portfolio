@@ -42,7 +42,7 @@ export function SkillsDiffSection({ skillsDiff }: SkillsDiffSectionProps) {
                       <span className="text-git-green font-bold w-3 shrink-0">+</span>
                       <span className="text-git-green">{entry.name}</span>
                       {entry.note && (
-                        <span className="text-git-green/50 text-xs ml-auto"># {entry.note}</span>
+                        <span className="text-git-green/50 text-xs ml-auto min-w-0 truncate"># {entry.note}</span>
                       )}
                     </div>
                   );
@@ -53,7 +53,7 @@ export function SkillsDiffSection({ skillsDiff }: SkillsDiffSectionProps) {
                       <span className="text-git-red font-bold w-3 shrink-0">-</span>
                       <span className="text-git-red line-through opacity-60">{entry.name}</span>
                       {entry.note && (
-                        <span className="text-git-red/50 text-xs ml-auto"># {entry.note}</span>
+                        <span className="text-git-red/50 text-xs ml-auto min-w-0 truncate"># {entry.note}</span>
                       )}
                     </div>
                   );
@@ -63,7 +63,7 @@ export function SkillsDiffSection({ skillsDiff }: SkillsDiffSectionProps) {
                     <span className="text-git-yellow font-bold w-3 shrink-0">~</span>
                     <span className="text-git-yellow">{entry.name}</span>
                     {entry.note && (
-                      <span className="text-git-yellow/50 text-xs ml-auto"># {entry.note}</span>
+                      <span className="text-git-yellow/50 text-xs ml-auto min-w-0 truncate"># {entry.note}</span>
                     )}
                   </div>
                 );

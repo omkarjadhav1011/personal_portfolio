@@ -1,8 +1,12 @@
 package com.portfolio.profile;
 
+import com.portfolio.chatbot.RateLimiter;
+import com.portfolio.telemetry.EngagementRecorder;
+import com.portfolio.telemetry.EngagementType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -42,10 +46,13 @@ public class ProfileController {
 
     private final ProfileRepository repository;
     private final ResumeTextExtractor resumeTextExtractor;
+    private final EngagementRecorder engagementRecorder;
 
-    public ProfileController(ProfileRepository repository, ResumeTextExtractor resumeTextExtractor) {
+    public ProfileController(ProfileRepository repository, ResumeTextExtractor resumeTextExtractor,
+                             EngagementRecorder engagementRecorder) {
         this.repository = repository;
         this.resumeTextExtractor = resumeTextExtractor;
+        this.engagementRecorder = engagementRecorder;
     }
 
     @Operation(summary = "Get profile")
@@ -147,7 +154,7 @@ public class ProfileController {
 
     @Operation(summary = "Download resume document from the database")
     @GetMapping("/resume")
-    public ResponseEntity<byte[]> getResume() {
+    public ResponseEntity<byte[]> getResume(HttpServletRequest request) {
         List<Profile> all = repository.findAll();
         if (all.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -159,6 +166,11 @@ public class ProfileController {
         String filename = p.getResumeFilename() != null && !p.getResumeFilename().isBlank()
                 ? p.getResumeFilename()
                 : DEFAULT_RESUME_FILENAME;
+
+        // Passive engagement signal (D2) — async, fail-open, never affects the download.
+        engagementRecorder.record(EngagementType.RESUME_DOWNLOAD, filename,
+                RateLimiter.clientIp(request), null);
+
         HttpHeaders headers = new HttpHeaders();
         String ct = p.getResumeContentType() != null ? p.getResumeContentType() : "application/pdf";
         headers.setContentType(MediaType.parseMediaType(ct));

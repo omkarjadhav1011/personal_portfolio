@@ -16,6 +16,7 @@ import { useAI, type AIMessage } from "@/hooks/useAI";
 import { useCommandPaletteStore } from "@/store/commandPalette";
 import { cn } from "@/lib/utils";
 import { InlineMarkdown } from "@/components/ui/InlineMarkdown";
+import { ChatContactCard, chatContactAlreadySent } from "@/components/layout/ChatContactCard";
 
 // ─── Suggested content ────────────────────────────────────────────────────────
 
@@ -93,17 +94,11 @@ export function CommandPalette() {
   const aiBottomRef = useRef<HTMLDivElement>(null);
   const [localInput, setLocalInput] = useState("");
 
-  // Global keyboard handler — uses getState() to avoid stale closure
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
-        e.preventDefault();
-        useCommandPaletteStore.getState().toggle();
-      }
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  // The Ctrl+K listener deliberately does NOT live here. This component is
+  // lazy-loaded by CommandPaletteHost, so a listener registered in it would not
+  // exist until after the chunk had already been fetched — which is only the
+  // case once the palette has been opened some other way. Registering it in
+  // both places would toggle twice per keypress and cancel out.
 
   // Auto-scroll — each panel has its own ref, gated by active mode to prevent
   // cross-panel scroll during AnimatePresence exit transitions
@@ -226,7 +221,7 @@ export function CommandPalette() {
                         aria-selected={!isAI}
                         onClick={() => setMode("terminal")}
                         className={cn(
-                          "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-2xs transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-git-green/40",
+                          "flex items-center gap-1.5 px-2.5 py-1.5 sm:py-1 rounded-md text-xs sm:text-2xs transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-git-green/40",
                           !isAI
                             ? "bg-terminal-surface text-git-green"
                             : "text-text-faint hover:text-text-muted"
@@ -240,7 +235,7 @@ export function CommandPalette() {
                         aria-selected={isAI}
                         onClick={() => setMode("ai")}
                         className={cn(
-                          "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-2xs transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-git-green/40",
+                          "flex items-center gap-1.5 px-2.5 py-1.5 sm:py-1 rounded-md text-xs sm:text-2xs transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-git-green/40",
                           isAI
                             ? "bg-terminal-surface text-git-green"
                             : "text-text-faint hover:text-text-muted"
@@ -296,7 +291,7 @@ export function CommandPalette() {
                                 >
                                   Ask AI
                                 </button>{" "}
-                                for natural language queries about this developer.
+                                for natural language queries about Omkar.
                               </p>
                             </div>
                           )}
@@ -368,6 +363,13 @@ export function CommandPalette() {
                                 <AIBubble key={msg.id} message={msg} />
                               ))}
                               {isTyping && <TypingIndicator />}
+                              {/* E1 handoff: after real engagement (3+ visitor turns), offer to
+                                  capture details inline — value first, ask second. */}
+                              {!isTyping &&
+                                !chatContactAlreadySent() &&
+                                messages.filter((m) => m.role === "user").length >= 3 && (
+                                  <ChatContactCard />
+                                )}
                               <div ref={aiBottomRef} />
                             </div>
                           )}
@@ -390,7 +392,7 @@ export function CommandPalette() {
                       onChange={(e) => setLocalInput(e.target.value)}
                       onKeyDown={handleKeyDown}
                       placeholder={isAI ? "Ask about his skills, projects, experience…" : "git checkout projects"}
-                      className="flex-1 bg-transparent text-sm text-text-primary placeholder-text-faint outline-none focus-visible:ring-1 focus-visible:ring-git-green/40 rounded font-mono"
+                      className="flex-1 bg-transparent text-base sm:text-sm text-text-primary placeholder-text-faint outline-none focus-visible:ring-1 focus-visible:ring-git-green/40 rounded font-mono"
                       autoComplete="off"
                       spellCheck={false}
                     />
@@ -422,12 +424,12 @@ export function CommandPalette() {
 
                   {/* ── Footer hint ───────────────────────────────────────── */}
                   <div className="flex items-center justify-between px-4 py-1.5 bg-terminal-surface border-t border-terminal-border">
-                    <span className="text-2xs text-text-faint">
+                    <span className="text-xs sm:text-2xs text-text-faint">
                       {isAI
                         ? "Enter to send · grounded in public portfolio data"
                         : "Arrow Up/Down to navigate history"}
                     </span>
-                    <span className="text-2xs text-text-faint">
+                    <span className="text-xs sm:text-2xs text-text-faint">
                       <kbd className="px-1 py-0.5 rounded bg-terminal-bg border border-terminal-border text-2xs">
                         ESC
                       </kbd>{" "}

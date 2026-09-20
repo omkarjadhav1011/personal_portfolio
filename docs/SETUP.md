@@ -78,10 +78,19 @@ DRIVE_MASTER_KEY=__generate__                 # openssl rand -base64 32  (SET ON
 # DRIVE_NOTIFY_EMAIL=you@example.com
 
 # ── Other optional features (app boots fine without these) ──
-# GEMINI_API_KEY=...            # chatbot + recruiter match (Google Gemini)
+# AI chat/recruiter: multi-provider failover chain — any subset of keys works, unkeyed
+# providers are skipped (docs/llm_failover_plan.md). All empty = AI endpoints 503.
+# LLM_PROVIDER_CHAIN=groq,cerebras,mistral,gemini,openrouter
+# GROQ_API_KEY=...              # console.groq.com (model default openai/gpt-oss-120b)
+# CEREBRAS_API_KEY=...          # cloud.cerebras.ai (model default gpt-oss-120b)
+# MISTRAL_API_KEY=...           # console.mistral.ai (model default mistral-small-latest)
+# OPENROUTER_API_KEY=...        # openrouter.ai (model default openai/gpt-oss-20b:free)
+# GEMINI_API_KEY=...            # aistudio.google.com — also powers RAG embeddings
 # RESEND_API_KEY=...            # contact-form email (separate from the vault mailer)
 # CONTACT_TO_EMAIL=...          # contact-form inbox
 # CORS_ALLOWED_ORIGIN=http://localhost:5173   # default already 5173
+# TELEGRAM_BOT_TOKEN=...        # owner notifications to your phone — see A8
+# TELEGRAM_CHAT_ID=...          # with the token
 ```
 
 ### A4. Generate the secrets
@@ -154,6 +163,23 @@ Restart the backend; read captured mail + OTP codes at **http://localhost:8025**
 4. Restart the backend. To send to **any** address, verify a domain in Resend and set
    `MAIL_FROM` to a sender on that domain.
 
+### A8. Owner notifications via Telegram (optional, one-time)
+Lead-capture events (new contact message, recruiter lead, …) can ping your phone through a
+Telegram bot. Without the token the app silently uses a no-op channel — nothing breaks.
+
+1. In Telegram, message **@BotFather** → `/newbot` → pick a name and a unique `..._bot`
+   username → BotFather replies with the **bot token** (`123456:ABC-...`).
+2. Get your **chat id**: open a chat with your new bot, press **Start**, then visit
+   `https://api.telegram.org/bot<TOKEN>/getUpdates` in a browser — your id is
+   `result[0].message.chat.id`. (Or message **@userinfobot** and copy the id it replies with.)
+3. In `.env` (local) and the Render dashboard (prod):
+   ```dotenv
+   TELEGRAM_BOT_TOKEN=123456:ABC-your-token
+   TELEGRAM_CHAT_ID=123456789
+   ```
+4. Restart the backend. Submitting the contact form should now ping your phone within seconds;
+   a failed send is logged and never affects the visitor.
+
 ---
 
 ## PART B — Production (Render + Vercel)
@@ -185,7 +211,9 @@ Canonical deploy spec lives in **`render.yaml`** and **`DEPLOY.md`** — this is
     `DRIVE_MASTER_KEY`, `DRIVE_PUBLIC_BASE_URL` (= this backend's URL, e.g.
     `https://portfolio-backend.onrender.com`).
   - **Vault email:** `MAIL_HOST/PORT/USERNAME/PASSWORD`, `MAIL_FROM`, `DRIVE_NOTIFY_EMAIL`.
-  - **Other (optional):** `GEMINI_API_KEY`, `RESEND_API_KEY`, `CONTACT_TO_EMAIL`.
+  - **Other (optional):** the AI provider keys (`GROQ_API_KEY`, `CEREBRAS_API_KEY`,
+    `MISTRAL_API_KEY`, `OPENROUTER_API_KEY`, `GEMINI_API_KEY` — any subset), `RESEND_API_KEY`,
+    `CONTACT_TO_EMAIL`.
 - [ ] `CORS_ALLOWED_ORIGIN` = your Vercel URL (set after B5).
 
 ### B5. Frontend → Vercel
@@ -222,7 +250,7 @@ Canonical deploy spec lives in **`render.yaml`** and **`DEPLOY.md`** — this is
 | `MAIL_SMTP_AUTH` / `MAIL_SMTP_STARTTLS` | Optional (default `true`) | `false` for Mailpit | `true` |
 | `MAIL_FROM` | For vault email | `onboarding@resend.dev` | verified sender |
 | `DRIVE_NOTIFY_EMAIL` | For vault email | your inbox | your inbox |
-| `GEMINI_API_KEY` | Optional | — | chatbot/recruiter |
+| `GROQ/CEREBRAS/MISTRAL/OPENROUTER/GEMINI_API_KEY` | Optional (any subset) | — | chatbot/recruiter failover chain; Gemini also = RAG embeddings |
 | `RESEND_API_KEY` / `CONTACT_TO_EMAIL` | Optional | — | contact form |
 | `CORS_ALLOWED_ORIGIN` | Optional | `http://localhost:5173` | Vercel URL |
 | `VITE_API_URL` (frontend) | Prod only | — (uses proxy) | Render backend URL |

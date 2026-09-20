@@ -3,12 +3,14 @@ package com.portfolio.mcp;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.portfolio.chatbot.AbuseLog;
 import com.portfolio.chatbot.RateLimiter;
+import com.portfolio.telemetry.EngagementRecorder;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
 
 /**
  * Phase B3 — the MCP message-endpoint throttle. Asserts that (1) only {@code tools/call} consumes
@@ -26,8 +28,8 @@ class McpRateLimitFilterTest {
             "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\","
                     + "\"params\":{\"name\":\"match_against_jd\",\"arguments\":{\"jdText\":\"Java role\"}}}";
 
-    private final McpRateLimitFilter filter =
-            new McpRateLimitFilter(new RateLimiter(), new ObjectMapper(), new AbuseLog());
+    private final McpRateLimitFilter filter = new McpRateLimitFilter(
+            new RateLimiter(), new ObjectMapper(), new AbuseLog(), mock(EngagementRecorder.class));
 
     private int invoke(String ip, String body) throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/mcp/message");

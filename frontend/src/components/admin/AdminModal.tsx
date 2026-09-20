@@ -16,7 +16,7 @@ export function AdminModal({ open, onClose, title, children }: AdminModalProps) 
         <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" />
         <Dialog.Content
           aria-describedby={undefined}
-          className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-xl border border-terminal-border bg-terminal-surface shadow-terminal"
+          className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] sm:w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-xl border border-terminal-border bg-terminal-surface shadow-terminal"
         >
           {/* Terminal titlebar */}
           <div className="flex items-center gap-1.5 px-4 py-3 border-b border-terminal-border bg-terminal-bg">

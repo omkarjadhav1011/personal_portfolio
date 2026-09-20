@@ -2,6 +2,7 @@ package com.portfolio.contact;
 
 import com.portfolio.chatbot.RateLimiter;
 import com.portfolio.common.Hashing;
+import com.portfolio.notify.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -41,12 +42,18 @@ public class ContactController {
     private final EmailService emailService;
     private final RateLimiter rateLimiter;
     private final ContactMessageRepository messageRepository;
+    private final NotificationService notificationService;
+    private final ContactDailyCap dailyCap;
 
     public ContactController(EmailService emailService, RateLimiter rateLimiter,
-                             ContactMessageRepository messageRepository) {
+                             ContactMessageRepository messageRepository,
+                             NotificationService notificationService,
+                             ContactDailyCap dailyCap) {
         this.emailService = emailService;
         this.rateLimiter = rateLimiter;
         this.messageRepository = messageRepository;
+        this.notificationService = notificationService;
+        this.dailyCap = dailyCap;
     }
 
     @Operation(summary = "Send a contact message", description = "Public; validates, drops bots, sends via Resend")
@@ -66,13 +73,24 @@ public class ContactController {
             return new ContactResult(true, SUCCESS_MESSAGE);
         }
 
+        // Global daily volume cap (H3, pentest #30) — after the honeypot so bot drops never
+        // consume it, before the save so an over-cap submission stores nothing.
+        if (!dailyCap.tryAcquire()) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Daily message limit reached — please email me directly.");
+        }
+
         String name = req.name().trim();
         String email = req.email().trim().toLowerCase();
         String message = req.message().trim();
 
         // Store first — the row is the deliverable; email is a best-effort notification.
         ContactMessage saved = messageRepository.save(new ContactMessage(
-                name, email, message, MessageSource.WEB, Hashing.sha256Hex(RateLimiter.clientIp(request))));
+                name, email, message, resolveSource(req.source()),
+                Hashing.sha256Hex(RateLimiter.clientIp(request))));
+
+        // DB commit → notify (B2): async and fail-open, never part of the request outcome.
+        notificationService.notifyOwner("📬 New message from " + name);
 
         boolean sent = emailService.send(name, email, message);
         if (!sent) {
@@ -80,6 +98,17 @@ public class ContactController {
         }
 
         return new ContactResult(true, SUCCESS_MESSAGE);
+    }
+
+    /**
+     * The E1 chat handoff tags its submissions CHATBOT; everything else (absent, unknown, or a
+     * value a client shouldn't self-assign like MCP) stays WEB — the label is a funnel hint,
+     * not trusted input.
+     */
+    private static MessageSource resolveSource(String raw) {
+        return "CHATBOT".equalsIgnoreCase(raw == null ? "" : raw.trim())
+                ? MessageSource.CHATBOT
+                : MessageSource.WEB;
     }
 
     /** Mirror the server action: validation failures return 200 with {success:false, firstError}. */

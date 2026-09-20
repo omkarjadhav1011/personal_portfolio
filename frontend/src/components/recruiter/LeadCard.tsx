@@ -30,9 +30,17 @@ export function LeadCard({ match, jobDescription, ownerName }: LeadCardProps) {
   const shouldReduce = useReducedMotion();
   const lead = useSubmitLead();
 
-  if (sentThisSession) return null;
-
   const firstName = ownerName.split(" ")[0] || ownerName;
+
+  // Once-per-session send — but say so instead of vanishing silently.
+  if (sentThisSession) {
+    return (
+      <p className="font-mono text-xs text-text-muted">
+        <span className="text-git-green mr-1">✓</span># message sent —{" "}
+        {firstName} will get back to you
+      </p>
+    );
+  }
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -99,7 +107,7 @@ export function LeadCard({ match, jobDescription, ownerName }: LeadCardProps) {
               disabled={busy}
               placeholder="your@email.com"
               aria-label="Your email"
-              className="flex-1 min-w-0 bg-terminal-bg border border-terminal-border rounded-lg px-4 py-2.5 font-mono text-sm text-text-primary placeholder-text-faint outline-none focus:border-git-green/60 focus-visible:ring-1 focus-visible:ring-git-green/30 transition-colors disabled:opacity-50"
+              className="flex-1 min-w-0 bg-terminal-bg border border-terminal-border rounded-lg px-4 py-2.5 font-mono text-base sm:text-sm text-text-primary placeholder-text-faint outline-none focus:border-git-green/60 focus-visible:ring-1 focus-visible:ring-git-green/30 transition-colors disabled:opacity-50"
             />
             <input
               type="text"
@@ -108,7 +116,7 @@ export function LeadCard({ match, jobDescription, ownerName }: LeadCardProps) {
               disabled={busy}
               placeholder="company (optional)"
               aria-label="Company (optional)"
-              className="flex-1 min-w-0 bg-terminal-bg border border-terminal-border rounded-lg px-4 py-2.5 font-mono text-sm text-text-primary placeholder-text-faint outline-none focus:border-git-green/60 focus-visible:ring-1 focus-visible:ring-git-green/30 transition-colors disabled:opacity-50"
+              className="flex-1 min-w-0 bg-terminal-bg border border-terminal-border rounded-lg px-4 py-2.5 font-mono text-base sm:text-sm text-text-primary placeholder-text-faint outline-none focus:border-git-green/60 focus-visible:ring-1 focus-visible:ring-git-green/30 transition-colors disabled:opacity-50"
             />
             <button
               type="submit"

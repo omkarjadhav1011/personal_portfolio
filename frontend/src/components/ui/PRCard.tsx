@@ -142,7 +142,7 @@ export function PRCard({
           <button
             type="button"
             onClick={() => setExpanded(!expanded)}
-            className="w-full text-left font-mono text-[11px] flex items-center gap-1.5 hover:brightness-125 mb-3 text-text-muted"
+            className="w-full text-left font-mono text-[11px] flex items-center gap-1.5 py-1.5 sm:py-0 hover:brightness-125 mb-3 text-text-muted"
           >
             <ChevronRight
               size={12}

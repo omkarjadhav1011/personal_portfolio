@@ -16,8 +16,13 @@ services:
     plan: free
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
-    # Actuator health endpoint — Render gates traffic on this returning 200.
-    healthCheckPath: /actuator/health
+    # The no-I/O HealthController, NOT /actuator/health. Render polls this path continuously,
+    # and the actuator endpoint runs the DataSource probe on every hit — against a serverless
+    # Postgres that opens a connection round the clock, so the compute never suspends and the
+    # free compute-hour quota drains (it did, Sep 2026; see docs/future_plan.md). Nothing is
+    # lost by the swap: Flyway runs at startup, so a database that is down already fails the
+    # boot and the port never opens, whatever this path is set to.
+    healthCheckPath: /health
     envVars:
       # ── Database (auto-wired from the managed Postgres above) ──────────────
       - key: DB_HOST
@@ -44,30 +49,88 @@ services:
       - key: ADMIN_PASSWORD_HASH
         sync: false
 
+      # ── Demo content ───────────────────────────────────────────────────────
+      # Seeds starter profile/projects/experience/skills into an EMPTY database so the
+      # site isn't blank on first boot. NOW OFF: real content exists, and while this was
+      # "true" every row deleted in the admin panel came back on the next restart —
+      # Render's free tier restarts often — which is how fabricated star/fork/commit
+      # counts and a "Student / open to internships" headline stayed live for months.
+      # Leave it false. Turning it on against a populated database is a no-op (the
+      # seeder skips existing slugs), but against an empty one it overwrites nothing
+      # and re-adds the starter set.
+      - key: SEED_DEMO_DATA
+        value: "false"
+
       # ── CORS ─────────────────────────────────────────────────────────────
       # The Vercel frontend's public origin, e.g. https://your-portfolio.vercel.app
       # (no trailing slash). Set after the frontend URL is known.
+      #
+      # ⚠ DOMAIN MIGRATION: this is one of exactly two backend values that must
+      # change when the custom domain goes live. It mirrors VITE_SITE_URL on the
+      # frontend. If it is not updated, every API call from the new domain is
+      # blocked by CORS and the site renders its "failed to load" state.
+      # See docs/seo/00-RECON.md §0.8 for the full migration runbook.
       - key: CORS_ALLOWED_ORIGIN
         sync: false
 
-      # ── AI assistant: chatbot + RAG + recruiter (Google Gemini) ───────────
-      # The only secret is GEMINI_API_KEY — leave it unset to disable all AI features
-      # (chat/recruiter then return 503). The rest are non-secret tuning knobs with
+      # ── AI assistant: chatbot + RAG + recruiter — multi-provider failover chain ──
+      # (docs/llm_failover_plan.md). Secrets are the *_API_KEY entries — leave them all
+      # unset to disable AI features (chat/recruiter then return 503); any subset works,
+      # unkeyed providers are skipped. The rest are non-secret tuning knobs with
       # sensible defaults committed here; change them in git or the dashboard.
+      - key: LLM_PROVIDER_CHAIN
+        value: groq,cerebras,mistral,gemini,openrouter
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+      - key: LLM_GROQ_DAILY_CAP
+        value: "950"                 # keep under Groq's documented 1K free RPD
+      - key: CEREBRAS_API_KEY
+        sync: false
+      - key: CEREBRAS_MODEL
+        value: gpt-oss-120b
+      - key: MISTRAL_API_KEY
+        sync: false
+      - key: MISTRAL_MODEL
+        value: mistral-small-latest
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL
+        value: openai/gpt-oss-20b:free   # qwen3-next-80b:free was persistently 429 upstream (2026-07-04)
+      - key: LLM_OPENROUTER_DAILY_CAP
+        value: "45"                  # free tier is 50/day ($10 one-time credit -> 1000/day)
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_MODEL
-        value: gemini-2.5-flash      # or gemini-2.5-flash-lite (more daily quota) / gemini-2.5-pro
+        # gemini-3-flash does NOT exist — the API rejects it with 404 NOT_FOUND, which fails
+        # every chat/match call. Verified against ListModels on 2026-09-02: use gemini-2.5-flash
+        # (also GeminiProvider's own default, and the model the thinkingBudget:0 workaround for
+        # structured output was written against). Free RPD is per-project — check AI Studio.
+        value: gemini-2.5-flash
       - key: GEMINI_API_URL
         value: https://generativelanguage.googleapis.com/v1beta
+      - key: LLM_GEMINI_DAILY_CAP
+        value: "900"
       - key: GEMINI_EMBED_MODEL
         value: gemini-embedding-001
       # Must match the embedding column width (vector(768)); don't change after indexing.
       - key: GEMINI_EMBED_DIM
         value: "768"
-      # Hard daily ceiling on AI calls (chat + recruiter); keep below the free-tier RPD.
+      # Global daily ceiling on AI calls across ALL providers; keep FAR below the chain's
+      # total RPD — that gap is what stops a bot flood from exhausting real provider quotas.
       - key: AI_DAILY_REQUEST_CAP
         value: "200"
+      # Per-IP daily AI allowance (0 disables) — anti budget-burn.
+      - key: AI_IP_DAILY_CAP
+        value: "30"
+
+      # ── Owner notifications (Telegram Bot API). Leave token unset to disable —
+      #    the app falls back to a logging no-op channel. Setup: docs/SETUP.md §A8. ──
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
 
       # ── Contact-form email delivery (Resend REST). Leave key unset to disable. ──
       - key: RESEND_API_KEY
@@ -92,6 +155,12 @@ services:
       - key: OAUTH_ALLOWED_EMAILS
         sync: false
       # SPA origin to redirect back to after sign-in (the Vercel URL in prod).
+      #
+      # ⚠ DOMAIN MIGRATION: the second of the two backend values that must change
+      # when the custom domain goes live (the other is CORS_ALLOWED_ORIGIN above).
+      # Mirrors VITE_SITE_URL on the frontend. If it is not updated, OAuth sign-in
+      # redirects admins back to the old domain after authenticating.
+      # See docs/seo/00-RECON.md §0.8 for the full migration runbook.
       - key: APP_FRONTEND_URL
         sync: false
       # Prod is HTTPS, so the OAuth-request cookie must carry the Secure flag.

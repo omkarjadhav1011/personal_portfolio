@@ -59,7 +59,7 @@ function FileTypeIcon({ contentType, size = 30 }: { contentType: string; size?: 
 }
 
 const iconBtn =
-  "p-1.5 rounded-md text-text-muted hover:text-text-primary hover:bg-terminal-border/40 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-git-blue/30";
+  "p-2.5 md:p-1.5 rounded-md text-text-muted hover:text-text-primary hover:bg-terminal-border/40 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-git-blue/30";
 
 export function DriveClient() {
   const { toast } = useToast();
@@ -210,7 +210,7 @@ export function DriveClient() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="font-mono text-xs text-text-faint">$ ls -la ~/vault</div>
           <h1 className="flex items-center gap-2 text-xl font-bold text-text-primary">
@@ -221,7 +221,7 @@ export function DriveClient() {
             {files.length === 1 ? "" : "s"}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <span title="Uploads will require an email code to download or send">
             <FormCheckbox label="sensitive" checked={uploadSensitive} onChange={setUploadSensitive} />
           </span>
@@ -263,7 +263,7 @@ export function DriveClient() {
             <ChevronRight size={12} className="text-text-faint" />
             <button
               onClick={() => goToCrumb(i)}
-              className={`rounded px-1.5 py-0.5 transition-colors hover:text-git-blue focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-git-blue/30 ${
+              className={`max-w-[40vw] truncate rounded px-1.5 py-0.5 transition-colors hover:text-git-blue focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-git-blue/30 ${
                 i === trail.length - 1 ? "text-text-primary" : "text-text-muted"
               }`}
             >

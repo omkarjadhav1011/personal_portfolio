@@ -7,6 +7,87 @@ Status legend: 🔜 planned · 💭 idea · ⏸️ deferred · ✅ done (kept br
 
 ---
 
+## Now / Next — the remaining work, in order (updated 2026-07-03)
+
+Lead capture (Groups P0 + A–E + F1) shipped and released to `main` on 2026-07-03. This is the
+complete plan for what's left, ordered by (blockers first, then impact ÷ effort). Details for
+each item live in the sections below.
+
+**0. Manual owner actions (minutes each — some block later items):**
+- [ ] Verify the live release (PROD-gate): backend `/actuator/health` UP; run a JD match + leave
+      a lead + send a chat message on the live site → Telegram pings arrive, dashboard engagement
+      panel counts them; anonymous `GET /api/admin/leads` and `/api/admin/telemetry` → 401.
+- [ ] Confirm `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` are set in the Render dashboard
+      (without them prod notifications + the Monday digest silently no-op).
+- [ ] Add the real Cal.com social (label `book a call`) via the admin profile editor — F1
+      renders nothing until it exists.
+- [ ] **Resend: verify a domain + set `MAIL_FROM`** — the blocker for F2 and X3 below.
+- [ ] Housekeeping: delete the stale `feature/springboot` branch (its one unmerged commit
+      hardcodes dev credentials — superseded, must never merge or push) and drop the six
+      superseded stashes (`git stash list` — everything except recovered work is artifacts).
+
+**1. Hardening sitting — ✅ DONE 2026-07-03 (`fix/security-hardening`, released):**
+- [x] B2 — Vercel security headers. *Post-deploy check pending: click through the live site —
+      API calls and the avatar must not be CSP-blocked; tighten `*.onrender.com` to the exact
+      backend origin once recorded.*
+- [x] B3 — `DailyBudgetGuard` persisted (V14 `daily_counter`, row `ai-budget`).
+- [x] Per-form daily contact cap (`CONTACT_DAILY_CAP`, default 100, row `contact-form`).
+
+**2. Prod-only security verification (needs the live URL):**
+- [ ] XFF residual probe on Render (Security section, pentest RC-a).
+
+**2b. AI quota reality check — resolved by multi-provider failover (built 2026-07-04):**
+- ✅ **Multi-provider LLM failover BUILT** (steps 0–8 of `docs/llm_failover_plan.md`, branch
+      `feat/llm-failover`): chain groq → cerebras → mistral → gemini → openrouter, 429/5xx
+      failover, per-provider persisted quota (zone-aware resets), circuit breaker, JSON ladder,
+      per-IP daily cap. Drill + real-key smoke verified all providers.
+- [ ] **Step 9 remaining:** merge `feat/llm-failover` → dev (Render auto-deploys), add the four
+      provider keys in the Render dashboard, prod smoke (chat + match on the live site, check
+      `[llm]` log lines).
+- [ ] **Owner:** verify the project's Gemini RPD at aistudio.google.com/rate-limit (render.yaml
+      now ships `GEMINI_MODEL=gemini-3-flash`); opt out of Mistral training-data use in its
+      console; **rotate all four provider keys** (they transited chat once during setup).
+- [ ] After deploy, revisit `AI_DAILY_REQUEST_CAP` (currently 200) — with ~4K RPD of real
+      chain capacity it becomes a pure cost-policy knob rather than a quota mirror.
+- 💭 Separate dev vs prod API keys — now applies to all five providers, not just Gemini.
+- 💭 OpenRouter one-time $10 credit purchase → 1,000 RPD on `:free` models (would justify
+      promoting it in the chain).
+- ⏸️ Embedding-provider failover explicitly out of scope: pgvector rows are gemini-embedding-001
+      vectors; switching embedding provider requires a full re-index. GitHub Models evaluated and
+      excluded (8K-in/4K-out caps + experimentation-only ToS).
+- 💭 Per-provider health/quota panel on the admin dashboard (data lands in `daily_counter`).
+- 🔜 **Per-IP daily cap on AI endpoints** (anti budget-burn): the per-minute `RateLimiter` doesn't
+      stop a slow bot (5 req/min drains the 200/day budget from one IP in ~40 min). Add a per-IP
+      daily ceiling (~20–30/day, `PersistentDailyCounter`) so draining the budget requires IP
+      rotation. Candidate extra step in `llm_failover_plan.md`.
+- 💭 Cloudflare Turnstile on the chat widget if `AbuseLog` ever shows real distributed abuse —
+      defends against IP-rotating bots that defeat per-IP caps.
+- ⚠️ Tuning rule: keep `AI_DAILY_REQUEST_CAP` well below the chain's total RPD (~4K) — the gap is
+      the margin that stops a bot flood from ever exhausting real provider quotas.
+
+**3. Feature work, ranked:**
+- [ ] A1 — `search_portfolio(query)` MCP tool (S).
+- [ ] B7 — real root `README.md` (S) — the repo landing page is portfolio content.
+- [ ] C2 — render the JD match as a literal git diff (S, frontend-only, most on-brand).
+- [ ] F2 — auto-acknowledgment email (S, **unblocked by the Resend domain action above**;
+      spec in the Lead capture section).
+- [ ] X3 — in-app reply from the admin inbox (M, same Resend prerequisite; spec in
+      `lead_capture_plan.md` §X3).
+- [ ] A3 — Drive quick wins: sensitivity toggle + real upload progress (S).
+- [ ] A4 — RAG-ground the recruiter match/letter (M).
+- [ ] A5 — streaming Drive uploads (M).
+- 💭 Mobile follow-ups (from the 2026-07-04 responsive pass): stacked-card mobile variants for the
+      admin tables (chose horizontal scroll for now) · optional strict-16px body type on mobile
+      (kept the 14px terminal scale, only inputs/tiny labels were bumped) · drag-reorder on touch
+      (handles hidden below `md`, up/down buttons are the mobile mechanism).
+
+**4. Larger / someday:** A6 resume builder Phase 2 (L) · C1 clonable career repo · C3
+`ask_candidate` MCP tool (telemetry prerequisite now DONE — Group D shipped) · C4 curl-able
+ANSI resume · C5 signed resume · Drive Phase 8 WhatsApp · Streamable HTTP MCP transport
+(waits for Spring Boot 4 / Spring AI 2) · multi-instance Redis stores · RAG reindex debounce.
+
+---
+
 ## Secure Document Vault ("Drive")
 
 v1 (Phases 1–7) is built and verified. Remaining scope:
@@ -49,23 +130,119 @@ v1 (Phases 1–7) is built and verified. Remaining scope:
 - 🔜 **Remaining pentest fixes B–D + hardening list** — Vercel security headers (CSP etc.), Spring
   Boot 3.3.x bump, prod secret-hygiene runbook; see `SECURITY_PENTEST_REPORT.md` §5.
 
+### Hardening sitting — branch `fix/security-hardening` (implementation spec, 2026-07-03)
+
+One reviewable branch, three items (Now/Next §1). Verified facts this spec rests on:
+`frontend/vercel.json` currently has rewrites only; `frontend/nginx.conf` holds 6 headers that
+Vercel never serves; `frontend/index.html` has **no inline scripts** (strict `script-src 'self'`
+is safe); `DailyBudgetGuard` keeps `(day, count)` in memory only; next migration is `V14`.
+
+**H1 (= B2) — security headers in `vercel.json`.**
+Add a `headers` block (`source: "/(.*)"`) porting nginx.conf: `X-Frame-Options: DENY`,
+`X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `Permissions-Policy`
+(camera/mic/geo/payment off), HSTS `max-age=31536000; includeSubDomains`, and a CSP. CSP
+deltas vs nginx (which assumed a same-origin proxy): `connect-src 'self' https://*.onrender.com`
+and `img-src 'self' data: https://*.onrender.com` — the SPA calls the Render backend
+cross-origin and loads the avatar from it. Wildcard now; tighten to the exact backend origin
+once it's recorded. Keep `style-src 'unsafe-inline'` (Tailwind/framer inline styles).
+*Verify:* build-time none (config only); after the next Vercel deploy `curl -I` the live site →
+headers present, then click through the site (API calls + avatar must not be CSP-blocked).
+
+**H2 (= B3) — persist the `DailyBudgetGuard` counter.**
+`V14__add_daily_counter.sql`: `daily_counter(name varchar(40) PK, day date NOT NULL,
+count int NOT NULL)` — one generic row per counter, shared with H3. New `common.counter`
+mini-package: `DailyCounter` entity + repository + `DailyCounterStore` (load/saveseam).
+`DailyBudgetGuard` keeps its exact public API (`tryAcquire`/`remaining`) but loads its row
+(`name='ai-budget'`) lazily on first use and saves on every increment (≤ cap writes/day —
+negligible; load/save seam). The existing direct-construction unit tests keep working via a
+no-op store.
+*Verify:* unit — a new guard instance constructed over the same store resumes the count
+("restart survives"); suite green (V14 + entity validate).
+
+**H3 — per-form daily contact cap (pentest #30 remainder).**
+`CONTACT_DAILY_CAP` env (default 100, 0 disables) read by a small `contact.ContactDailyCap`
+component using the same `DailyCounterStore` (`name='contact-form'`). Checked in
+`ContactController.send` AFTER honeypot (bots must not consume the cap) and BEFORE the save;
+over cap → 429 with the standard envelope ("Daily message limit reached — please email
+directly."). Recruiter leads keep their own per-IP bucket; this cap is contact-form only.
+*Verify:* `@SpringBootTest` with `CONTACT_DAILY_CAP=1` — first POST stores + succeeds, second
+→ 429 and no row; honeypot POSTs never consume the cap.
+
 ## Lead capture (lead_capture_plan.md)
 
-- 🔜 **Wire notifyOwner into contact + lead saves.** Group B (`feat/lead-capture-notify`, B1
-  committed unmerged) holds `NotificationService`; once it merges to dev, add the one-line
-  `notifyOwner(...)` calls in `ContactController.send` (B2) and `RecruiterController.lead`
-  (C1 deferral — the spot is marked with a code comment).
+- ✅ **Groups P0 + A–E + F1 shipped 2026-07-03**, all released to `main`: durable contact inbox
+  (V11) · Telegram owner notifications (fail-open, Noop fallback) · recruiter lead capture (V12)
+  + admin Leads tab · engagement telemetry (V13, 4 signals, dashboard panel, Monday 09:00 IST
+  digest) · chat handoff (`source=CHATBOT` inline form) · booking link (a `book a call` social,
+  no migration). Backend suite: 151 tests.
+
+- 🔜 **F2 — auto-acknowledgment email to the visitor (S) — the ONLY unshipped lead-capture
+  phase.** *Blocked on the Resend verified domain + `MAIL_FROM` (owner action in "Now / Next"
+  §0): Resend's default `onboarding@resend.dev` sender can only deliver to the account owner's
+  own address, so an ack to an arbitrary visitor bounces until a custom domain is verified.*
+  **What we build once unblocked:** after the A1 store-then-send in `ContactController` (and
+  the C1 lead save), a **second** Resend send goes to the *visitor*: "thanks — your message
+  reached Omkar, he'll reply soon", from `MAIL_FROM`, `reply_to` = the owner's real address.
+  Strictly **fail-open**: an ack failure is logged and never changes the form/lead response
+  (the visitor already got their success; the row is already stored). No new table, no new
+  endpoint — one method on `EmailService` + two call sites. **Verify:** submit with a personal
+  address → ack lands in that inbox; kill `RESEND_API_KEY` → form still succeeds, log shows the
+  skip; honeypot submissions never trigger an ack (no row → no send).
+
 - 💭 **Leads admin: delete/archive.** C3 shipped the leads inbox triage-only (GET/PATCH, flow
   NEW → READ → REPLIED) — no DELETE endpoint by design. Add delete (or an ARCHIVED step) if the
   table ever needs pruning.
+- 💭 **X-series extensions** (specs in `lead_capture_plan.md`): X2 trackable resume links
+  (per-application tokens writing `RESUME_LINK_HIT` engagement events), X3 in-app reply from
+  the inbox (needs the same Resend domain as F2).
+- 💤 **Dormant `/api/recruiter/letter` endpoint (2026-07-04).** The recruiter page dropped the
+  AI cover-letter section (recruiters read it as AI boilerplate; the slot now promotes the lead
+  card as "Connect with Omkar"). `RecruiterController.letter` + `buildLetterPrompt` are still
+  deployed but have no callers — remove them, or expose the letter as an MCP tool if it earns
+  its keep there.
+
+## Custom domain + 24/7 uptime (current initiative, 2026-07-04)
+
+- 🔜 **Custom domain + keep-alive on the existing Vercel + Render stack (₹0/mo)** — replaces the
+  AWS migration (pivot 2026-07-04): the real pain was only Render free-tier spin-down (15 idle
+  min → ~50 s JVM cold start). Fix: UptimeRobot pinging `/actuator/health` every 5 min (750 free
+  instance-hrs/mo covers 24/7) + domain from Cloudflare/Namecheap → apex/`www` on Vercel,
+  `api.<domain>` on Render. Runbook: `DEPLOY.md` → "Custom domain + keep-alive". Cutover
+  checklist includes tightening the `vercel.json` CSP from `*.onrender.com` to `api.<domain>`
+  (closes the B2 post-deploy tightening note above) + OAuth console redirect URIs.
+
+## AWS migration (aws_migration_plan.md) — ⏸️ shelved 2026-07-04
+
+- ⏸️ **Migrate to AWS + custom domain** — was decided, then shelved same day in favour of the
+  ₹0 domain+pinger fix above (the pain was uptime, not the platform). The doc stays as the
+  full roadmap: S3+CloudFront (frontend) + single EC2 with Docker Compose (Spring Boot +
+  pgvector Postgres + Caddy) + S3 (vault/backups) + Route 53, ~₹590–730/mo post-credits;
+  comparison of 7 options + phased runbook (Phases 0–7, confirmation-gated). Escalation
+  ladder: pinger → Render Starter (~₹600/mo) → Option 7.
+- ⏸️ **RDS upgrade** (swap the PG container for RDS, ~₹1,900/mo total) when budget allows —
+  `DATABASE_URL` flip + dump restore, nothing else changes.
+- ⏸️ **ECS Fargate + ALB** as AWS learning milestone #2 (possibly build-then-teardown to cap cost).
+- ⏸️ **IAM-role auth for the Drive S3 client** — `DriveStorageConfig` should fall back to the
+  default credentials provider chain when static `STORAGE_ACCESS_KEY` is absent.
+- 💭 Compute Savings Plan after the t4g.small-vs-micro sizing decision (~30–40% off EC2).
+- 💭 Terraform/CDK second pass re-creating the whole stack (also fixes the single-instance
+  rebuild story).
+- 💭 CloudFront/WAF in front of `api.` if AI-endpoint abuse ever outgrows app-level caps.
 
 ## Other initiatives (detailed plans in this folder)
 
+- `aws_migration_plan.md` — AWS migration: option comparison, chosen architecture, phased runbook.
 - `LLM_plan.md` — LLM/chatbot roadmap.
+- `llm_failover_plan.md` — multi-provider LLM failover: design decisions + step-by-step
+  implementation plan (2026-07-04, ready to execute).
 - `MCP_RECRUITER_plan.md` — recruiter MCP integration plan.
 - `oauth2_mfa_admin_hardening_plan.md` — OAuth2 + TOTP MFA + admin hardening (largely shipped; kept
   for reference).
 - 💭 **Resume builder** — Phase 1 (upload + serve) shipped; a full structured resume builder is planned.
+- 📝 **`docs/SETUP.md` header is stale** — it still says "Spring Boot 3.3.5" and "React + Vite"
+  while `pom.xml` is on 3.5.15; it also predates the LLM chain / MCP / telemetry subsystems, so its
+  prerequisite + `.env` sections need a refresh pass (surfaced while writing the root `README.md`,
+  2026-09-02).
 
 ## AI assistant / RAG (LLM_plan.md)
 
@@ -87,6 +264,252 @@ v1 tools (`get_profile`, `list_projects`, `get_experience`, `get_resume_summary`
 - 💭 **`search_portfolio(query)`** — semantic search over the corpus via the existing pgvector
   `RetrievalService` (Phase E2 candidate). Embedding-backed, so it consumes Gemini embedding quota
   and needs its own rate-limit bucket + cost accounting like `match_against_jd`.
+- ⏸️ **MCP `notifications/progress` for `match_against_jd`** (2026-07-04) — the tool now emits
+  logging notifications (`notifications/message`) per analysis stage, but real progress
+  notifications need the client's `progressToken` from the request `_meta`, which the Spring AI
+  1.0.9 tool bridge doesn't surface (`McpToolUtils` only exposes the exchange). Revisit with the
+  Spring AI 2.0 upgrade.
+- 💭 **Recruiter match cache → Redis** (2026-07-04) — `MatchResultCache` (JD-hash-keyed match
+  results, 6h TTL, 200 entries) is in-memory like the other TTL stores; move to Redis if the app
+  ever scales past one instance.
+- 💭 **Show the fit-score sub-score breakdown in the recruiter UI** (2026-07-04) — the backend now
+  computes per-bucket must-have/nice-to-have coverage behind every score (audit-logged); a
+  `FitScoreHero` breakdown panel could surface it to recruiters for extra trust. Backend-only for
+  now by decision.
+
+---
+
+## Codebase review — 2026-07-02 (features, improvements, ideas)
+
+Output of a full product/code review. Each entry says exactly **what we're building** so it can be
+picked up cold. Effort: S (≤ half a day) · M (1–3 days) · L (1+ week). Items that expand an entry
+already in this file are marked *(expands existing entry above)*.
+
+### A. Features to build next (ranked by impact ÷ effort)
+
+- 🔜 **A1 — `search_portfolio(query)` MCP tool (S)** *(expands the 💭 under "Public MCP server")*
+  **What we build:** a 9th `@Tool` in `PortfolioMcpTools` that takes a free-text query, embeds it via
+  the existing `GeminiEmbeddingClient`, runs pgvector similarity search through `RetrievalService`,
+  and returns the top-N matching portfolio chunks (project/skill/experience snippets with source
+  labels). Gets its own rate-limit bucket (`mcp-search:<ip>`) in `McpRateLimitFilter`, cloned from
+  the `mcp-match` pattern, and consumes the `DailyBudgetGuard` budget (embedding calls cost quota).
+  **Why:** AI agents reach for semantic search first; today they must guess `list_projects` filters.
+
+- ✅ **A2 — Recruiter/MCP usage telemetry + admin dashboard panel.** Shipped 2026-07-03 as
+  lead-capture Group D (widened to the general `engagement_event` stream, V13):
+  `com.portfolio.telemetry` package, four instrumented signals, `GET /api/admin/telemetry`,
+  dashboard engagement panel, weekly Telegram digest. C3's prerequisite is now met.
+
+- 🔜 **A3 — Drive quick wins: sensitivity toggle + real upload progress (S)** *(expands the two 🔜
+  entries under "Drive")* **What we build:** (1) `PATCH /api/drive/files/{id}` accepting
+  `{"sensitive": bool}`, mirroring the existing folder `PATCH`, plus a toggle in `DriveAdmin.tsx`;
+  (2) an XHR-based upload variant of `authFetch` in `lib/api.ts` that reports `upload.onprogress`,
+  wired to a real per-file % bar replacing the current spinner.
+
+- 🔜 **A4 — RAG-ground the recruiter match/letter (M)** *(expands the 💭 "Recruiter RAG grounding")*
+  **What we build:** `RecruiterPromptBuilder` stops embedding the full portfolio snapshot in every
+  Gemini call; instead the JD is embedded and the top-K relevant chunks are retrieved via
+  `RetrievalService` (same as chat, Phase C4 of `LLM_plan.md`) and passed as grounded context.
+  Match quality stays (verify on a few known JDs); token cost per call drops, which matters under
+  the 200/day `DailyBudgetGuard` cap.
+
+- 🔜 **A5 — Streaming Drive uploads (M)** *(expands the 🔜 "Streaming upload")*
+  **What we build:** replace `file.getBytes()` in `DriveService` with `CipherInputStream` over the
+  multipart stream → S3 `putObject` with `contentLength = plaintext + 16` (GCM tag), so large files
+  never sit fully in heap. Also closes pentest hardening item #22.
+
+- ⏸️ **A6 — Resume builder Phase 2 (L)** — structured resume builder (sections, entries, PDF
+  render) on top of the shipped Phase 1 upload+serve. Deliberately last: `get_resume_summary`
+  already exposes extracted resume text over MCP, so agents get most of the value today.
+
+### B. Improvements / fixes (verified in code 2026-07-02)
+
+- ✅ **B1 — Stop trusting `X-Real-IP` in `RateLimiter.clientIp` (S).** Done 2026-07-02 as
+  lead-capture P0 (`fix/rate-limiter-client-ip`, merged); regression test in `RateLimiterTest`.
+
+- 🔜 **B2 — Ship security headers on Vercel (S).**
+  **What we build:** a `headers` block in `frontend/vercel.json` (verified: currently rewrites
+  only) with `X-Frame-Options: DENY`, `X-Content-Type-Options`, `Referrer-Policy`, HSTS, and a CSP
+  whose `connect-src` is scoped to the Render backend origin — porting what exists only in
+  `nginx.conf` (which Vercel never runs). Pentest Fix B.
+
+- 🔜 **B3 — Persist the `DailyBudgetGuard` counter (S).**
+  **What we build:** back the in-memory `(day, count)` state (`DailyBudgetGuard.java:24-26`) with a
+  single-row Postgres table (Flyway `V<next>`), read at startup / written on increment. Today every
+  Render restart (free tier sleeps daily) silently resets the "hard" AI-spend ceiling.
+
+- ✅ **B4 — Fix stale javadoc on `RateLimiter.clientIp`.** Done with B1 (same P0 commit).
+
+- ✅ **B5 — Relocate `SECURITY_PENTEST_REPORT.md` to `docs/`.** Done during P0 — lives at
+  `docs/SECURITY_PENTEST_REPORT.md`.
+
+- ✅ **B6 — Update the pentest report's status line.** Done during P0 — the "Where I left off"
+  line now records Fix A (IP part) as done.
+
+- 🔜 **B7 — Write a real root `README.md` (S).**
+  Currently one line (`# personal_portfolio`). **What we build:** overview + architecture sketch
+  (SPA / API / Postgres+pgvector / MinIO-R2), feature list (vault, RAG chat, recruiter AI, MCP
+  server), links to live site + MCP endpoint + `docs/`. The repo landing page *is* portfolio
+  content for technical evaluators.
+
+### C. Out-of-the-box ideas (domain-unique)
+
+- 💭 **C1 — `git clone` my career: the portfolio as an actual git repository.**
+  **What we build:** a JGit-backed endpoint serving a *generated, clonable repo* over git's
+  smart-HTTP protocol (e.g. `/career.git`): commits = career events dated from `experience` rows,
+  branches = skill categories (the data model `SkillBranchController` already has), tags = job
+  changes, README = profile. Regenerated on admin writes via the same trigger pattern as
+  `CorpusReindexAspect`. A recruiter-engineer runs `git clone … && git log --graph` and reads the
+  career in their own terminal — the git theme becomes functional, not just visual.
+
+- 💭 **C2 — Render the JD match as a literal git diff (cheapest, most on-brand).**
+  **What we build:** a new presentation of the existing `MatchResult` on `RecruiterPage`: matched
+  skills as `+` lines in git-green with evidence, gaps as `-` lines in red, headed
+  `diff --git a/job_description b/omkar`, reusing `SkillsDiffSection`'s diff UI. Zero new backend.
+
+- 💭 **C3 — `ask_candidate(question)` MCP tool: recruiters' agents interview you, transcripts
+  captured.** **What we build:** one MCP tool that answers free-form questions as the candidate,
+  grounded via `RetrievalService` + `PromptBuilder` (essentially `/api/chat` re-exposed over MCP,
+  with its own rate bucket + budget draw), logging every Q&A to the A2 telemetry table. The MCP
+  server becomes a 24/7 async screening interview *and* a lead-capture funnel ("what companies
+  asked about me this week"). Depends on A2.
+
+- 💭 **C4 — `curl`-able ANSI resume (content negotiation).**
+  **What we build:** a controller that serves a plain-text/ANSI-escape resume when the request has
+  `Accept: text/plain` or a curl/wget User-Agent — profile, projects, and skills drawn as an ASCII
+  `git log --graph`, rendered from the same queries `PortfolioMcpTools` uses. A terminal-themed
+  portfolio you can actually read from a terminal.
+
+- 💭 **C5 — Cryptographically signed resume + verify endpoint.**
+  **What we build:** the served resume PDF gets a detached signature (HMAC or Ed25519, key handled
+  like `DRIVE_MASTER_KEY` — env-only, fail-fast) and a public `GET /api/verify` page: upload/paste
+  a hash, get "authentic / tampered". Anti-fraud provenance for recruiters in the age of
+  AI-generated fakes, reusing the vault's crypto discipline.
+
+**Recommended order:** ~~B1~~ ~~A2~~ (done) → B2/B3 (same sitting) → A1 → C2 → then pick by
+appetite. The current consolidated order lives in "Now / Next" at the top of this file.
+
+---
+
+- 💭 **Simple-portfolio branch (`release/simple-portfolio`, at `eb90d36`).** A pre-AI cut of the site
+  (portfolio + admin + OAuth2/MFA + vault, no chatbot/recruiter-agent/MCP/LLM-failover) kept
+  deployable side by side with the live site. Render blueprint resources renamed to
+  `portfolio-simple-db` / `portfolio-simple-backend`, and `DataSeeder` is re-enabled behind a new
+  `SEED_DEMO_DATA` flag so a fresh database isn't blank. Deferred: no Render CLI or MCP is
+  configured locally, so creating that Blueprint is a manual dashboard step; `/recruiter` is still
+  routable on that branch and errors without `GEMINI_API_KEY` — hide the route if the simple deploy
+  goes public; and `SEED_DEMO_DATA` must be flipped to false once real content is curated, since
+  the per-row seed guards otherwise resurrect deleted placeholders on every restart.
+
+---
+
+- 💭 **Postgres moved off Render to Neon (2026-09-02).** Render's free Postgres expires 30 days after
+  creation, so prod now runs on Neon (`aws-us-west-2`, pgvector 0.8.0, forever-free, auto-resume from
+  idle). The backend connects via `DATABASE_URL` as a full JDBC URL against Neon's **direct** endpoint —
+  not the `-pooler` one, whose PgBouncer transaction mode breaks Flyway advisory locks and Hibernate
+  prepared statements. Deferred: `render.yaml` still describes a `fromDatabase`-wired Render Postgres and
+  no longer matches production — update it (or drop it) so a future Blueprint sync can't recreate the old
+  pair; Neon's free plan caps at 0.5 GB / 100 CU-hours, worth watching if the vault or embeddings grow.
+
+---
+
+- 💭 **Keep-alive pinger not yet created (2026-09-02).** `GET /health` ships and is live on
+  `portfolio-backend-sfzm`, but nothing pings it yet, so the free service still cold-starts after
+  15 idle minutes. Deferred because it's a manual dashboard step: cron-job.org every 10 min
+  (primary), UptimeRobot every 5 min (backup) — steps in `DEPLOY.md`. Ping only **one** free
+  service: the 750 instance-hours/month quota is per workspace and a full month is 744 h, so a
+  second warm service exhausts it mid-month and Render suspends both.
+
+---
+
+## SEO overhaul (`seo/overhaul` branch — see `docs/seo/`)
+
+- ⏳ **Replace the resume PDF served at `/api/profile/resume`.** The live `Omkar_Jadhav_Ace.pdf`
+  still carries the old phone number, "final-year student", "seeking a role", and Next.js /
+  FastAPI / ChromaDB / RAG. Needs a regenerated PDF uploaded through the admin panel — only the
+  owner can do this. Blocks Wave 3. (`docs/seo/00-RECON.md` §9.6)
+- ⏳ **Confirm the real LinkedIn URL.** The one published today resolves to a different person;
+  the resume cites `linkedin.com/in/omkar-jadhav-st`. Blocks the `sameAs` graph in Wave 2.
+- ⏳ **LeetCode profile URL** never supplied — omitted from `sameAs`, and the "210+ problems"
+  claim stays off the site until there is a profile to link.
+- ⏳ **Real descriptions for `crop-recommendation` and `dev-mobiles`.** Both were kept, but their
+  only copy is fabricated demo-seed text and `dev-mobiles` credits an employer being deleted.
+- ⏳ **Per-page `<lastmod>` in the sitemap.** Deliberately omitted in Wave 0 — a build date is not
+  a content change. Add real dates when the prerender step knows per-page content mtimes.
+- ⏳ **Project detail routes in the sitemap.** `/projects/:slug` is dynamic; concrete slugs get
+  enumerated once prerendering resolves them at build time (Wave 1/3).
+- ⏳ **Admin content edits must trigger a Vercel deploy hook.** Once content is prerendered at
+  build time, editing via the admin panel no longer reaches the served HTML without a rebuild.
+- ⏳ **Custom domain purchase.** Treated as certain. Buy it *before* Wave 5 content work — every
+  week on the `vercel.app` subdomain accrues authority to an address that will be abandoned.
+  Runbook: `docs/seo/00-RECON.md` §0.8.
+- ⏳ **`Referrer-Policy: no-referrer`** (`frontend/vercel.json:14`) will blank referrer data in any
+  analytics added in Phase 5. Loosen to `strict-origin-when-cross-origin` if that data is wanted.
+- ⏳ **Paste the canonical statement onto every external surface.** It is now identical on the
+  site, in `llms.txt` and in the JSON-LD. The corroboration only pays off when the GitHub bio,
+  the LinkedIn About section and the profile bio in the admin panel carry the same sentence
+  verbatim. Source of truth: `CANONICAL_STATEMENT` in `frontend/src/lib/identity.ts`.
+- ⏳ **Re-test AI answers after indexing.** Ask ChatGPT, Claude, Perplexity and Google AI
+  Overviews "who is Omkar Jadhav?" and record whether the right one is described. Meaningless
+  until the site is crawled — revisit ~4-8 weeks after Search Console submission.
+- ⏳ **Measure real Core Web Vitals.** Wave 4's numbers are build-output and critical-path
+  analysis, not lab or field data — no browser was available. Run Lighthouse and PageSpeed
+  Insights against the deployed site, and read CrUX in Search Console once traffic exists.
+- ⏳ **The 467 KB entry bundle is still the largest remaining weight.** framer-motion and the
+  Radix primitives dominate it. Worth an audit, but only after real measurement says it matters.
+- ⏳ **Replacing the self-hosted font needs a new filename.** `/fonts/*` is served
+  `immutable` for a year and Vite does not content-hash files in `public/`.
+- ⏳ **Thin pages after Wave 3.** `/experience` is 258 words against a 400 floor, and the project
+  pages run 137-233 against a 300 floor. Both are thin because the underlying content is short,
+  not because of layout — the fix is fuller write-ups, and two project descriptions are still
+  DRAFT pending the owner's review. Do not pad.
+- ⏳ **`/skills` and `/contact` were not built** (Wave 3 scope decision). Skills and contact remain
+  full sections on the homepage. Revisit if `omkar jadhav contact` becomes worth its own URL.
+- ⏳ **Wave 5 is incomplete — the run hit the account spend limit.** 8 briefs and 5 of 8 drafts
+  were recovered from the workflow journal into `docs/seo/drafts/`; 3 drafts were never written
+  and most drafts never went through the 4 verify lenses. State per article is tabulated in
+  `docs/seo/drafts/README.md`. Re-run with resume when budget allows — cached agents replay, so
+  only the missing work costs anything.
+- ⏳ **`spring-ai-mcp-server.md` has 18 unresolved verifier findings** recorded in its front
+  matter (2 of 20 applied by hand). Every other recovered draft is unverified.
+- ⏳ **`/blog` does not exist yet.** The 8 article topics in `03-KEYWORD-MAP.md` need the route
+  shell before Wave 5 content can land.
+- ⏳ **Google Rich Results Test still unrun** — it needs a live public URL. Run it against `/` and
+  `/about` after the next deploy.
+- ⏳ **Verify client hydration in a real browser.** Wave 1 prerenders every public route and
+  `main.tsx` now hydrates instead of re-rendering. The server HTML is verified; hydration is NOT —
+  no browser was available. Run `npm run preview` and check the console for React hydration
+  warnings before deploying.
+- 🔴 **Neon compute has auto-suspend DISABLED and has blown the free quota.**
+  `suspend_timeout_seconds: 0` means the compute never scales to zero; it has run
+  continuously since 2026-09-01 (active_time 440.7 h, compute 110.2 CPU-h) and the API now
+  returns HTTP 402. This is also why the Render backend cannot boot — Flyway cannot reach a
+  suspended compute. Fix: set the endpoint's suspend timeout to ~300s. Note this interacts
+  with the planned keep-alive pinger: pinging the backend every 10 min keeps the Neon
+  compute awake too, which is what would re-burn the quota. Ping `/health` (no DB I/O), not
+  `/actuator/health`.
+- ⏳ **Admin panel content fixes.** The live database still holds the stale profile, the Dnyanda
+  role, the fabricated project metrics and the Next.js skill. The prerender content guard blocks
+  a deploy until they are corrected at `/admin`.
+- ⏳ **Certification dates unconfirmed** (Jan 2023 / Mar 2023 carried over unverified; the AI/ML
+  bootcamp has none). Confirm or reduce all three to year-only.
+- ⏳ **Skills removed pending a decision:** Tailwind CSS, C++, MongoDB, NumPy, Pandas,
+  Scikit-learn, Jupyter. They were on the site but are absent from the confirmed skills list.
+- ⏳ **Two project descriptions are DRAFT** (`crop-recommendation`, `Mobile_Shop`) — reconstructed
+  by reading the repositories, not supplied by the owner. Review before publishing.
+- ⏳ **`/mcp` and `/projects/:slug` h1s are weak** ("MCP Server", the bare repo name). Wave 3
+  should make them carry the name and a keyword.
+- ⏳ **Remove the `/scratch` dev scaffold route** (`src/pages/ScratchProjects.tsx`) — publicly
+  routable and returns 200. Disallowed in robots.txt as of Wave 0; delete it properly in Wave 1.
+
+- 🔴 **Neon free-tier compute quota blew up the backend (2026-09-20).** Prod is down: Flyway can't
+  connect (`SQLSTATE 53000`, "account or project has exceeded the quota"), so Render crash-loops.
+  The Neon compute was awake 440.7 h of the 440.8 h billing period — it never autosuspended, because
+  (a) Render's `healthCheckPath` is `/actuator/health`, which runs the DataSource probe on every
+  poll, and (b) `application.yml` sets no HikariCP limits, so `minimumIdle` defaults to
+  `maximumPoolSize` (10) and the pool pins 10 connections open forever. Fix: point the health check
+  at the no-I/O `/health`, set `hikari.minimum-idle: 0` with a short `idle-timeout`, and confirm the
+  external pingers only hit `/health`. Quota resets 2026-10-01.
 
 ---
 

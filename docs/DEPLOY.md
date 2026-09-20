@@ -31,16 +31,29 @@ prompts you for it). Vars **not** in `render.yaml` must be added manually in the
 | `ADMIN_PASSWORD_HASH` | 🔴 required | yes (`sync:false`) | **BCrypt hash** (cost 10–12) of the admin password — never plaintext (see §1 for how to generate). |
 | `CORS_ALLOWED_ORIGIN` | 🔴 required | yes (`sync:false`) | The Vercel frontend origin, no trailing slash. Default (local) `http://localhost:5173`. |
 
-### Backend (Render) — AI assistant: chatbot + RAG + recruiter
+### Backend (Render) — AI assistant: chatbot + RAG + recruiter (multi-provider failover)
+
+Chat/match/letter are served by a **failover chain of free-tier providers**
+(`docs/llm_failover_plan.md`): a rate-limited or failing provider is skipped automatically.
+Any subset of keys works — unkeyed providers are skipped (boot log prints the chain summary);
+**all keys empty = chatbot/recruiter return 503** (feature off). Keys are backend-only — never
+in any `VITE_*`. Embeddings (RAG) stay Gemini-only and are outside the chain.
 
 | Var | Set? | In render.yaml | Purpose / default |
 |---|---|---|---|
-| `GEMINI_API_KEY` | ⚪ (enables AI) | yes (`sync:false`) | Google AI Studio key. **Empty = chatbot/recruiter return 503** (feature off). Backend-only — never in any `VITE_*`. |
-| `GEMINI_MODEL` | ⚪ | yes (`value`) | Chat model. Default `gemini-2.5-flash`. Swap to `gemini-2.5-flash-lite` (higher daily quota) or `gemini-2.5-pro`. |
+| `LLM_PROVIDER_CHAIN` | ⚪ | yes (`value`) | Priority order. Default `groq,cerebras,mistral,gemini,openrouter`. |
+| `GROQ_API_KEY` | ⚪ (enables provider) | yes (`sync:false`) | console.groq.com. `GROQ_MODEL` default `openai/gpt-oss-120b`; `LLM_GROQ_DAILY_CAP` default `950` (under the 1K free RPD). |
+| `CEREBRAS_API_KEY` | ⚪ (enables provider) | yes (`sync:false`) | cloud.cerebras.ai. `CEREBRAS_MODEL` default `gpt-oss-120b`. No daily cap (token-bucket limits). |
+| `MISTRAL_API_KEY` | ⚪ (enables provider) | yes (`sync:false`) | console.mistral.ai (opt out of training-data use in the console). `MISTRAL_MODEL` default `mistral-small-latest`. |
+| `OPENROUTER_API_KEY` | ⚪ (enables provider) | yes (`sync:false`) | openrouter.ai. `OPENROUTER_MODEL` default `openai/gpt-oss-20b:free`; `LLM_OPENROUTER_DAILY_CAP` default `45` (free tier is 50/day; a one-time $10 credit raises it to 1,000/day). |
+| `GEMINI_API_KEY` | ⚪ (enables provider + RAG) | yes (`sync:false`) | Google AI Studio key. Also powers embeddings. |
+| `GEMINI_MODEL` | ⚪ | yes (`value`) | Chat model. Default `gemini-3-flash`. Free RPD is **per-project** — verify at aistudio.google.com/rate-limit and size `LLM_GEMINI_DAILY_CAP` (default `900`) under it. |
 | `GEMINI_API_URL` | ⚪ | yes (`value`) | Gemini REST base. Default `https://generativelanguage.googleapis.com/v1beta`. |
 | `GEMINI_EMBED_MODEL` | ⚪ | yes (`value`) | Embedding model for RAG. Default `gemini-embedding-001`. |
 | `GEMINI_EMBED_DIM` | ⚪ | yes (`value`) | Embedding dimension. Default `768`. **Must match the `embedding` column width** — don't change after data is indexed. |
-| `AI_DAILY_REQUEST_CAP` | ⚪ | yes (`value`) | Hard daily ceiling on AI calls (chat + recruiter), set **below** the free-tier RPD. Default `200`. |
+| `LLM_BREAKER_THRESHOLD` / `LLM_BREAKER_COOLDOWN_SECONDS` | ⚪ | no | Circuit breaker: consecutive failures to open / cooldown. Defaults `3` / `300`. |
+| `AI_DAILY_REQUEST_CAP` | ⚪ | yes (`value`) | **Global** daily ceiling on AI calls across all providers. Default `200`. Keep FAR below the chain's total RPD — that gap stops a bot flood from exhausting real provider quotas. |
+| `AI_IP_DAILY_CAP` | ⚪ | yes (`value`) | Per-IP daily AI allowance (anti budget-burn). Default `30`, `0` disables. |
 
 ### Backend (Render) — contact form (email via Resend REST)
 
@@ -189,6 +202,84 @@ browser blocks all API calls.
 - Open the site, confirm the profile/projects load (proves frontend→backend CORS works).
 - Log in at `/admin`, upload an avatar — it persists in Postgres and renders via the
   absolute `VITE_API_URL` (cross-origin `<img>` is handled by `assetUrl()`).
+
+---
+
+## Custom domain + keep-alive (24/7 on the free tier)
+
+Two independent problems, two fixes (decided 2026-07-04; background + shelved AWS alternative
+in `aws_migration_plan.md`):
+
+1. **Render free spins down after 15 idle minutes** and the JVM cold-starts slowly (~50 s) —
+   the site is effectively not live 24/7.
+2. The site runs on platform subdomains (`*.vercel.app` / `*.onrender.com`) instead of a
+   custom domain.
+
+### A. Keep-alive pinger (₹0 — do this first, no domain needed)
+
+Render's free tier includes **750 instance-hours/month** — more than a full month (744 h) for
+one service — it only *spins down on idleness*. An external monitor that pings more often than
+the 15-minute idle window keeps it warm:
+
+Ping **`/health`** (`common/HealthController`), *not* `/actuator/health`: the actuator route runs
+the DataSource probe on every call and 503s when Postgres is down — right for Render's own
+`healthCheckPath`, wrong for a pinger. `/health` does no I/O and returns `{"status":"ok"}`.
+
+1. **[you]** Primary — [cron-job.org](https://console.cron-job.org): sign up free → **Create
+   cronjob** → URL `https://<backend>.onrender.com/health`, schedule **every 10 minutes**,
+   enabled, save.
+2. **[you]** Backup/alternative — [UptimeRobot](https://uptimerobot.com): **Add Monitor** →
+   type HTTP(s), URL `https://<backend>.onrender.com/health`, interval **5 minutes** (the free
+   floor), alert contact = your email.
+3. Keep the interval **under 15 minutes**. One service pinged 24/7 fits the 750 h/month quota;
+   two do not.
+
+Bonus: this doubles as real uptime monitoring — you get an email when the backend is actually
+down. **Caveats (honest):** keeping a free instance warm via pings is gray-area use of Render's
+free tier; occasional platform restarts still happen (in-memory OTP/download-token stores reset
+— already true today); the first request *after a deploy* still cold-starts once.
+
+**Verify:** after >30 min with no human traffic, the site responds instantly (no cold-start
+spinner); next morning the UptimeRobot log shows ~100% uptime overnight.
+
+**Escalation ladder** if this ever stops being enough (policy change / real traffic):
+Render **Starter** ($7/mo ≈ ₹600, officially always-on, two clicks) → the shelved AWS plan
+(`aws_migration_plan.md`, Option 7).
+
+### B. Custom domain
+
+Buy the domain at **Cloudflare Registrar** (at-cost, ~₹800–1,000/yr for `.com`) or Namecheap;
+DNS stays at the registrar. Then, in order (site never breaks):
+
+1. **Frontend — [you]:** Vercel project → Settings → Domains → add `<domain>` + `www.<domain>`;
+   create the `A`/`CNAME` records Vercel shows at the registrar; pick the apex↔www redirect.
+   Vercel issues TLS automatically.
+   *Verify:* `https://<domain>` serves the SPA with a valid cert; a deep-link refresh works.
+2. **Backend — [you]:** Render service → Settings → Custom Domains → add `api.<domain>` →
+   create the shown CNAME at the registrar; Render issues TLS.
+3. **Coordinated cutover (one sitting, ~30 min):**
+   - Render env: `CORS_ALLOWED_ORIGIN=https://<domain>` (single origin, no trailing slash),
+     `APP_FRONTEND_URL=https://<domain>`, and if the vault is enabled
+     `DRIVE_PUBLIC_BASE_URL=https://api.<domain>`.
+   - OAuth consoles (see §5 below): add the `https://api.<domain>/login/oauth2/code/{google,github}`
+     redirect/callback URIs (the old onrender ones can stay during transition).
+   - Repo: in `frontend/vercel.json`, tighten the CSP — replace `https://*.onrender.com` with
+     `https://api.<domain>` in **both** `img-src` and `connect-src`.
+   - Vercel env: `VITE_API_URL=https://api.<domain>` → redeploy (build-time var; the CSP commit
+     deploys with it).
+   - Point the UptimeRobot monitor at `https://api.<domain>/actuator/health`.
+
+   *Verify:* login (password **and** OAuth) via the new domain; a chat/recruiter AI call
+   succeeds; avatar image + vault download load with no CSP errors in devtools; contact form
+   sends. *Rollback:* revert `VITE_API_URL` + the CSP edit to the onrender URL and redeploy
+   the frontend (minutes).
+
+### C. Contingency — if Render's free Postgres ever warns about expiry/limits
+
+Render's free-database policy has changed over time — check the dashboard. If it ever becomes a
+problem, the free managed-Postgres escape hatches are **Neon** or **Supabase** (both support
+**pgvector**, which `V9__add_pgvector.sql` requires). Migration is the standard
+`pg_dump -Fc` → `pg_restore` → flip `DATABASE_URL` on Render.
 
 ---
 

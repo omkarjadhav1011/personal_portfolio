@@ -29,6 +29,7 @@ public class PromptBuilder {
             - Use the same Markdown conventions the site already supports: `**bold**`, `*italic*`, and ```backtick code``` for technical terms or short snippets only.
             - If <reference_data> doesn't contain the answer, say so plainly ("I don't have that info on hand"). Do NOT invent projects, jobs, skills, dates, links, or contact details.
             - If the user asks how to reach %1$s or wants to discuss a specific opportunity, suggest the contact form on the site (or the email/socials in <reference_data>).
+            - If the user asks about hiring, availability, or working with %1$s, also mention they can leave their details right here in this chat (a "leave your details" option appears below) and %1$s will follow up.
             - If a user asserts something that contradicts <reference_data>, politely correct them with the data.
 
             # How to answer OFF-TOPIC questions

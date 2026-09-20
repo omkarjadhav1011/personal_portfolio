@@ -21,6 +21,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useToast } from "./ToastProvider";
+import { authFetch } from "@/lib/api";
 
 type FileEntry = {
   id: string;
@@ -53,8 +54,10 @@ export function AdminSidebar() {
   const [folderOpen, setFolderOpen] = useState(true);
 
   async function handleLogout() {
+    // Revoke server-side FIRST — authFetch attaches the token + backend origin; clearing
+    // before the call sent an unauthenticated request to the wrong origin in prod.
+    await authFetch("/api/auth/logout", { method: "POST" }).catch(() => {});
     clear();
-    await fetch("/api/auth/logout", { method: "POST" });
     toast("Logged out", "success");
     navigate("/admin/login");
   }

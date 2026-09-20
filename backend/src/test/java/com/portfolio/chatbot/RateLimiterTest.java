@@ -93,4 +93,51 @@ class RateLimiterTest {
         // Empty bucket needs ~6s to regain 1 token (10 tokens / 60s).
         assertEquals(6, limiter.check("ip").retryAfterSeconds());
     }
+
+    // ── per-IP daily AI cap (step 3b of llm_failover_plan.md) ───────────────
+
+    @Test
+    void dailyCapBlocksAtTheLimitWithRetryUntilUtcMidnight() {
+        AtomicLong now = new AtomicLong(12 * 60 * 60 * 1000L); // noon UTC, day 0
+        RateLimiter limiter = new RateLimiter(now::get, 3);
+
+        for (int i = 0; i < 3; i++) {
+            assertTrue(limiter.checkDaily("ai-daily:1.2.3.4").ok(), "request " + (i + 1) + " within cap");
+        }
+        RateLimiter.Result blocked = limiter.checkDaily("ai-daily:1.2.3.4");
+        assertFalse(blocked.ok(), "over daily cap");
+        assertEquals(12 * 60 * 60, blocked.retryAfterSeconds(), "retry hint = seconds to UTC midnight");
+    }
+
+    @Test
+    void dailyCapIsPerKey() {
+        AtomicLong now = new AtomicLong(0);
+        RateLimiter limiter = new RateLimiter(now::get, 1);
+
+        assertTrue(limiter.checkDaily("ai-daily:a").ok());
+        assertFalse(limiter.checkDaily("ai-daily:a").ok(), "key a spent");
+        assertTrue(limiter.checkDaily("ai-daily:b").ok(), "key b independent");
+    }
+
+    @Test
+    void dailyCapResetsAtUtcDayRollover() {
+        AtomicLong now = new AtomicLong(23 * 60 * 60 * 1000L); // 23:00 UTC, day 0
+        RateLimiter limiter = new RateLimiter(now::get, 1);
+
+        limiter.checkDaily("ai-daily:ip");
+        assertFalse(limiter.checkDaily("ai-daily:ip").ok(), "spent for today");
+
+        now.addAndGet(2 * 60 * 60 * 1000L); // 01:00 UTC, day 1
+        assertTrue(limiter.checkDaily("ai-daily:ip").ok(), "fresh allowance after midnight");
+    }
+
+    @Test
+    void dailyCapZeroDisablesTheCheck() {
+        AtomicLong now = new AtomicLong(0);
+        RateLimiter limiter = new RateLimiter(now::get, 0);
+
+        for (int i = 0; i < 100; i++) {
+            assertTrue(limiter.checkDaily("ai-daily:ip").ok());
+        }
+    }
 }
