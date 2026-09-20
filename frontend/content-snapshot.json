@@ -1,0 +1,838 @@
+{
+  "fetchedAt": "2026-09-20T09:25:13.217Z",
+  "seed": [
+    {
+      "key": [
+        "profile"
+      ],
+      "data": {
+        "id": "18771bd8-6fe2-4fb8-a782-acc4887924db",
+        "name": "Omkar Jadhav",
+        "handle": "omkarjadhav1011",
+        "headline": "Software Development Engineer I at Nonstop IO Technologies",
+        "bio": "Omkar Jayvant Jadhav is a Software Development Engineer I at Nonstop IO Technologies in Kharadi, Pune, India. He graduated from KIT's College of Engineering (Autonomous), Kolhapur in 2026 with a B.Tech in Computer Science & Engineering (Data Science), and works on backend development in C#, NestJS and SQL.\n\nHe implemented end-to-end user audit functionality on an enterprise reporting product, contributed to its Report Builder module, and builds LLM-integrated applications with the Gemini and Hugging Face APIs.",
+        "currentBranch": "main",
+        "currentStatus": "Building backend services at Nonstop IO Technologies",
+        "availableForWork": false,
+        "email": "jadhavomkar101103@gmail.com",
+        "location": "Pune, Maharashtra, India",
+        "socials": [
+          {
+            "label": "GitHub",
+            "url": "https://github.com/omkarjadhav1011",
+            "icon": "github"
+          },
+          {
+            "label": "LeetCode",
+            "url": "https://leetcode.com/u/jadhav_omkar1013/",
+            "icon": "leetcode"
+          },
+          {
+            "label": "LinkedIn",
+            "url": "https://www.linkedin.com/in/omkar-jadhav-st/",
+            "icon": "linkedin"
+          }
+        ],
+        "funFacts": [
+          "Solved 210+ problems on LeetCode",
+          "Took the long route into engineering: diploma at ICRE Gargoti, then B.Tech at KIT Kolhapur",
+          "Wrote the audit-logging layer that tracks user actions across a production reporting product"
+        ],
+        "stash": [
+          "⑂  Built this site end to end: Spring Boot API, React SPA, PostgreSQL",
+          "🤖  Wrote a multi-provider LLM failover router so the assistant survives a dead provider",
+          "🔐  Encrypts every vault file with its own AES-256-GCM data key"
+        ],
+        "currentRole": {
+          "enabled": true,
+          "title": "Software Development Engineer I",
+          "company": "Nonstop IO Technologies",
+          "monogram": "N",
+          "logoUrl": "",
+          "url": "https://nonstopio.com",
+          "location": "Kharadi, Pune, Maharashtra, India · On-site",
+          "startedAt": "Feb 2026",
+          "tenure": "7 mos",
+          "accent": "#00ff88"
+        },
+        "avatarUrl": null,
+        "resumeUrl": null,
+        "resumeFilename": null,
+        "techPicks": [],
+        "updatedAt": "2026-09-20T08:49:46.310618Z"
+      }
+    },
+    {
+      "key": [
+        "projects"
+      ],
+      "data": [
+        {
+          "id": "bf40c161-7f57-4252-b735-0533f294af39",
+          "slug": "portfolio-ai-assistant",
+          "repoName": "personal_portfolio",
+          "description": "This portfolio: a Spring Boot API and React SPA with an AI assistant, multi-provider LLM failover, and a public MCP server.",
+          "language": "Java",
+          "languageColor": "#b07219",
+          "stars": 0,
+          "forks": 0,
+          "commits": 0,
+          "lastCommit": "",
+          "lastCommitMsg": "",
+          "tags": [
+            "Java",
+            "Spring Boot",
+            "React",
+            "TypeScript",
+            "PostgreSQL",
+            "Docker"
+          ],
+          "liveUrl": null,
+          "repoUrl": "https://github.com/omkarjadhav1011/personal_portfolio",
+          "status": "active",
+          "pinned": true,
+          "longDescription": "A Git-themed developer portfolio built as a full application rather than a static site. The backend is Spring Boot 3.5 on Java 21 with PostgreSQL and Flyway migrations; the frontend is React 18 with Vite and TypeScript. Beyond the public pages it carries an admin panel, an encrypted document vault using per-file AES-256-GCM data keys, TOTP multi-factor auth, and an AI assistant. The assistant runs on an ordered provider chain (Groq, Cerebras, Mistral, Gemini, OpenRouter) with per-provider circuit breaking and daily quotas, so a dead or rate-limited provider fails over instead of failing. Retrieval is backed by pgvector with Gemini embeddings, and a public read-only MCP server exposes the same query layer so a recruiter's own AI client can evaluate the work directly.",
+          "order": 0,
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        },
+        {
+          "id": "03d25be0-2f90-414a-9c74-7c6194aa57e3",
+          "slug": "ai-interview-preparation-system",
+          "repoName": "InterviewAI",
+          "description": "Voice-driven interview practice: speech recognition transcribes spoken answers, the Gemini API scores them and returns feedback.",
+          "language": "Python",
+          "languageColor": "#3572A5",
+          "stars": 0,
+          "forks": 0,
+          "commits": 0,
+          "lastCommit": "",
+          "lastCommitMsg": "",
+          "tags": [
+            "Python",
+            "Gemini API",
+            "Speech Recognition"
+          ],
+          "liveUrl": null,
+          "repoUrl": "https://github.com/omkarjadhav1011/InterviewAI",
+          "status": "active",
+          "pinned": true,
+          "longDescription": "A voice-driven interview practice system that runs question-and-answer sessions with automated feedback. Speech Recognition converts the spoken answer to text, which feeds an evaluation pipeline; the Gemini API scores the response and generates actionable feedback using structured prompt templates.",
+          "order": 1,
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        },
+        {
+          "id": "93eac4ca-629f-43be-b282-de8bc45d48c3",
+          "slug": "text-to-image-generator",
+          "repoName": "Text-to-Image Generator",
+          "description": "A Streamlit web app that turns a text prompt into an image using a Hugging Face hosted model.",
+          "language": "Python",
+          "languageColor": "#3572A5",
+          "stars": 0,
+          "forks": 0,
+          "commits": 0,
+          "lastCommit": "",
+          "lastCommitMsg": "",
+          "tags": [
+            "Python",
+            "Streamlit",
+            "Hugging Face API"
+          ],
+          "liveUrl": null,
+          "repoUrl": null,
+          "status": "active",
+          "pinned": true,
+          "longDescription": "A Streamlit web app that takes a text prompt and generates a corresponding image via a Hugging Face hosted model. Handles the API integration, the request/response flow, and error handling for failed or slow generations.",
+          "order": 2,
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        },
+        {
+          "id": "b4c128e1-a7e2-4503-b1cd-150bfe89235e",
+          "slug": "expense-tracker",
+          "repoName": "expense-tracker",
+          "description": "Full-stack expense manager: React frontend, Spring Boot REST API, PostgreSQL schema with category and monthly aggregation.",
+          "language": "Java",
+          "languageColor": "#b07219",
+          "stars": 0,
+          "forks": 0,
+          "commits": 0,
+          "lastCommit": "",
+          "lastCommitMsg": "",
+          "tags": [
+            "React",
+            "Spring Boot",
+            "PostgreSQL",
+            "REST APIs"
+          ],
+          "liveUrl": null,
+          "repoUrl": "https://github.com/omkarjadhav1011/expense-tracker",
+          "status": "active",
+          "pinned": true,
+          "longDescription": "A full-stack expense management application with a React frontend and Spring Boot REST API backend. Includes the PostgreSQL schema design and the queries for adding, filtering and aggregating expenses, producing monthly and category-wise spending breakdowns.",
+          "order": 3,
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        },
+        {
+          "id": "884f1a01-b5c9-45e2-820b-d369d63a1e93",
+          "slug": "crop-recommendation",
+          "repoName": "crop-recommendation",
+          "description": "A Flask web app that recommends a crop from seven soil and climate readings using a trained classifier.",
+          "language": "Python",
+          "languageColor": "#3572A5",
+          "stars": 0,
+          "forks": 0,
+          "commits": 0,
+          "lastCommit": "",
+          "lastCommitMsg": "",
+          "tags": [
+            "Python",
+            "Flask",
+            "Machine Learning"
+          ],
+          "liveUrl": null,
+          "repoUrl": "https://github.com/omkarjadhav1011/crop-recommendation",
+          "status": "active",
+          "pinned": false,
+          "longDescription": "DRAFT - pending review. A Flask application that recommends a crop from seven soil and climate inputs: nitrogen, phosphorus, potassium, temperature, humidity, pH and rainfall. A classifier trained on a 2,200-row dataset covering 22 crops is loaded from a pickle file and served behind a small multi-page UI.",
+          "order": 4,
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        },
+        {
+          "id": "39d5615a-d3a4-4998-b25e-b9c7f880851a",
+          "slug": "dev-mobiles",
+          "repoName": "Mobile_Shop",
+          "description": "A PHP and MySQL e-commerce site for a mobile phone store, with customer accounts, cart, orders and an admin back office.",
+          "language": "PHP",
+          "languageColor": "#4F5D95",
+          "stars": 0,
+          "forks": 0,
+          "commits": 0,
+          "lastCommit": "",
+          "lastCommitMsg": "",
+          "tags": [
+            "PHP",
+            "MySQL",
+            "JavaScript",
+            "HTML5",
+            "CSS3"
+          ],
+          "liveUrl": null,
+          "repoUrl": "https://github.com/omkarjadhav1011/Mobile_Shop",
+          "status": "archived",
+          "pinned": false,
+          "longDescription": "DRAFT - pending review. A server-rendered e-commerce application for a mobile phone store, branded \"Dev Mobiles\", built in PHP against a 13-table MySQL schema. The storefront covers registration and login, product browsing by brand, search, wishlist, cart, checkout with a generated order number, order tracking and invoices. A separate admin area manages products, brands, inventory, order status, customer reviews, enquiries and date-range sales reports.",
+          "order": 5,
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        }
+      ]
+    },
+    {
+      "key": [
+        "skill-branches"
+      ],
+      "data": [
+        {
+          "id": "11111111-0000-4000-8000-000000000001",
+          "branchName": "feature/languages",
+          "color": "#58a6ff",
+          "offset": 0,
+          "skills": [
+            {
+              "id": "1e0139f8-f361-4921-8754-ab1ad2328dd6",
+              "name": "SQL",
+              "level": 4,
+              "tag": null,
+              "icon": "🗄",
+              "branchId": "11111111-0000-4000-8000-000000000001",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            },
+            {
+              "id": "28982eec-a1f0-4b17-b602-2bc09aa79336",
+              "name": "JavaScript",
+              "level": 4,
+              "tag": null,
+              "icon": "JS",
+              "branchId": "11111111-0000-4000-8000-000000000001",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            },
+            {
+              "id": "2f8a9a9c-33f0-4a9d-9f8f-a80f7d308752",
+              "name": "TypeScript",
+              "level": 3,
+              "tag": null,
+              "icon": "TS",
+              "branchId": "11111111-0000-4000-8000-000000000001",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            },
+            {
+              "id": "68918ac9-243c-4890-aee8-72edb5d8cf30",
+              "name": "C#",
+              "level": 4,
+              "tag": null,
+              "icon": "#",
+              "branchId": "11111111-0000-4000-8000-000000000001",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            },
+            {
+              "id": "b4629cd8-b084-4600-8c47-af6bae7ec166",
+              "name": "Python",
+              "level": 4,
+              "tag": null,
+              "icon": "🐍",
+              "branchId": "11111111-0000-4000-8000-000000000001",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            },
+            {
+              "id": "b5a29c78-3187-498f-a1a8-2740ec055311",
+              "name": "Java",
+              "level": 3,
+              "tag": null,
+              "icon": "☕",
+              "branchId": "11111111-0000-4000-8000-000000000001",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            }
+          ],
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        },
+        {
+          "id": "11111111-0000-4000-8000-000000000002",
+          "branchName": "feature/backend",
+          "color": "#00ff88",
+          "offset": 1,
+          "skills": [
+            {
+              "id": "3653080c-4bb4-41e5-b39c-e7f140aa0e31",
+              "name": "REST APIs",
+              "level": 4,
+              "tag": null,
+              "icon": "🔌",
+              "branchId": "11111111-0000-4000-8000-000000000002",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            },
+            {
+              "id": "5e90d37d-cd5f-4ba6-b1ff-c315c99f61cc",
+              "name": "PostgreSQL",
+              "level": 3,
+              "tag": null,
+              "icon": "🐘",
+              "branchId": "11111111-0000-4000-8000-000000000002",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            },
+            {
+              "id": "7e95017e-4b78-40b1-a416-c01bd439e695",
+              "name": "MySQL",
+              "level": 4,
+              "tag": null,
+              "icon": "🗃",
+              "branchId": "11111111-0000-4000-8000-000000000002",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            },
+            {
+              "id": "948c7edb-a0f4-44dd-beb7-e34c75c19f9d",
+              "name": "NestJS",
+              "level": 4,
+              "tag": null,
+              "icon": "🐱",
+              "branchId": "11111111-0000-4000-8000-000000000002",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            },
+            {
+              "id": "96fcd7dc-64eb-4d9f-bd9b-e2016e638839",
+              "name": "Spring Boot",
+              "level": 3,
+              "tag": null,
+              "icon": "🌱",
+              "branchId": "11111111-0000-4000-8000-000000000002",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            },
+            {
+              "id": "e550a83c-1440-4eba-a0d5-c665d3678132",
+              "name": "PHP",
+              "level": 3,
+              "tag": null,
+              "icon": "🐘",
+              "branchId": "11111111-0000-4000-8000-000000000002",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            }
+          ],
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        },
+        {
+          "id": "11111111-0000-4000-8000-000000000003",
+          "branchName": "feature/frontend",
+          "color": "#f0883e",
+          "offset": 2,
+          "skills": [
+            {
+              "id": "26864a7d-2436-4b62-bc95-8f7c2aa392dd",
+              "name": "CSS3",
+              "level": 4,
+              "tag": null,
+              "icon": "🎨",
+              "branchId": "11111111-0000-4000-8000-000000000003",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            },
+            {
+              "id": "b6bdc6d0-50d0-4786-a9ef-4e4a402c2b23",
+              "name": "HTML5",
+              "level": 5,
+              "tag": null,
+              "icon": "🌐",
+              "branchId": "11111111-0000-4000-8000-000000000003",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            },
+            {
+              "id": "cb2776e6-5243-4475-b04a-300154f25774",
+              "name": "React",
+              "level": 3,
+              "tag": null,
+              "icon": "⚛",
+              "branchId": "11111111-0000-4000-8000-000000000003",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            }
+          ],
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        },
+        {
+          "id": "11111111-0000-4000-8000-000000000004",
+          "branchName": "feature/ai",
+          "color": "#d2a8ff",
+          "offset": 3,
+          "skills": [
+            {
+              "id": "1b149ea4-7906-44ed-b462-917829bd2310",
+              "name": "Hugging Face API",
+              "level": 3,
+              "tag": null,
+              "icon": "🤗",
+              "branchId": "11111111-0000-4000-8000-000000000004",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            },
+            {
+              "id": "4e89d826-c9b4-4e71-aafa-2f4de136dd98",
+              "name": "Gemini API",
+              "level": 4,
+              "tag": null,
+              "icon": "✦",
+              "branchId": "11111111-0000-4000-8000-000000000004",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            },
+            {
+              "id": "adcd6796-0bd8-49f0-affe-8e000c0c62a0",
+              "name": "Prompt Engineering",
+              "level": 3,
+              "tag": null,
+              "icon": "💬",
+              "branchId": "11111111-0000-4000-8000-000000000004",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            }
+          ],
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        },
+        {
+          "id": "11111111-0000-4000-8000-000000000005",
+          "branchName": "feature/tools",
+          "color": "#e3b341",
+          "offset": 4,
+          "skills": [
+            {
+              "id": "3320d53f-afca-4b4c-bd8e-bceb4871d147",
+              "name": "Docker",
+              "level": 3,
+              "tag": null,
+              "icon": "🐳",
+              "branchId": "11111111-0000-4000-8000-000000000005",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            },
+            {
+              "id": "3bd4c861-f5b3-4f87-8880-3482923a5f10",
+              "name": "GitHub",
+              "level": 4,
+              "tag": null,
+              "icon": "🐙",
+              "branchId": "11111111-0000-4000-8000-000000000005",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            },
+            {
+              "id": "7c4ddce8-e27b-48e5-92fb-b6586ee5a72f",
+              "name": "Postman",
+              "level": 4,
+              "tag": null,
+              "icon": "📮",
+              "branchId": "11111111-0000-4000-8000-000000000005",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            },
+            {
+              "id": "b8030d0a-a0c6-4635-8fbd-07d727a40b8a",
+              "name": "Git",
+              "level": 5,
+              "tag": null,
+              "icon": "⑂",
+              "branchId": "11111111-0000-4000-8000-000000000005",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            },
+            {
+              "id": "c7fb0afe-e887-4faf-ba95-ee36675c1082",
+              "name": "Streamlit",
+              "level": 3,
+              "tag": null,
+              "icon": "📊",
+              "branchId": "11111111-0000-4000-8000-000000000005",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            },
+            {
+              "id": "f081524d-c4c2-4e61-a364-c935df2ecbd7",
+              "name": "VS Code",
+              "level": 5,
+              "tag": null,
+              "icon": "💻",
+              "branchId": "11111111-0000-4000-8000-000000000005",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            }
+          ],
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        },
+        {
+          "id": "11111111-0000-4000-8000-000000000006",
+          "branchName": "feature/core-cs",
+          "color": "#7ee787",
+          "offset": 5,
+          "skills": [
+            {
+              "id": "1130d327-e166-48e0-bc99-b1c632bcf296",
+              "name": "OOP",
+              "level": 4,
+              "tag": null,
+              "icon": "🧱",
+              "branchId": "11111111-0000-4000-8000-000000000006",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            },
+            {
+              "id": "17fde23c-1ddd-4e86-8314-133a1910d62d",
+              "name": "Data Structures & Algorithms",
+              "level": 4,
+              "tag": null,
+              "icon": "🧮",
+              "branchId": "11111111-0000-4000-8000-000000000006",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            },
+            {
+              "id": "36748f11-97e4-493a-bc36-539539eb1ded",
+              "name": "DBMS",
+              "level": 4,
+              "tag": null,
+              "icon": "🗂",
+              "branchId": "11111111-0000-4000-8000-000000000006",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            },
+            {
+              "id": "a254968c-1efa-4d6d-8a4b-2cdae01e7ec5",
+              "name": "MVC Architecture",
+              "level": 3,
+              "tag": null,
+              "icon": "🏛",
+              "branchId": "11111111-0000-4000-8000-000000000006",
+              "createdAt": "2026-09-20T08:49:46.310618Z",
+              "updatedAt": "2026-09-20T08:49:46.310618Z"
+            }
+          ],
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        }
+      ]
+    },
+    {
+      "key": [
+        "skill-diff"
+      ],
+      "data": [
+        {
+          "id": "4e48a404-761d-4986-9fb2-d13a6b68ba9c",
+          "name": "C#",
+          "type": "added",
+          "note": "day-to-day backend work at Nonstop IO",
+          "order": 0,
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        },
+        {
+          "id": "31a94e99-112c-4678-a21a-447474fa9cb5",
+          "name": "NestJS",
+          "type": "added",
+          "note": "services on the enterprise reporting product",
+          "order": 1,
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        },
+        {
+          "id": "093c12e4-7b0c-4e12-a7c6-1d8a53810026",
+          "name": "TypeScript",
+          "type": "added",
+          "note": "typed everything, including this site",
+          "order": 2,
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        },
+        {
+          "id": "db8cdb52-40a4-4c85-85b2-23007a706743",
+          "name": "Docker",
+          "type": "added",
+          "note": "containerized local dependencies",
+          "order": 3,
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        },
+        {
+          "id": "a5a59b37-0de3-437d-9f14-4d32001e0be2",
+          "name": "SQL",
+          "type": "modified",
+          "note": "optimizing reporting, audit-log and data-retrieval queries",
+          "order": 4,
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        },
+        {
+          "id": "e316b3cd-3bd5-46eb-a766-1b15b6cb9a58",
+          "name": "Spring Boot",
+          "type": "modified",
+          "note": "the API behind this portfolio",
+          "order": 5,
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        }
+      ]
+    },
+    {
+      "key": [
+        "experience"
+      ],
+      "data": [
+        {
+          "id": "37519b09-06b3-41e9-988a-665ced923822",
+          "hash": "9c4e1a7",
+          "type": "job",
+          "title": "Software Development Engineer I",
+          "org": "Nonstop IO Technologies",
+          "date": "Aug 2026",
+          "dateEnd": null,
+          "description": [
+            "Backend development on an enterprise reporting product, contributing to live production modules",
+            "Implemented end-to-end user audit functionality tracking and logging user actions across the application for compliance and traceability",
+            "Contributed to the Report Builder module and wrote optimized SQL queries for reporting, audit logs, and data-retrieval flows"
+          ],
+          "branch": "work/nonstop-io",
+          "branchColor": "#00ff88",
+          "colorKey": "green",
+          "tags": [
+            "C#",
+            "NestJS",
+            "SQL"
+          ],
+          "url": "https://nonstopio.com",
+          "order": 1,
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        },
+        {
+          "id": "398d0674-c8d1-4dc2-be24-5071196c73b6",
+          "hash": "3b7d0f2",
+          "type": "job",
+          "title": "Software Developer Intern",
+          "org": "Nonstop IO Technologies",
+          "date": "Feb 2026",
+          "dateEnd": "Aug 2026",
+          "description": [
+            "Joined the backend team working on the enterprise reporting product in C#, NestJS and SQL",
+            "Converted to Software Development Engineer I in August 2026"
+          ],
+          "branch": "work/nonstop-io",
+          "branchColor": "#00ff88",
+          "colorKey": "green",
+          "tags": [
+            "C#",
+            "NestJS",
+            "SQL"
+          ],
+          "url": "https://nonstopio.com",
+          "order": 2,
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        },
+        {
+          "id": "ce09ee01-338f-4007-b605-27040856d9d2",
+          "hash": "0d3f9e1",
+          "type": "education",
+          "title": "B.Tech, Computer Science & Engineering (Data Science)",
+          "org": "KIT's College of Engineering (Autonomous), Kolhapur",
+          "date": "2023",
+          "dateEnd": "2026",
+          "description": [
+            "Graduated in 2026 with 80%",
+            "Coursework: Data Structures & Algorithms, DBMS, Operating Systems, Computer Networks, Data Science"
+          ],
+          "branch": "edu/btech-cse",
+          "branchColor": "#58a6ff",
+          "colorKey": "blue",
+          "tags": [
+            "DSA",
+            "DBMS",
+            "Data Science"
+          ],
+          "url": null,
+          "order": 3,
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        },
+        {
+          "id": "06e973b5-5e66-43a5-b35e-28bccbc0b9f9",
+          "hash": "1e2b4c7",
+          "type": "education",
+          "title": "Diploma, Computer Engineering",
+          "org": "Institute of Civil and Rural Engineering, Gargoti",
+          "date": "2020",
+          "dateEnd": "2023",
+          "description": [
+            "Graduated in 2023 with 87%"
+          ],
+          "branch": "edu/diploma-cse",
+          "branchColor": "#58a6ff",
+          "colorKey": "blue",
+          "tags": [
+            "C++",
+            "DBMS"
+          ],
+          "url": null,
+          "order": 4,
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        },
+        {
+          "id": "5d5a3b89-06f8-452f-843f-fd16b097cb56",
+          "hash": "2c3d5e8",
+          "type": "education",
+          "title": "High School (SSC)",
+          "org": "Shankar Chakru Patil Madhyamik Vidhyalaya, Dindewadi",
+          "date": "2019",
+          "dateEnd": "2020",
+          "description": [
+            "Completed in 2020 with 94%"
+          ],
+          "branch": "edu/high-school",
+          "branchColor": "#58a6ff",
+          "colorKey": "blue",
+          "tags": [],
+          "url": null,
+          "order": 5,
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        },
+        {
+          "id": "73cafdb2-b2e6-441a-bf94-6a976098b7cf",
+          "hash": "a2d8e4f",
+          "type": "achievement",
+          "title": "Python Bootcamp: Zero to Hero",
+          "org": "Udemy",
+          "date": "Jan 2023",
+          "dateEnd": null,
+          "description": [
+            "Completed the Python programming bootcamp"
+          ],
+          "branch": "cert/python-bootcamp",
+          "branchColor": "#e3b341",
+          "colorKey": "yellow",
+          "tags": [
+            "Python",
+            "Udemy"
+          ],
+          "url": null,
+          "order": 6,
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        },
+        {
+          "id": "7dc9c63a-54ce-4129-8c4a-8d85117dcd9b",
+          "hash": "b5c7f2a",
+          "type": "achievement",
+          "title": "Java Programming: Beginner to Master",
+          "org": "Udemy",
+          "date": "Mar 2023",
+          "dateEnd": null,
+          "description": [
+            "Completed the Java programming course covering core Java and OOP"
+          ],
+          "branch": "cert/java-programming",
+          "branchColor": "#e3b341",
+          "colorKey": "yellow",
+          "tags": [
+            "Java",
+            "OOP",
+            "Udemy"
+          ],
+          "url": null,
+          "order": 7,
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        },
+        {
+          "id": "f1e094c6-5ae0-4d64-9d91-a36eaca0bbc9",
+          "hash": "c8e1a94",
+          "type": "achievement",
+          "title": "AI, Machine Learning & Data Science Bootcamp",
+          "org": "Udemy",
+          "date": "2023",
+          "dateEnd": null,
+          "description": [
+            "Completed the AI, machine learning and data science bootcamp"
+          ],
+          "branch": "cert/ai-ml-ds",
+          "branchColor": "#e3b341",
+          "colorKey": "yellow",
+          "tags": [
+            "Udemy"
+          ],
+          "url": null,
+          "order": 8,
+          "createdAt": "2026-09-20T08:49:46.310618Z",
+          "updatedAt": "2026-09-20T08:49:46.310618Z"
+        }
+      ]
+    }
+  ]
+}

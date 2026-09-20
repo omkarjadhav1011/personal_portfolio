@@ -488,6 +488,11 @@ appetite. The current consolidated order lives in "Now / Next" at the top of thi
   with the planned keep-alive pinger: pinging the backend every 10 min keeps the Neon
   compute awake too, which is what would re-burn the quota. Ping `/health` (no DB I/O), not
   `/actuator/health`.
+- ⏳ **`frontend/content-snapshot.json` must be re-committed when site content changes.** The
+  prerender refreshes it on every build that reaches the API; if it drifts far behind the database,
+  a deploy made while the backend is asleep publishes stale content. The build warns with the
+  snapshot's age. `REQUIRE_LIVE_CONTENT=1` disables the fallback for deploys where that is
+  unacceptable.
 - ⏳ **Admin panel content fixes.** The live database still holds the stale profile, the Dnyanda
   role, the fabricated project metrics and the Next.js skill. The prerender content guard blocks
   a deploy until they are corrected at `/admin`.

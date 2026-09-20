@@ -112,6 +112,57 @@ function fail(message) {
 }
 
 /**
+ * The content snapshot.
+ *
+ * Prerendering reads the site's content from a Spring Boot API on Render's free
+ * tier, which spins down after ~15 minutes idle and can be suspended outright
+ * when the monthly instance-hour quota runs out. Without a fallback, "the
+ * backend happened to be asleep" becomes "the deploy failed" — which is a bad
+ * trade when the content changes far less often than the code does.
+ *
+ * So: every successful build refreshes this file, and it is committed. A build
+ * that cannot reach the API uses it instead and says so loudly.
+ *
+ * This does NOT weaken the guarantee that matters. The snapshot is real content,
+ * never a skeleton, and both guards still run against whatever was used — a page
+ * rendering a loading state still fails the build, and a forbidden claim in stale
+ * content still blocks it. The only risk is publishing content that is older than
+ * the database, which the warning names explicitly. REQUIRE_LIVE_CONTENT=1 turns
+ * the fallback off for deploys where that risk is unacceptable.
+ */
+const SNAPSHOT_FILE = "content-snapshot.json";
+const snapshotPath = resolve(frontendDir, SNAPSHOT_FILE);
+
+function saveSnapshot(seed) {
+  try {
+    writeFileSync(
+      snapshotPath,
+      JSON.stringify({ fetchedAt: new Date().toISOString(), seed }, null, 2),
+      "utf8",
+    );
+  } catch (error) {
+    // A read-only or ephemeral filesystem must not fail a build that otherwise
+    // has everything it needs.
+    console.warn(`[prerender] could not refresh ${SNAPSHOT_FILE}: ${error.message}`);
+  }
+}
+
+function loadSnapshot() {
+  try {
+    const parsed = JSON.parse(readFileSync(snapshotPath, "utf8"));
+    return Array.isArray(parsed?.seed) && parsed.seed.length ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function snapshotAgeDays(snapshot) {
+  const taken = Date.parse(snapshot.fetchedAt);
+  if (Number.isNaN(taken)) return "unknown";
+  return Math.floor((Date.now() - taken) / 86_400_000);
+}
+
+/**
  * Fetches JSON with retries. The backend is on Render's free tier and cold
  * starts have been measured at ~7s, so the first attempt routinely times out on
  * an idle service. Retrying is the difference between a reliable deploy and one
@@ -373,18 +424,39 @@ async function main() {
   console.log(`[prerender] site:    ${SITE_URL}`);
   console.log(`[prerender] content: ${API_URL}`);
 
-  // 1 — pull the content the pages are built from.
-  const seed = [];
-  for (const endpoint of ENDPOINTS) {
-    const data = await fetchJson(endpoint.path).catch((error) =>
+  // 1 — pull the content the pages are built from, falling back to the last
+  //     committed snapshot if the backend cannot be reached.
+  let seed;
+  try {
+    seed = [];
+    for (const endpoint of ENDPOINTS) {
+      seed.push({ key: endpoint.key, data: await fetchJson(endpoint.path) });
+    }
+    saveSnapshot(seed);
+    console.log("[prerender] content: live API (snapshot refreshed)");
+  } catch (error) {
+    const snapshot = loadSnapshot();
+    if (!snapshot) {
       fail(
-        `Could not read content from the backend.\n  ${error.message}\n\n` +
-          `Prerendering needs the API to be reachable. If the service is asleep, wake it\n` +
-          `and retry; if it is genuinely down, do not deploy — the build would publish\n` +
-          `empty pages to every crawler.`,
-      ),
+        `Could not read content from the backend, and there is no snapshot to fall back on.\n` +
+          `  ${error.message}\n\n` +
+          `Run the build once while the backend is awake to create ${SNAPSHOT_FILE},\n` +
+          `then commit it. Publishing without content would serve empty pages to every\n` +
+          `crawler, so the build stops here instead.`,
+      );
+    }
+    console.warn(
+      `\n[prerender] ⚠ BACKEND UNREACHABLE — USING THE COMMITTED SNAPSHOT\n\n` +
+        `  ${error.message}\n\n` +
+        `  Snapshot taken: ${snapshot.fetchedAt} (${snapshotAgeDays(snapshot)} days old)\n\n` +
+        `  The site will publish that content, which is real but may be stale. If you have\n` +
+        `  edited anything in /admin since then, those edits are NOT in this deploy — wake\n` +
+        `  the backend and redeploy. Set REQUIRE_LIVE_CONTENT=1 to make this a hard failure.\n`,
     );
-    seed.push({ key: endpoint.key, data });
+    if (process.env.REQUIRE_LIVE_CONTENT === "1") {
+      fail("REQUIRE_LIVE_CONTENT=1 is set and the backend was unreachable.");
+    }
+    seed = snapshot.seed;
   }
 
   const seeded = (name) => seed.find((s) => s.key[0] === name)?.data ?? [];
