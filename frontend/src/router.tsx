@@ -7,12 +7,16 @@ import { RouteError } from "@/routes/RouteError";
 import { NotFound } from "@/routes/NotFound";
 import Home from "@/pages/Home";
 
-// Lazy-loaded routes keep admin + recruiter + detail/scratch out of the initial
+// Lazy-loaded routes keep admin + recruiter + detail out of the initial
 // public bundle (Suspense fallbacks live in RootLayout/MainLayout/AdminLayout).
+const About = lazy(() => import("@/pages/About"));
+const Projects = lazy(() => import("@/pages/Projects"));
 const ProjectDetail = lazy(() => import("@/pages/ProjectDetail"));
+const Experience = lazy(() => import("@/pages/Experience"));
+const Education = lazy(() => import("@/pages/Education"));
+const Resume = lazy(() => import("@/pages/Resume"));
 const RecruiterPage = lazy(() => import("@/pages/RecruiterPage"));
 const McpPage = lazy(() => import("@/pages/McpPage"));
-const ScratchProjects = lazy(() => import("@/pages/ScratchProjects"));
 const Login = lazy(() => import("@/pages/admin/Login"));
 const OAuthCallback = lazy(() => import("@/pages/admin/OAuthCallback"));
 const MfaVerify = lazy(() => import("@/pages/admin/MfaVerify"));
@@ -38,7 +42,12 @@ export const router = createBrowserRouter([
         element: <MainLayout />,
         children: [
           { index: true, element: <Home /> },
+          { path: "about", element: <About /> },
+          { path: "projects", element: <Projects /> },
           { path: "projects/:slug", element: <ProjectDetail /> },
+          { path: "experience", element: <Experience /> },
+          { path: "education", element: <Education /> },
+          { path: "resume", element: <Resume /> },
           { path: "recruiter", element: <RecruiterPage /> },
           { path: "mcp", element: <McpPage /> },
         ],
@@ -73,7 +82,6 @@ export const router = createBrowserRouter([
           },
         ],
       },
-      { path: "scratch", element: <ScratchProjects /> },
       { path: "*", element: <NotFound /> },
     ],
   },

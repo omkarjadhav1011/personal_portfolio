@@ -3,11 +3,29 @@
 // Regenerate with:  npm run gen:og
 import { Resvg } from "@resvg/resvg-js";
 import { mkdirSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { loadEnv } from "vite";
+
+// The card renders the site's own domain as a footer. That string is pixels, not
+// markup, so no metadata edit can correct it later — it has to come from the same
+// single source of truth as every other absolute URL on the site.
+const envDir = fileURLToPath(new URL("..", import.meta.url));
+const env = loadEnv(process.env.NODE_ENV ?? "production", envDir);
+const siteUrl = env.VITE_SITE_URL;
+if (!siteUrl) {
+  console.error(
+    "\nVITE_SITE_URL is not set, so the OpenGraph card's footer URL cannot be\n" +
+      "resolved. Copy frontend/.env.example to frontend/.env and try again.\n",
+  );
+  process.exit(1);
+}
+// Hostname only — the card shows "example.com", not "https://example.com/".
+const SITE_HOST = new URL(siteUrl).host;
 
 const NAME = "Omkar Jadhav";
-const HANDLE = "omkarjadhav";
-const HEADLINE = "B.Tech CSE (Data Science) Student &amp; Full-Stack Developer";
-const STATUS = "Open to internships &amp; collaborations";
+const HANDLE = "omkarjadhav1011";
+const HEADLINE = "Software Development Engineer I at Nonstop IO Technologies";
+const STATUS = "Backend engineer - C#, NestJS, SQL - Pune, India";
 
 const svg = `<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -28,7 +46,7 @@ const svg = `<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http:/
       <circle cx="28" cy="24" r="6" fill="#00ff88"/>
       <text x="48" y="31" font-size="18" fill="#00ff88">${STATUS}</text>
     </g>
-    <text x="1120" y="595" font-size="14" fill="#484f58" text-anchor="end">${HANDLE}.vercel.app</text>
+    <text x="1120" y="595" font-size="14" fill="#484f58" text-anchor="end">${SITE_HOST}</text>
   </g>
 </svg>`;
 

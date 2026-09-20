@@ -364,7 +364,7 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
         <Section icon={GitBranch} title="Git Status" accent="git-green">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormInput label="current branch" value={form.currentBranch} onChange={(e) => field("currentBranch", e.target.value)} error={errors.currentBranch} required placeholder="main" />
-            <FormInput label="current status" value={form.currentStatus} onChange={(e) => field("currentStatus", e.target.value)} error={errors.currentStatus} required placeholder="Open to internships" />
+            <FormInput label="current status" value={form.currentStatus} onChange={(e) => field("currentStatus", e.target.value)} error={errors.currentStatus} required placeholder="Building backend services at ..." />
           </div>
           <FormCheckbox label="available for work" checked={form.availableForWork} onChange={(v) => field("availableForWork", v)} />
         </Section>
@@ -388,7 +388,7 @@ export function ProfileClient({ initialProfile }: { initialProfile: Profile }) {
                   label="role title"
                   value={role.title}
                   onChange={(e) => roleField("title", e.target.value)}
-                  placeholder="Full-Stack Developer Intern"
+                  placeholder="Software Development Engineer I"
                 />
                 <FormInput
                   label="company"
