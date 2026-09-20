@@ -26,6 +26,37 @@ each item live in the sections below.
       hardcodes dev credentials — superseded, must never merge or push) and drop the six
       superseded stashes (`git stash list` — everything except recovered work is artifacts).
 
+**0b. Database migration Neon → Supabase (done 2026-09-20, `dev` @ `3c0f39b`):** Neon's free
+compute-hour quota was exhausted, Flyway then failed every boot with SQLSTATE 53000, and the data
+was not recoverable. Render now points at Supabase (project `lkbntiglqcnmzcymzlcx`, us-west-2, to
+match Render's Oregon) over the **session pooler**, `aws-0-us-west-2.pooler.supabase.com:5432` —
+IPv4, which Render's egress can reach, and one server connection per client, so Flyway's advisory
+lock and prepared statements still work. The direct connection is IPv6-only and the transaction
+pooler (6543) breaks both; neither is usable here.
+- [ ] **Owner:** Render → `portfolio-backend` → Settings → **Health Check Path** → change
+      `/actuator/health` to `/health`. `render.yaml` already says `/health`, but it is intent only:
+      the live service was created through the REST API, not a Blueprint.
+- [ ] **Owner:** external keep-alive cron (cron-job.org or similar) hitting `GET /api/projects`
+      every 10 min. Supabase pauses a free project after **7 days of low database activity**, and
+      restoring is manual and dashboard-only — no API, no CLI. Not `/health`: it does no I/O, so it
+      does not count as database activity. Doubles as the Render free-tier spin-down keep-warm.
+- ⏸️ **The production content is gone with the Neon database** and the new one starts empty.
+      `docs/seo/fix-production-content.sql` (on `seo/overhaul`) is a *correction* script, not a
+      restore: against empty tables its `UPDATE profile SET …` matches zero rows, so no profile row
+      is ever created, and its six `DELETE`s are no-ops. Only the `skill_branch` / `skill` /
+      `skill_diff` / `project` / `commit_entry` INSERTs land. Re-enter the profile at `/admin`, or
+      add a profile INSERT to the script.
+- ⏸️ `SEED_DEMO_DATA` deliberately left untouched on Render: the Render MCP has no read tool for
+      env vars, so its live value is unverified, and `dev`'s `render.yaml` still declares `"true"`
+      while `seo/overhaul` flips it to `"false"`. Against the now-empty database, `true` republishes
+      the fabricated star/fork/commit counts and the "Student / open to internships" headline, and
+      resurrects every row deleted in `/admin` on the next restart.
+- ⏸️ Only the two database hunks of `adb6754` were ported to `dev` (as `3c0f39b`, byte-identical so
+      the branch still merges cleanly); `seo/overhaul` (10 commits) remains unmerged.
+- 💭 The Hikari comment still reasons about Neon's compute-hour billing. Supabase has no
+      compute-hour meter, so `minimum-idle: 0` now earns its keep by holding the service below the
+      session pooler's connection ceiling, not by letting a compute suspend.
+
 **1. Hardening sitting — ✅ DONE 2026-07-03 (`fix/security-hardening`, released):**
 - [x] B2 — Vercel security headers. *Post-deploy check pending: click through the live site —
       API calls and the avatar must not be CSP-blocked; tighten `*.onrender.com` to the exact
