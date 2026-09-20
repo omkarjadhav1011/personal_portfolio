@@ -40,17 +40,20 @@ pooler (6543) breaks both; neither is usable here.
       every 10 min. Supabase pauses a free project after **7 days of low database activity**, and
       restoring is manual and dashboard-only — no API, no CLI. Not `/health`: it does no I/O, so it
       does not count as database activity. Doubles as the Render free-tier spin-down keep-warm.
-- ⏸️ **The production content is gone with the Neon database** and the new one starts empty.
-      `docs/seo/fix-production-content.sql` (on `seo/overhaul`) is a *correction* script, not a
-      restore: against empty tables its `UPDATE profile SET …` matches zero rows, so no profile row
-      is ever created, and its six `DELETE`s are no-ops. Only the `skill_branch` / `skill` /
-      `skill_diff` / `project` / `commit_entry` INSERTs land. Re-enter the profile at `/admin`, or
-      add a profile INSERT to the script.
-- ⏸️ `SEED_DEMO_DATA` deliberately left untouched on Render: the Render MCP has no read tool for
-      env vars, so its live value is unverified, and `dev`'s `render.yaml` still declares `"true"`
-      while `seo/overhaul` flips it to `"false"`. Against the now-empty database, `true` republishes
-      the fabricated star/fork/commit counts and the "Student / open to internships" headline, and
-      resurrects every row deleted in `/admin` on the next restart.
+- ✅ **The production content did not survive Neon** — but it came back the long way round. On the
+      first boot the seeder (`SEED_DEMO_DATA` was live-`true`, whatever `seo/overhaul`'s render.yaml
+      says) refilled the empty database with the fabricated content: invented star/fork/commit
+      counts, the "Student / open to internships" headline, the unconfirmed Dnyanda Solutions role.
+      That put the database into exactly the populated state `docs/seo/fix-production-content.sql`
+      was written against — so the flag went to `false` on Render and the script was applied to
+      Supabase: `UPDATE 1` on profile, 22 rows deleted, 54 inserted, and all five of its
+      verification queries return zero rows.
+- [ ] **Owner:** two content caveats the script itself flags and nobody has cleared. The three
+      Udemy certification dates are **unconfirmed** ("Jan 2023" / "Mar 2023" were carried over from
+      static data; the AI/ML bootcamp has no date at all), and the `crop-recommendation` and
+      `dev-mobiles` long descriptions are marked **"DRAFT - pending review"** — reconstructed by
+      reading the repositories, never confirmed by the owner. All of it is live now.
+- ✅ `SEED_DEMO_DATA` is now `false` on Render — verified the hard way: it was `true`, and it fired.
 - ⏸️ Only the two database hunks of `adb6754` were ported to `dev` (as `3c0f39b`, byte-identical so
       the branch still merges cleanly); `seo/overhaul` (10 commits) remains unmerged.
 - 💭 The Hikari comment still reasons about Neon's compute-hour billing. Supabase has no
