@@ -516,6 +516,14 @@ appetite. The current consolidated order lives in "Now / Next" at the top of thi
   at the no-I/O `/health`, set `hikari.minimum-idle: 0` with a short `idle-timeout`, and confirm the
   external pingers only hit `/health`. Quota resets 2026-10-01.
 
+- ⏳ **Preview deployments are CORS-blocked at runtime (2026-09-20).** `VITE_SITE_URL` and
+  `VITE_API_URL` are now set for Production, Preview and Development on Vercel, so preview builds
+  compile and prerender against the live backend. But the backend's `CORS_ALLOWED_ORIGIN` only
+  allows the production origin, so once a preview page hydrates, every client-side call to
+  `portfolio-backend-sfzm.onrender.com` is rejected and the page can flip from good prerendered
+  markup to its "failed to load" state. Fix needs a decision: allow a `*-omkarjadhav1011s-projects.vercel.app`
+  pattern in the backend CORS config, or accept that previews are markup-only.
+
 ---
 
 ## How to use this file
