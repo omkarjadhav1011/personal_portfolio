@@ -319,6 +319,41 @@ async function main() {
         "Pune. B.Tech CSE (Data Science), KIT Kolhapur. C#, NestJS, SQL, Spring Boot.",
     },
     {
+      route: "/about",
+      title: "About Omkar Jadhav — Backend Developer in Pune, India",
+      description:
+        "Omkar Jayvant Jadhav is an SDE-I at Nonstop IO Technologies, Pune, building " +
+        "backend services in C#, NestJS and SQL. B.Tech CSE (Data Science), KIT Kolhapur 2026.",
+    },
+    {
+      route: "/projects",
+      title: "Projects by Omkar Jadhav — Spring Boot, React, Python",
+      description:
+        "Software built by Omkar Jadhav: a Spring Boot and React portfolio with an AI " +
+        "assistant, an interview practice system, a text-to-image generator and an expense tracker.",
+    },
+    {
+      route: "/experience",
+      title: "Experience — Omkar Jadhav, SDE-I at Nonstop IO",
+      description:
+        "Omkar Jadhav is a Software Development Engineer I at Nonstop IO Technologies, Kharadi, " +
+        "Pune. Backend work on an enterprise reporting product in C#, NestJS and SQL since Feb 2026.",
+    },
+    {
+      route: "/education",
+      title: "Education — Omkar Jadhav, B.Tech CSE, KIT Kolhapur",
+      description:
+        "Omkar Jadhav graduated from KIT's College of Engineering (Autonomous), Kolhapur in 2026 " +
+        "with a B.Tech in CSE (Data Science), after a Diploma at ICRE Gargoti.",
+    },
+    {
+      route: "/resume",
+      title: "Resume — Omkar Jadhav, Software Development Engineer I",
+      description:
+        "The full resume of Omkar Jayvant Jadhav: SDE-I at Nonstop IO Technologies, Pune. " +
+        "Experience, skills, projects and education, readable in full with a PDF download.",
+    },
+    {
       route: "/recruiter",
       title: "Recruiter Fit Match — Omkar Jadhav",
       description:

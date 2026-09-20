@@ -227,9 +227,9 @@ export function AboutSection({ profile, topSkills }: AboutSectionProps) {
               <div className="flex flex-col sm:flex-row sm:items-center gap-5 mb-5">
                 <Avatar name={profile.name} avatarUrl={profile.avatarUrl} />
                 <div className="min-w-0 flex-1">
-                  <h1 className="font-mono font-bold text-2xl sm:text-3xl tracking-tight leading-tight text-text-primary">
+                  <h2 className="font-mono font-bold text-2xl sm:text-3xl tracking-tight leading-tight text-text-primary">
                     {profile.name}
-                  </h1>
+                  </h2>
                   <div className="font-mono text-xs mt-1 text-text-muted">
                     @{profile.handle} · {profile.location}
                   </div>

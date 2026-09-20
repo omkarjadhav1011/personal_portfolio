@@ -2,6 +2,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useParams, Link } from "react-router-dom";
 import { ExternalLink, GitFork, Star, GitCommitHorizontal } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { LanguageDot } from "@/components/ui/LanguageDot";
 import { useProject } from "@/api/projects";
 
@@ -36,7 +37,7 @@ export default function ProjectDetail() {
             fatal: pathspec &apos;{slug}&apos; did not match any project
           </p>
           <Link
-            to="/#projects"
+            to="/projects"
             className="inline-flex items-center gap-2 text-sm text-text-muted hover:text-git-green transition-colors"
           >
             <span>←</span>
@@ -52,7 +53,7 @@ export default function ProjectDetail() {
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Back navigation */}
         <Link
-          to="/#projects"
+          to="/projects"
           className="inline-flex items-center gap-2 font-mono text-sm text-text-muted hover:text-git-green transition-colors"
         >
           <span>←</span>
@@ -60,31 +61,10 @@ export default function ProjectDetail() {
           git checkout main
         </Link>
 
-        {/* Visible breadcrumb trail. Required before the BreadcrumbList in the
-            JSON-LD graph is legitimate: structured data may only describe what a
-            reader can actually see, and the positions and labels here must match
-            the schema's item for item. Styled as a path to fit the terminal
-            theme, but it is a real <nav> with real links, so a crawler reads it
-            as hierarchy and it is keyboard navigable. */}
-        <nav aria-label="Breadcrumb" className="mt-4 font-mono text-xs text-text-faint">
-          <ol className="flex flex-wrap items-center gap-1.5">
-            <li>
-              <Link to="/" className="hover:text-git-green transition-colors">
-                Home
-              </Link>
-            </li>
-            <li aria-hidden="true">/</li>
-            <li>
-              <Link to="/#projects" className="hover:text-git-green transition-colors">
-                Projects
-              </Link>
-            </li>
-            <li aria-hidden="true">/</li>
-            <li className="text-text-muted" aria-current="page">
-              {project.repoName}
-            </li>
-          </ol>
-        </nav>
+        {/* Shared with every other page, and read from the same `crumbsFor`
+            the JSON-LD BreadcrumbList uses, so the visible trail and the
+            structured data cannot drift apart. */}
+        <Breadcrumbs route={`/projects/${project.slug}`} leafName={project.repoName} className="mt-4 font-mono text-xs text-text-faint" />
 
         {/* Project header */}
         <div className="rounded-xl border border-terminal-border bg-terminal-surface overflow-hidden shadow-terminal">

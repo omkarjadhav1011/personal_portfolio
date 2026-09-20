@@ -447,6 +447,16 @@ appetite. The current consolidated order lives in "Now / Next" at the top of thi
   analytics added in Phase 5. Loosen to `strict-origin-when-cross-origin` if that data is wanted.
 - ⏳ **Self-host JetBrains Mono.** The Google Fonts stylesheet in `index.html` is render-blocking.
   Wave 4.
+- ⏳ **Thin pages after Wave 3.** `/experience` is 258 words against a 400 floor, and the project
+  pages run 137-233 against a 300 floor. Both are thin because the underlying content is short,
+  not because of layout — the fix is fuller write-ups, and two project descriptions are still
+  DRAFT pending the owner's review. Do not pad.
+- ⏳ **`/skills` and `/contact` were not built** (Wave 3 scope decision). Skills and contact remain
+  full sections on the homepage. Revisit if `omkar jadhav contact` becomes worth its own URL.
+- ⏳ **`/blog` does not exist yet.** The 8 article topics in `03-KEYWORD-MAP.md` need the route
+  shell before Wave 5 content can land.
+- ⏳ **Google Rich Results Test still unrun** — it needs a live public URL. Run it against `/` and
+  `/about` after the next deploy.
 - ⏳ **Verify client hydration in a real browser.** Wave 1 prerenders every public route and
   `main.tsx` now hydrates instead of re-rendering. The server HTML is verified; hydration is NOT —
   no browser was available. Run `npm run preview` and check the console for React hydration

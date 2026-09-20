@@ -15,7 +15,16 @@
  *  - `/projects/:slug` — dynamic; the concrete slugs are resolved from live
  *                        content at build time by the prerender step
  */
-export const PUBLIC_ROUTES = ["/", "/recruiter", "/mcp"] as const;
+export const PUBLIC_ROUTES = [
+  "/",
+  "/about",
+  "/projects",
+  "/experience",
+  "/education",
+  "/resume",
+  "/recruiter",
+  "/mcp",
+] as const;
 
 /** Routes that must never be indexed. Mirrored into robots.txt `Disallow` rules. */
 export const DISALLOWED_PATHS = ["/admin/"] as const;

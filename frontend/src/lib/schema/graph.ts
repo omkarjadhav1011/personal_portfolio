@@ -30,6 +30,8 @@
  *    exceptions are called out where they occur.
  */
 
+import { crumbsFor } from "@/lib/breadcrumbs";
+
 /** Minimal JSON-LD shapes. Deliberately loose: schema.org is not a closed set. */
 export type JsonLdValue = string | number | boolean | null | JsonLdNode | JsonLdValue[];
 export interface JsonLdNode {
@@ -181,8 +183,8 @@ export function buildGraph(input: GraphInput): JsonLdNode {
   // sameAs is the mechanism that actually separates him from his namesakes, and
   // it is verified for reciprocity — so only confirmed, owned profiles belong
   // here. A wrong entry does not merely fail to help; it instructs Google to
-  // merge him with someone else. LinkedIn is absent until its URL is confirmed:
-  // the one previously published resolves to a different Omkar Jadhav.
+  // merge him with someone else -- which is exactly what the previously
+  // published LinkedIn URL did, pointing at a different Omkar Jadhav.
   const sameAs = (profile.socials ?? [])
     .map((s) => s.url)
     .filter((url) => /^https?:\/\//i.test(url));
@@ -367,18 +369,46 @@ export function buildGraph(input: GraphInput): JsonLdNode {
         }),
       );
 
-      // Mirrors the breadcrumb trail rendered on the page. Positions and labels
-      // must match it exactly, or this is markup for content nobody can see.
-      nodes.push({
-        "@type": "BreadcrumbList",
-        "@id": `${projectUrl}#breadcrumb`,
-        itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Home", item: abs("/") },
-          { "@type": "ListItem", position: 2, name: "Projects", item: abs("/#projects") },
-          { "@type": "ListItem", position: 3, name: project.repoName, item: projectUrl },
-        ],
-      });
     }
+  }
+
+  // ── Breadcrumbs ────────────────────────────────────────────────────────────
+  // Generated from the same `crumbsFor` the visible <nav> renders, so the two
+  // cannot drift. Skipped on the homepage, which has no trail to describe.
+  const leafName = projectSlug
+    ? (projects.find((p) => p.slug === projectSlug)?.repoName ?? undefined)
+    : undefined;
+  const crumbs = crumbsFor(route, leafName);
+
+  if (crumbs.length > 1) {
+    nodes.push({
+      "@type": "BreadcrumbList",
+      "@id": `${abs(route)}#breadcrumb`,
+      itemListElement: crumbs.map((crumb, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: crumb.name,
+        item: abs(crumb.path),
+      })),
+    });
+  }
+
+  // ── ProfilePage ────────────────────────────────────────────────────────────
+  // Marks /about as the canonical page *about* the Person, rather than merely a
+  // page that mentions them. It is the strongest single signal available for
+  // "this URL describes this human".
+  if (route === "/about") {
+    nodes.push(
+      clean({
+        "@type": "ProfilePage",
+        "@id": `${abs("/about")}#profilepage`,
+        url: abs("/about"),
+        name: `About ${profile.name}`,
+        mainEntity: ref(PERSON),
+        isPartOf: ref(WEBSITE),
+        inLanguage: "en",
+      }),
+    );
   }
 
   return { "@context": "https://schema.org", "@graph": nodes };

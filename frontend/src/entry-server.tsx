@@ -19,7 +19,12 @@ export { normalizeSiteUrl } from "@/lib/site-url";
 // where structured data belongs, so it is re-exported for the same reason.
 export { buildGraph } from "@/lib/schema/graph";
 import Home from "@/pages/Home";
+import About from "@/pages/About";
+import Projects from "@/pages/Projects";
 import ProjectDetail from "@/pages/ProjectDetail";
+import Experience from "@/pages/Experience";
+import Education from "@/pages/Education";
+import Resume from "@/pages/Resume";
 import RecruiterPage from "@/pages/RecruiterPage";
 import McpPage from "@/pages/McpPage";
 
@@ -55,7 +60,12 @@ const routes: RouteObject[] = [
         element: <MainLayout />,
         children: [
           { index: true, element: <Home /> },
+          { path: "about", element: <About /> },
+          { path: "projects", element: <Projects /> },
           { path: "projects/:slug", element: <ProjectDetail /> },
+          { path: "experience", element: <Experience /> },
+          { path: "education", element: <Education /> },
+          { path: "resume", element: <Resume /> },
           { path: "recruiter", element: <RecruiterPage /> },
           { path: "mcp", element: <McpPage /> },
           // Rendered once to dist/404.html, which Vercel serves — with a real
