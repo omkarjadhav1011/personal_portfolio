@@ -2,6 +2,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useParams, Link } from "react-router-dom";
 import { ExternalLink, GitFork, Star, GitCommitHorizontal } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { LanguageDot } from "@/components/ui/LanguageDot";
 import { useProject } from "@/api/projects";
 
@@ -36,7 +37,7 @@ export default function ProjectDetail() {
             fatal: pathspec &apos;{slug}&apos; did not match any project
           </p>
           <Link
-            to="/#projects"
+            to="/projects"
             className="inline-flex items-center gap-2 text-sm text-text-muted hover:text-git-green transition-colors"
           >
             <span>←</span>
@@ -52,13 +53,18 @@ export default function ProjectDetail() {
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Back navigation */}
         <Link
-          to="/#projects"
+          to="/projects"
           className="inline-flex items-center gap-2 font-mono text-sm text-text-muted hover:text-git-green transition-colors"
         >
           <span>←</span>
           <span className="text-git-green">$</span>
           git checkout main
         </Link>
+
+        {/* Shared with every other page, and read from the same `crumbsFor`
+            the JSON-LD BreadcrumbList uses, so the visible trail and the
+            structured data cannot drift apart. */}
+        <Breadcrumbs route={`/projects/${project.slug}`} leafName={project.repoName} className="mt-4 font-mono text-xs text-text-faint" />
 
         {/* Project header */}
         <div className="rounded-xl border border-terminal-border bg-terminal-surface overflow-hidden shadow-terminal">
@@ -83,6 +89,19 @@ export default function ProjectDetail() {
                   </h1>
                 </div>
                 <p className="text-text-muted text-sm">{project.description}</p>
+                {/* Author byline. Two jobs: it names the entity on a page that
+                    otherwise only ever says "this project" (an AI assistant
+                    retrieves a passage, not a page, so an unnamed one is
+                    unusable), and it is the visible content that Wave 2's
+                    SoftwareSourceCode.author must mirror — schema may only
+                    claim what a reader can see. */}
+                <p className="mt-2 text-xs text-text-faint">
+                  A project by{" "}
+                  <Link to="/" className="text-text-muted hover:text-git-green transition-colors">
+                    Omkar Jadhav
+                  </Link>
+                  {project.language ? ` · ${project.language}` : ""}
+                </p>
               </div>
               <span
                 className={`text-xs px-2.5 py-1 rounded-full border font-mono ${STATUS_COLORS[project.status] ?? ""}`}

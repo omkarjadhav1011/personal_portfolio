@@ -23,6 +23,11 @@ coverage/
 .env.*.local
 *.env
 *.env.*
+# ...but the committed templates must survive the patterns above. Without these
+# negations `*.env.*` swallows `.env.example`, and the one variable the build
+# depends on ends up documented nowhere.
+!.env.example
+!*.env.example
 
 # build
 dist/

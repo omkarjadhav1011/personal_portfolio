@@ -94,17 +94,11 @@ export function CommandPalette() {
   const aiBottomRef = useRef<HTMLDivElement>(null);
   const [localInput, setLocalInput] = useState("");
 
-  // Global keyboard handler — uses getState() to avoid stale closure
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
-        e.preventDefault();
-        useCommandPaletteStore.getState().toggle();
-      }
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  // The Ctrl+K listener deliberately does NOT live here. This component is
+  // lazy-loaded by CommandPaletteHost, so a listener registered in it would not
+  // exist until after the chunk had already been fetched — which is only the
+  // case once the palette has been opened some other way. Registering it in
+  // both places would toggle twice per keypress and cancel out.
 
   // Auto-scroll — each panel has its own ref, gated by active mode to prevent
   // cross-panel scroll during AnimatePresence exit transitions

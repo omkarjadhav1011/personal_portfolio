@@ -26,6 +26,40 @@ each item live in the sections below.
       hardcodes dev credentials — superseded, must never merge or push) and drop the six
       superseded stashes (`git stash list` — everything except recovered work is artifacts).
 
+**0b. Database migration Neon → Supabase (done 2026-09-20, `dev` @ `3c0f39b`):** Neon's free
+compute-hour quota was exhausted, Flyway then failed every boot with SQLSTATE 53000, and the data
+was not recoverable. Render now points at Supabase (project `lkbntiglqcnmzcymzlcx`, us-west-2, to
+match Render's Oregon) over the **session pooler**, `aws-0-us-west-2.pooler.supabase.com:5432` —
+IPv4, which Render's egress can reach, and one server connection per client, so Flyway's advisory
+lock and prepared statements still work. The direct connection is IPv6-only and the transaction
+pooler (6543) breaks both; neither is usable here.
+- [ ] **Owner:** Render → `portfolio-backend` → Settings → **Health Check Path** → change
+      `/actuator/health` to `/health`. `render.yaml` already says `/health`, but it is intent only:
+      the live service was created through the REST API, not a Blueprint.
+- [ ] **Owner:** external keep-alive cron (cron-job.org or similar) hitting `GET /api/projects`
+      every 10 min. Supabase pauses a free project after **7 days of low database activity**, and
+      restoring is manual and dashboard-only — no API, no CLI. Not `/health`: it does no I/O, so it
+      does not count as database activity. Doubles as the Render free-tier spin-down keep-warm.
+- ✅ **The production content did not survive Neon** — but it came back the long way round. On the
+      first boot the seeder (`SEED_DEMO_DATA` was live-`true`, whatever `seo/overhaul`'s render.yaml
+      says) refilled the empty database with the fabricated content: invented star/fork/commit
+      counts, the "Student / open to internships" headline, the unconfirmed Dnyanda Solutions role.
+      That put the database into exactly the populated state `docs/seo/fix-production-content.sql`
+      was written against — so the flag went to `false` on Render and the script was applied to
+      Supabase: `UPDATE 1` on profile, 22 rows deleted, 54 inserted, and all five of its
+      verification queries return zero rows.
+- [ ] **Owner:** two content caveats the script itself flags and nobody has cleared. The three
+      Udemy certification dates are **unconfirmed** ("Jan 2023" / "Mar 2023" were carried over from
+      static data; the AI/ML bootcamp has no date at all), and the `crop-recommendation` and
+      `dev-mobiles` long descriptions are marked **"DRAFT - pending review"** — reconstructed by
+      reading the repositories, never confirmed by the owner. All of it is live now.
+- ✅ `SEED_DEMO_DATA` is now `false` on Render — verified the hard way: it was `true`, and it fired.
+- ⏸️ Only the two database hunks of `adb6754` were ported to `dev` (as `3c0f39b`, byte-identical so
+      the branch still merges cleanly); `seo/overhaul` (10 commits) remains unmerged.
+- 💭 The Hikari comment still reasons about Neon's compute-hour billing. Supabase has no
+      compute-hour meter, so `minimum-idle: 0` now earns its keep by holding the service below the
+      session pooler's connection ceiling, not by letting a compute suspend.
+
 **1. Hardening sitting — ✅ DONE 2026-07-03 (`fix/security-hardening`, released):**
 - [x] B2 — Vercel security headers. *Post-deploy check pending: click through the live site —
       API calls and the avatar must not be CSP-blocked; tighten `*.onrender.com` to the exact
@@ -239,6 +273,10 @@ directly."). Recruiter leads keep their own per-IP bucket; this cap is contact-f
 - `oauth2_mfa_admin_hardening_plan.md` — OAuth2 + TOTP MFA + admin hardening (largely shipped; kept
   for reference).
 - 💭 **Resume builder** — Phase 1 (upload + serve) shipped; a full structured resume builder is planned.
+- 📝 **`docs/SETUP.md` header is stale** — it still says "Spring Boot 3.3.5" and "React + Vite"
+  while `pom.xml` is on 3.5.15; it also predates the LLM chain / MCP / telemetry subsystems, so its
+  prerequisite + `.env` sections need a refresh pass (surfaced while writing the root `README.md`,
+  2026-09-02).
 
 ## AI assistant / RAG (LLM_plan.md)
 
@@ -384,6 +422,133 @@ already in this file are marked *(expands existing entry above)*.
 
 **Recommended order:** ~~B1~~ ~~A2~~ (done) → B2/B3 (same sitting) → A1 → C2 → then pick by
 appetite. The current consolidated order lives in "Now / Next" at the top of this file.
+
+---
+
+- 💭 **Simple-portfolio branch (`release/simple-portfolio`, at `eb90d36`).** A pre-AI cut of the site
+  (portfolio + admin + OAuth2/MFA + vault, no chatbot/recruiter-agent/MCP/LLM-failover) kept
+  deployable side by side with the live site. Render blueprint resources renamed to
+  `portfolio-simple-db` / `portfolio-simple-backend`, and `DataSeeder` is re-enabled behind a new
+  `SEED_DEMO_DATA` flag so a fresh database isn't blank. Deferred: no Render CLI or MCP is
+  configured locally, so creating that Blueprint is a manual dashboard step; `/recruiter` is still
+  routable on that branch and errors without `GEMINI_API_KEY` — hide the route if the simple deploy
+  goes public; and `SEED_DEMO_DATA` must be flipped to false once real content is curated, since
+  the per-row seed guards otherwise resurrect deleted placeholders on every restart.
+
+---
+
+- 💭 **Postgres moved off Render to Neon (2026-09-02).** Render's free Postgres expires 30 days after
+  creation, so prod now runs on Neon (`aws-us-west-2`, pgvector 0.8.0, forever-free, auto-resume from
+  idle). The backend connects via `DATABASE_URL` as a full JDBC URL against Neon's **direct** endpoint —
+  not the `-pooler` one, whose PgBouncer transaction mode breaks Flyway advisory locks and Hibernate
+  prepared statements. Deferred: `render.yaml` still describes a `fromDatabase`-wired Render Postgres and
+  no longer matches production — update it (or drop it) so a future Blueprint sync can't recreate the old
+  pair; Neon's free plan caps at 0.5 GB / 100 CU-hours, worth watching if the vault or embeddings grow.
+
+---
+
+- 💭 **Keep-alive pinger not yet created (2026-09-02).** `GET /health` ships and is live on
+  `portfolio-backend-sfzm`, but nothing pings it yet, so the free service still cold-starts after
+  15 idle minutes. Deferred because it's a manual dashboard step: cron-job.org every 10 min
+  (primary), UptimeRobot every 5 min (backup) — steps in `DEPLOY.md`. Ping only **one** free
+  service: the 750 instance-hours/month quota is per workspace and a full month is 744 h, so a
+  second warm service exhausts it mid-month and Render suspends both.
+
+---
+
+## SEO overhaul (`seo/overhaul` branch — see `docs/seo/`)
+
+- ⏳ **Replace the resume PDF served at `/api/profile/resume`.** The live `Omkar_Jadhav_Ace.pdf`
+  still carries the old phone number, "final-year student", "seeking a role", and Next.js /
+  FastAPI / ChromaDB / RAG. Needs a regenerated PDF uploaded through the admin panel — only the
+  owner can do this. Blocks Wave 3. (`docs/seo/00-RECON.md` §9.6)
+- ⏳ **Confirm the real LinkedIn URL.** The one published today resolves to a different person;
+  the resume cites `linkedin.com/in/omkar-jadhav-st`. Blocks the `sameAs` graph in Wave 2.
+- ⏳ **LeetCode profile URL** never supplied — omitted from `sameAs`, and the "210+ problems"
+  claim stays off the site until there is a profile to link.
+- ⏳ **Real descriptions for `crop-recommendation` and `dev-mobiles`.** Both were kept, but their
+  only copy is fabricated demo-seed text and `dev-mobiles` credits an employer being deleted.
+- ⏳ **Per-page `<lastmod>` in the sitemap.** Deliberately omitted in Wave 0 — a build date is not
+  a content change. Add real dates when the prerender step knows per-page content mtimes.
+- ⏳ **Project detail routes in the sitemap.** `/projects/:slug` is dynamic; concrete slugs get
+  enumerated once prerendering resolves them at build time (Wave 1/3).
+- ⏳ **Admin content edits must trigger a Vercel deploy hook.** Once content is prerendered at
+  build time, editing via the admin panel no longer reaches the served HTML without a rebuild.
+- ⏳ **Custom domain purchase.** Treated as certain. Buy it *before* Wave 5 content work — every
+  week on the `vercel.app` subdomain accrues authority to an address that will be abandoned.
+  Runbook: `docs/seo/00-RECON.md` §0.8.
+- ⏳ **`Referrer-Policy: no-referrer`** (`frontend/vercel.json:14`) will blank referrer data in any
+  analytics added in Phase 5. Loosen to `strict-origin-when-cross-origin` if that data is wanted.
+- ⏳ **Paste the canonical statement onto every external surface.** It is now identical on the
+  site, in `llms.txt` and in the JSON-LD. The corroboration only pays off when the GitHub bio,
+  the LinkedIn About section and the profile bio in the admin panel carry the same sentence
+  verbatim. Source of truth: `CANONICAL_STATEMENT` in `frontend/src/lib/identity.ts`.
+- ⏳ **Re-test AI answers after indexing.** Ask ChatGPT, Claude, Perplexity and Google AI
+  Overviews "who is Omkar Jadhav?" and record whether the right one is described. Meaningless
+  until the site is crawled — revisit ~4-8 weeks after Search Console submission.
+- ⏳ **Measure real Core Web Vitals.** Wave 4's numbers are build-output and critical-path
+  analysis, not lab or field data — no browser was available. Run Lighthouse and PageSpeed
+  Insights against the deployed site, and read CrUX in Search Console once traffic exists.
+- ⏳ **The 467 KB entry bundle is still the largest remaining weight.** framer-motion and the
+  Radix primitives dominate it. Worth an audit, but only after real measurement says it matters.
+- ⏳ **Replacing the self-hosted font needs a new filename.** `/fonts/*` is served
+  `immutable` for a year and Vite does not content-hash files in `public/`.
+- ⏳ **Thin pages after Wave 3.** `/experience` is 258 words against a 400 floor, and the project
+  pages run 137-233 against a 300 floor. Both are thin because the underlying content is short,
+  not because of layout — the fix is fuller write-ups, and two project descriptions are still
+  DRAFT pending the owner's review. Do not pad.
+- ⏳ **`/skills` and `/contact` were not built** (Wave 3 scope decision). Skills and contact remain
+  full sections on the homepage. Revisit if `omkar jadhav contact` becomes worth its own URL.
+- ⏳ **Wave 5 is incomplete — the run hit the account spend limit.** 8 briefs and 5 of 8 drafts
+  were recovered from the workflow journal into `docs/seo/drafts/`; 3 drafts were never written
+  and most drafts never went through the 4 verify lenses. State per article is tabulated in
+  `docs/seo/drafts/README.md`. Re-run with resume when budget allows — cached agents replay, so
+  only the missing work costs anything.
+- ⏳ **`spring-ai-mcp-server.md` has 18 unresolved verifier findings** recorded in its front
+  matter (2 of 20 applied by hand). Every other recovered draft is unverified.
+- ⏳ **`/blog` does not exist yet.** The 8 article topics in `03-KEYWORD-MAP.md` need the route
+  shell before Wave 5 content can land.
+- ⏳ **Google Rich Results Test still unrun** — it needs a live public URL. Run it against `/` and
+  `/about` after the next deploy.
+- ⏳ **Verify client hydration in a real browser.** Wave 1 prerenders every public route and
+  `main.tsx` now hydrates instead of re-rendering. The server HTML is verified; hydration is NOT —
+  no browser was available. Run `npm run preview` and check the console for React hydration
+  warnings before deploying.
+- 🔴 **Neon compute has auto-suspend DISABLED and has blown the free quota.**
+  `suspend_timeout_seconds: 0` means the compute never scales to zero; it has run
+  continuously since 2026-09-01 (active_time 440.7 h, compute 110.2 CPU-h) and the API now
+  returns HTTP 402. This is also why the Render backend cannot boot — Flyway cannot reach a
+  suspended compute. Fix: set the endpoint's suspend timeout to ~300s. Note this interacts
+  with the planned keep-alive pinger: pinging the backend every 10 min keeps the Neon
+  compute awake too, which is what would re-burn the quota. Ping `/health` (no DB I/O), not
+  `/actuator/health`.
+- ⏳ **`frontend/content-snapshot.json` must be re-committed when site content changes.** The
+  prerender refreshes it on every build that reaches the API; if it drifts far behind the database,
+  a deploy made while the backend is asleep publishes stale content. The build warns with the
+  snapshot's age. `REQUIRE_LIVE_CONTENT=1` disables the fallback for deploys where that is
+  unacceptable.
+- ⏳ **Admin panel content fixes.** The live database still holds the stale profile, the Dnyanda
+  role, the fabricated project metrics and the Next.js skill. The prerender content guard blocks
+  a deploy until they are corrected at `/admin`.
+- ⏳ **Certification dates unconfirmed** (Jan 2023 / Mar 2023 carried over unverified; the AI/ML
+  bootcamp has none). Confirm or reduce all three to year-only.
+- ⏳ **Skills removed pending a decision:** Tailwind CSS, C++, MongoDB, NumPy, Pandas,
+  Scikit-learn, Jupyter. They were on the site but are absent from the confirmed skills list.
+- ⏳ **Two project descriptions are DRAFT** (`crop-recommendation`, `Mobile_Shop`) — reconstructed
+  by reading the repositories, not supplied by the owner. Review before publishing.
+- ⏳ **`/mcp` and `/projects/:slug` h1s are weak** ("MCP Server", the bare repo name). Wave 3
+  should make them carry the name and a keyword.
+- ⏳ **Remove the `/scratch` dev scaffold route** (`src/pages/ScratchProjects.tsx`) — publicly
+  routable and returns 200. Disallowed in robots.txt as of Wave 0; delete it properly in Wave 1.
+
+- 🔴 **Neon free-tier compute quota blew up the backend (2026-09-20).** Prod is down: Flyway can't
+  connect (`SQLSTATE 53000`, "account or project has exceeded the quota"), so Render crash-loops.
+  The Neon compute was awake 440.7 h of the 440.8 h billing period — it never autosuspended, because
+  (a) Render's `healthCheckPath` is `/actuator/health`, which runs the DataSource probe on every
+  poll, and (b) `application.yml` sets no HikariCP limits, so `minimumIdle` defaults to
+  `maximumPoolSize` (10) and the pool pins 10 connections open forever. Fix: point the health check
+  at the no-I/O `/health`, set `hikari.minimum-idle: 0` with a short `idle-timeout`, and confirm the
+  external pingers only hit `/health`. Quota resets 2026-10-01.
 
 ---
 

@@ -55,7 +55,7 @@ export function ContactSection() {
             Get in Touch
           </h2>
           <p className="text-text-muted text-sm font-mono mb-10">
-            # open to internships, collaborations, and interesting problems
+            # open to interesting problems, collaborations, and good conversations
           </p>
         </ScrollReveal>
 

@@ -9,12 +9,23 @@ import { profile as staticProfile } from "@/data/profile";
 import { useProfile } from "@/api/profile";
 import { cn } from "@/lib/utils";
 
-const NAV_SECTIONS = [
-  { id: "about", label: "about" },
-  { id: "skills", label: "skills" },
-  { id: "projects", label: "projects" },
-  { id: "experience", label: "log" },
-  { id: "contact", label: "contact" },
+/**
+ * Primary navigation.
+ *
+ * Items with `to` are real routes and render as <Link>, i.e. real <a href>
+ * elements. This matters more than it looks: the whole nav used to be
+ * <button onClick={scrollTo}>, so with JavaScript disabled the site had no
+ * links at all and a crawler could not reach anything from the homepage.
+ *
+ * Items with `id` are still homepage sections — skills and contact were not
+ * split into their own pages — and keep the smooth-scroll behaviour.
+ */
+const NAV_ITEMS: { label: string; to?: string; id?: string }[] = [
+  { label: "about", to: "/about" },
+  { label: "skills", id: "skills" },
+  { label: "projects", to: "/projects" },
+  { label: "log", to: "/experience" },
+  { label: "contact", id: "contact" },
 ];
 
 // The "new" badge on the recruiter link auto-retires after this date so it
@@ -82,25 +93,34 @@ export function Navbar() {
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-1 font-mono text-sm">
-            {NAV_SECTIONS.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => goTo(s.id)}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg transition-colors duration-200",
-                  // #1 — one signal for active: green text + the `*` marker.
-                  // The bordered/tinted pill was removed to lighten the bar.
-                  activeSection === s.id
-                    ? "text-git-green"
-                    : "text-text-muted hover:text-text-primary hover:bg-terminal-surface"
-                )}
-              >
-                {activeSection === s.id && (
-                  <span className="mr-1 text-git-green">*</span>
-                )}
-                {s.label}
-              </button>
-            ))}
+            {NAV_ITEMS.map((item) => {
+              const isActive = item.to
+                ? location.pathname === item.to
+                : activeSection === item.id;
+              const className = cn(
+                "px-3 py-1.5 rounded-lg transition-colors duration-200",
+                // #1 — one signal for active: green text + the `*` marker.
+                // The bordered/tinted pill was removed to lighten the bar.
+                isActive
+                  ? "text-git-green"
+                  : "text-text-muted hover:text-text-primary hover:bg-terminal-surface",
+              );
+              const body = (
+                <>
+                  {isActive && <span className="mr-1 text-git-green">*</span>}
+                  {item.label}
+                </>
+              );
+              return item.to ? (
+                <Link key={item.label} to={item.to} className={className}>
+                  {body}
+                </Link>
+              ) : (
+                <button key={item.label} onClick={() => goTo(item.id!)} className={className}>
+                  {body}
+                </button>
+              );
+            })}
 
             {/* #2 — divider separates content nav from the recruiter CTA */}
             <span className="mx-2 h-4 w-px bg-terminal-border" aria-hidden="true" />
@@ -219,21 +239,44 @@ export function Navbar() {
 
             <div className="border-t border-terminal-border my-1" />
 
-            {NAV_SECTIONS.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => { goTo(s.id); setMobileOpen(false); }}
-                className={cn(
-                  "w-full text-left px-4 py-3 rounded-lg text-sm transition-colors",
-                  activeSection === s.id
-                    ? "text-git-green bg-git-green/10"
-                    : "text-text-muted hover:text-text-primary hover:bg-terminal-surface"
-                )}
-              >
-                <span className="text-text-faint mr-3">$</span>
-                git checkout {s.id}
-              </button>
-            ))}
+            {NAV_ITEMS.map((item) => {
+              const isActive = item.to
+                ? location.pathname === item.to
+                : activeSection === item.id;
+              const className = cn(
+                "w-full text-left px-4 py-3 rounded-lg text-sm transition-colors",
+                isActive
+                  ? "text-git-green bg-git-green/10"
+                  : "text-text-muted hover:text-text-primary hover:bg-terminal-surface",
+              );
+              const body = (
+                <>
+                  <span className="text-text-faint mr-3">$</span>
+                  git checkout {item.label}
+                </>
+              );
+              return item.to ? (
+                <Link
+                  key={item.label}
+                  to={item.to}
+                  onClick={() => setMobileOpen(false)}
+                  className={className}
+                >
+                  {body}
+                </Link>
+              ) : (
+                <button
+                  key={item.label}
+                  onClick={() => {
+                    goTo(item.id!);
+                    setMobileOpen(false);
+                  }}
+                  className={className}
+                >
+                  {body}
+                </button>
+              );
+            })}
 
             </motion.div>
           </>

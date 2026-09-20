@@ -1,20 +1,45 @@
 import type { Profile } from "@/types";
+import { CANONICAL_STATEMENT } from "@/lib/identity";
 
+/**
+ * Static profile data.
+ *
+ * NOTE: this file is NOT dead code. `Home.tsx` reads the profile from the API,
+ * but the Navbar, Footer, StatusBar, ContactSection, ContributionHeatmap,
+ * RecruiterPage and the Ctrl+K terminal all import THIS object directly. Two
+ * sources of truth for the same facts is how the site ended up claiming three
+ * different job titles at once — so any fact corrected here must be corrected
+ * in the admin panel (which writes the database) as well.
+ *
+ * Every fact below is from the confirmed subject profile. Do not add claims
+ * that are not verifiable.
+ */
 export const profile: Profile = {
   name: "Omkar Jadhav",
-  handle: "omkarjadhav",
-  headline: "B.Tech CSE (Data Science) Student & Full-Stack Developer",
-  bio: `I build things for the web and explore the intersection of software and data.
-Currently pursuing B.Tech in Computer Science (Data Science) at KIT Kolhapur,
-obsessed with clean code, great UX, and systems that scale.
+  // The real GitHub username. This is not decoration: PRCard falls back to
+  // `https://github.com/${handle}/${slug}` when a project has no explicit
+  // repoUrl, so a wrong handle silently generates 404 links.
+  handle: "omkarjadhav1011",
+  headline: "Software Development Engineer I at Nonstop IO Technologies",
+  // The first paragraph is the canonical statement, verbatim. It is also what
+  // the JSON-LD `description` is built from, so the site, the schema and
+  // llms.txt all publish the identical sentence — corroboration across sources
+  // works on matching, and a paraphrase fragments the signal.
+  //
+  // ⚠ This is the STATIC copy. The live site reads the bio from the database,
+  // so the same text has to be pasted into the admin panel to take effect.
+  bio: `${CANONICAL_STATEMENT}
 
-When I'm not writing code, I'm experimenting with machine learning models,
-building full-stack apps, or debugging something I broke at 2am.`,
+He implemented end-to-end user audit functionality on an enterprise reporting
+product, contributed to its Report Builder module, and builds LLM-integrated
+applications with the Gemini and Hugging Face APIs.`,
   currentBranch: "main",
-  currentStatus: "Open to internships & collaborations",
-  availableForWork: true,
+  currentStatus: "Building backend services at Nonstop IO Technologies",
+  // He is employed. This flag drove the "Open to internships & collaborations"
+  // badge that told every recruiter he was still a student looking for work.
+  availableForWork: false,
   email: "jadhavomkar101103@gmail.com",
-  location: "Kolhapur, Maharashtra, India",
+  location: "Pune, Maharashtra, India",
   socials: [
     {
       label: "GitHub",
@@ -22,39 +47,47 @@ building full-stack apps, or debugging something I broke at 2am.`,
       icon: "github",
     },
     {
-      label: "LinkedIn",
-      url: "https://linkedin.com/in/omkarjadhav",
-      icon: "linkedin",
+      label: "LeetCode",
+      url: "https://leetcode.com/u/jadhav_omkar1013/",
+      icon: "leetcode",
     },
+    // Confirmed by the owner. Note this is NOT linkedin.com/in/omkarjadhav,
+    // which was published here for months and belongs to a different Omkar
+    // Jadhav (Dropouts Technologies LLP, University of Pune 2005-2009). A
+    // profile link is an identity claim, and a wrong one tells Google to merge
+    // this entity with a stranger's. Do not "simplify" this slug.
     {
-      label: "Twitter",
-      url: "https://twitter.com/omkarjadhav",
-      icon: "twitter",
+      label: "LinkedIn",
+      url: "https://www.linkedin.com/in/omkar-jadhav-st/",
+      icon: "linkedin",
     },
   ],
   funFacts: [
-    "I've written more git commit messages than diary entries",
-    "Went from 94% in SSC to building ML models — the plot thickens",
-    "I debug in production (just kidding... mostly)",
-    "My Hugging Face API calls cost more than my monthly coffee budget",
+    "Solved 210+ problems on LeetCode",
+    "Took the long route into engineering: diploma at ICRE Gargoti, then B.Tech at KIT Kolhapur",
+    "Wrote the audit-logging layer that tracks user actions across a production reporting product",
   ],
+  // Previously template filler ("Reading DDIA", "Codes to lo-fi beats", "My
+  // Hugging Face API calls cost more than my monthly coffee budget"). None of it
+  // was verifiable, so it was replaced with claims that are. Personalize freely
+  // — just keep every line true.
   stash: [
-    "☕  Coffee-driven development — 3 cups before 10am",
-    "♟  Plays chess to debug decision-making",
-    "📚  Reading: Designing Data-Intensive Applications (DDIA)",
-    "🎵  Codes to lo-fi beats and post-rock",
-    "🌱  Contributing to open source, one PR at a time",
+    "⑂  Built this site end to end: Spring Boot API, React SPA, PostgreSQL",
+    "🤖  Wrote a multi-provider LLM failover router so the assistant survives a dead provider",
+    "🔐  Encrypts every vault file with its own AES-256-GCM data key",
   ],
   currentRole: {
     enabled: true,
-    title: "Full-Stack Developer Intern",
-    company: "NonStop io Technologies",
+    title: "Software Development Engineer I",
+    company: "Nonstop IO Technologies",
     monogram: "N",
     logoUrl: "",
     url: "https://nonstopio.com",
-    location: "Pune, India · Hybrid",
-    startedAt: "Mar 2024",
-    tenure: "8 mos",
+    location: "Kharadi, Pune, Maharashtra, India · On-site",
+    startedAt: "Feb 2026",
+    // ⚠ Manual value — it does not recompute. Measured from Feb 2026 to
+    // Sep 2026. Update it, or derive it from startedAt.
+    tenure: "7 mos",
     accent: "#00ff88",
   },
 };

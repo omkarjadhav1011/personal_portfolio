@@ -16,8 +16,13 @@ services:
     plan: free
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
-    # Actuator health endpoint — Render gates traffic on this returning 200.
-    healthCheckPath: /actuator/health
+    # The no-I/O HealthController, NOT /actuator/health. Render polls this path continuously,
+    # and the actuator endpoint runs the DataSource probe on every hit — against a serverless
+    # Postgres that opens a connection round the clock, so the compute never suspends and the
+    # free compute-hour quota drains (it did, Sep 2026; see docs/future_plan.md). Nothing is
+    # lost by the swap: Flyway runs at startup, so a database that is down already fails the
+    # boot and the port never opens, whatever this path is set to.
+    healthCheckPath: /health
     envVars:
       # ── Database (auto-wired from the managed Postgres above) ──────────────
       - key: DB_HOST
@@ -45,16 +50,26 @@ services:
         sync: false
 
       # ── Demo content ───────────────────────────────────────────────────────
-      # Seeds placeholder profile/projects/experience/skills into an EMPTY database so the
-      # site isn't blank on first boot. Flip to "false" (or delete) once real content is
-      # entered in the admin panel: while it's true, a placeholder row you delete comes back
-      # on the next restart, and Render's free tier restarts often.
+      # Seeds starter profile/projects/experience/skills into an EMPTY database so the
+      # site isn't blank on first boot. NOW OFF: real content exists, and while this was
+      # "true" every row deleted in the admin panel came back on the next restart —
+      # Render's free tier restarts often — which is how fabricated star/fork/commit
+      # counts and a "Student / open to internships" headline stayed live for months.
+      # Leave it false. Turning it on against a populated database is a no-op (the
+      # seeder skips existing slugs), but against an empty one it overwrites nothing
+      # and re-adds the starter set.
       - key: SEED_DEMO_DATA
-        value: "true"
+        value: "false"
 
       # ── CORS ─────────────────────────────────────────────────────────────
       # The Vercel frontend's public origin, e.g. https://your-portfolio.vercel.app
       # (no trailing slash). Set after the frontend URL is known.
+      #
+      # ⚠ DOMAIN MIGRATION: this is one of exactly two backend values that must
+      # change when the custom domain goes live. It mirrors VITE_SITE_URL on the
+      # frontend. If it is not updated, every API call from the new domain is
+      # blocked by CORS and the site renders its "failed to load" state.
+      # See docs/seo/00-RECON.md §0.8 for the full migration runbook.
       - key: CORS_ALLOWED_ORIGIN
         sync: false
 
@@ -140,6 +155,12 @@ services:
       - key: OAUTH_ALLOWED_EMAILS
         sync: false
       # SPA origin to redirect back to after sign-in (the Vercel URL in prod).
+      #
+      # ⚠ DOMAIN MIGRATION: the second of the two backend values that must change
+      # when the custom domain goes live (the other is CORS_ALLOWED_ORIGIN above).
+      # Mirrors VITE_SITE_URL on the frontend. If it is not updated, OAuth sign-in
+      # redirects admins back to the old domain after authenticating.
+      # See docs/seo/00-RECON.md §0.8 for the full migration runbook.
       - key: APP_FRONTEND_URL
         sync: false
       # Prod is HTTPS, so the OAuth-request cookie must carry the Secure flag.
