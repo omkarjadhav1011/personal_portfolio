@@ -10,6 +10,17 @@ spring:
     url: ${DATABASE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:portfolio}}
     username: ${DB_USERNAME:portfolio}
     password: ${DB_PASSWORD:portfolio}
+    hikari:
+      # Serverless Postgres (Neon et al.) bills compute-hours and only suspends the compute after a
+      # window with NO open connections. HikariCP defaults minimum-idle to maximum-pool-size, which
+      # pins 10 connections open forever so the compute never sleeps -- that drained the entire free
+      # quota in Sep 2026 and took prod down (Flyway then failed with SQLSTATE 53000 on every boot).
+      # minimum-idle: 0 lets the pool drain to zero; idle-timeout must stay under the provider's
+      # suspend window (Neon's default is 5 min).
+      minimum-idle: 0
+      idle-timeout: 60000
+      max-lifetime: 300000
+      maximum-pool-size: ${DB_POOL_SIZE:5}
   jpa:
     hibernate:
       # Schema is owned by Flyway (db/migration). Hibernate only validates entities against it.

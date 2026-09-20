@@ -16,8 +16,13 @@ services:
     plan: free
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
-    # Actuator health endpoint — Render gates traffic on this returning 200.
-    healthCheckPath: /actuator/health
+    # The no-I/O HealthController, NOT /actuator/health. Render polls this path continuously,
+    # and the actuator endpoint runs the DataSource probe on every hit — against a serverless
+    # Postgres that opens a connection round the clock, so the compute never suspends and the
+    # free compute-hour quota drains (it did, Sep 2026; see docs/future_plan.md). Nothing is
+    # lost by the swap: Flyway runs at startup, so a database that is down already fails the
+    # boot and the port never opens, whatever this path is set to.
+    healthCheckPath: /health
     envVars:
       # ── Database (auto-wired from the managed Postgres above) ──────────────
       - key: DB_HOST
