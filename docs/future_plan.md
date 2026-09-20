@@ -480,6 +480,14 @@ appetite. The current consolidated order lives in "Now / Next" at the top of thi
   `main.tsx` now hydrates instead of re-rendering. The server HTML is verified; hydration is NOT —
   no browser was available. Run `npm run preview` and check the console for React hydration
   warnings before deploying.
+- 🔴 **Neon compute has auto-suspend DISABLED and has blown the free quota.**
+  `suspend_timeout_seconds: 0` means the compute never scales to zero; it has run
+  continuously since 2026-09-01 (active_time 440.7 h, compute 110.2 CPU-h) and the API now
+  returns HTTP 402. This is also why the Render backend cannot boot — Flyway cannot reach a
+  suspended compute. Fix: set the endpoint's suspend timeout to ~300s. Note this interacts
+  with the planned keep-alive pinger: pinging the backend every 10 min keeps the Neon
+  compute awake too, which is what would re-burn the quota. Ping `/health` (no DB I/O), not
+  `/actuator/health`.
 - ⏳ **Admin panel content fixes.** The live database still holds the stale profile, the Dnyanda
   role, the fabricated project metrics and the Next.js skill. The prerender content guard blocks
   a deploy until they are corrected at `/admin`.
