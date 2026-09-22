@@ -549,6 +549,11 @@ appetite. The current consolidated order lives in "Now / Next" at the top of thi
   `maximumPoolSize` (10) and the pool pins 10 connections open forever. Fix: point the health check
   at the no-I/O `/health`, set `hikari.minimum-idle: 0` with a short `idle-timeout`, and confirm the
   external pingers only hit `/health`. Quota resets 2026-10-01.
+- ⏳ **`feat/blog` still carries `cleanUrls: true` (2026-09-22).** `dev` and `main` dropped it so
+  the Google Search Console file at `/google51bc8d7df20ac577.html` returns 200 rather than a 308 —
+  Search Console rejects a verification file that redirects — with explicit `/index.html` and
+  `/:path*/index.html` redirects keeping the canonicalisation. Merging `dev` into `feat/blog` before
+  the next blog phase keeps that branch's preview honest.
 
 ---
 
