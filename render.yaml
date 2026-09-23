@@ -16,12 +16,12 @@ services:
     plan: free
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
-    # The no-I/O HealthController, NOT /actuator/health. Render polls this path continuously,
-    # and the actuator endpoint runs the DataSource probe on every hit — against a serverless
-    # Postgres that opens a connection round the clock, so the compute never suspends and the
-    # free compute-hour quota drains (it did, Sep 2026; see docs/future_plan.md). Nothing is
-    # lost by the swap: Flyway runs at startup, so a database that is down already fails the
-    # boot and the port never opens, whatever this path is set to.
+    # HealthController, NOT /actuator/health. It runs one bounded SELECT 1 and returns 503 when
+    # Postgres is unreachable, so an instance that has lost its database is reported unhealthy
+    # (and a deploy whose new instance cannot reach it never takes traffic). That polling keeps
+    # a connection busy round the clock: fine on Supabase, and it is what stops a free project
+    # pausing for inactivity. It is NOT fine on serverless Postgres billed by compute-hour
+    # (Neon drained its quota exactly this way, Sep 2026); revisit if the database moves back.
     healthCheckPath: /health
     envVars:
       # ── Database (auto-wired from the managed Postgres above) ──────────────

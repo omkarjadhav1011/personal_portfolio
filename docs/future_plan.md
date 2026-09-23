@@ -36,10 +36,15 @@ pooler (6543) breaks both; neither is usable here.
 - [ ] **Owner:** Render → `portfolio-backend` → Settings → **Health Check Path** → change
       `/actuator/health` to `/health`. `render.yaml` already says `/health`, but it is intent only:
       the live service was created through the REST API, not a Blueprint.
-- [ ] **Owner:** external keep-alive cron (cron-job.org or similar) hitting `GET /api/projects`
-      every 10 min. Supabase pauses a free project after **7 days of low database activity**, and
-      restoring is manual and dashboard-only — no API, no CLI. Not `/health`: it does no I/O, so it
-      does not count as database activity. Doubles as the Render free-tier spin-down keep-warm.
+- [ ] **Owner:** external keep-alive cron (cron-job.org or similar) hitting `GET /health` every
+      10 min. Supabase pauses a free project after **7 days of low database activity**, and
+      restoring is manual and dashboard-only — no API, no CLI. `/health` now runs a `SELECT 1`
+      (`feat/health-db-check`), so it counts as database activity; before that branch ships, use
+      `GET /api/projects` instead. Doubles as the Render free-tier spin-down keep-warm.
+- [ ] **Owner:** Render deploys fail since 2026-09-22 with Supabase `(ENOIDENTIFIER) no tenant
+      identifier provided`. The pooler needs the username `postgres.lkbntiglqcnmzcymzlcx` (in
+      `DB_USERNAME`, or in `DATABASE_URL` if that carries the user). The instance started before the
+      env change still serves; any new deploy, or a restart of that instance, goes down.
 - ✅ **The production content did not survive Neon** — but it came back the long way round. On the
       first boot the seeder (`SEED_DEMO_DATA` was live-`true`, whatever `seo/overhaul`'s render.yaml
       says) refilled the empty database with the fabricated content: invented star/fork/commit
