@@ -79,7 +79,7 @@ public class SecurityConfig {
                         // Keep-alive ping for the external uptime cron (Render free tier
                         // sleeps after 15 min idle). Explicit and FIRST so it can never be
                         // shadowed by a future matcher. HealthController runs one bounded
-                        // SELECT 1 and never puts the failure reason in the response.
+                        // read of the profile table and never puts the failure reason in the response.
                         .requestMatchers(HttpMethod.GET, "/health").permitAll()
                         // OAuth2 authorization + provider callback endpoints must be reachable
                         // before any token exists. The success handler then mints the JWT.

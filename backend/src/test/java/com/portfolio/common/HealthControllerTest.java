@@ -9,16 +9,22 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class HealthControllerTest {
 
-    /** A JdbcTemplate whose SELECT 1 is whatever the test says it is. */
-    private static JdbcTemplate jdbc(java.util.function.Supplier<Integer> answer) {
+    /** SQL the fake last received, so a test can pin what the probe actually runs. */
+    private static final AtomicReference<String> lastSql = new AtomicReference<>();
+
+    /** A JdbcTemplate whose probe query answers whatever the test says it does. */
+    private static JdbcTemplate jdbc(Supplier<Boolean> answer) {
         return new JdbcTemplate() {
             @Override
             public <T> T queryForObject(String sql, Class<T> requiredType) {
+                lastSql.set(sql);
                 return requiredType.cast(answer.get());
             }
         };
@@ -29,11 +35,20 @@ class HealthControllerTest {
     }
 
     @Test
-    void databaseAnswering_is200Up() {
-        var response = controller(jdbc(() -> 1)).health();
+    void databaseAnswering_is200Up_andReadsARealTable() {
+        var response = controller(jdbc(() -> true)).health();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(Map.of("status", "ok", "database", "up"));
+        assertThat(lastSql.get()).isEqualTo("SELECT EXISTS (SELECT 1 FROM profile)");
+    }
+
+    @Test
+    void emptyTable_isStillUp() {
+        // A fresh database with no profile row yet is reachable, not down.
+        var response = controller(jdbc(() -> false)).health();
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
@@ -55,7 +70,7 @@ class HealthControllerTest {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-            return 1;
+            return true;
         }));
 
         long start = System.nanoTime();
@@ -78,7 +93,7 @@ class HealthControllerTest {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-            return 1;
+            return true;
         }));
 
         hc.health();

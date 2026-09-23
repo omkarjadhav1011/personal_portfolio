@@ -13,7 +13,8 @@ import java.util.Map;
 /**
  * Health check for Render's {@code healthCheckPath} and the external keep-alive cron.
  *
- * <p>It touches the database on purpose: a {@code SELECT 1} through {@link DatabaseHealthProbe}.
+ * <p>It touches the database on purpose: one read of the {@code profile} table
+ * through {@link DatabaseHealthProbe}.
  * Two reasons. A backend that is up but cannot reach Postgres serves nothing useful, so it should
  * report 503 rather than a cheerful 200. And Supabase pauses a free project after about a week
  * without database activity, so the keep-alive ping has to reach the database to count, which a
@@ -39,7 +40,7 @@ public class HealthController {
         this.database = database;
     }
 
-    @Operation(summary = "Health check", description = "200 when the app is serving and Postgres answers SELECT 1; 503 otherwise.")
+    @Operation(summary = "Health check", description = "200 when the app is serving and Postgres answers a read of the profile table; 503 otherwise.")
     @ApiResponse(responseCode = "200", description = "Service and database are up")
     @ApiResponse(responseCode = "503", description = "Database unreachable or too slow to answer")
     @GetMapping("/health")
