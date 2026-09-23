@@ -16,7 +16,7 @@ services:
     plan: free
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
-    # HealthController, NOT /actuator/health. It runs one bounded SELECT 1 and returns 503 when
+    # HealthController, NOT /actuator/health. It runs one bounded read of the profile table, 503 when
     # Postgres is unreachable, so an instance that has lost its database is reported unhealthy
     # (and a deploy whose new instance cannot reach it never takes traffic). That polling keeps
     # a connection busy round the clock: fine on Supabase, and it is what stops a free project
